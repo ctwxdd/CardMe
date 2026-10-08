@@ -40,6 +40,12 @@ struct RecoveryOutcome {
 }
 
 // Only fixed counters leave the app; recovery never waits for this service.
+struct ScanOutcome {
+    var total: Int
+    var flagged: Int
+    var result: String
+}
+
 @MainActor
 final class UsageStatistics: ObservableObject {
     static let shared = UsageStatistics()
@@ -67,20 +73,29 @@ final class UsageStatistics: ObservableObject {
         config.urlCache = nil
         self.network = network ?? URLSession(configuration: config)
     }
-    func send(_ event: String, mode: String = "none", outcome: RecoveryOutcome? = nil) {
+    func send(_ event: String, mode: String = "none", outcome: RecoveryOutcome? = nil, scan: ScanOutcome? = nil) {
         guard enabled, tasks.count < 8,
-              ["app_open", "rescue_complete", "coffee_click"].contains(event),
+              ["app_open", "rescue_complete", "coffee_click", "scan_finished"].contains(event),
               ["none", "normal", "deep"].contains(mode),
               (event == "rescue_complete") == (outcome != nil),
-              (event == "rescue_complete") == (mode != "none") else { return }
+              (event == "rescue_complete" || event == "scan_finished") == (mode != "none"),
+              (event == "scan_finished") == (scan != nil) else { return }
+        if let scan {
+            guard mode == "normal", scan.total >= 0, scan.total <= 1_000_000,
+                  scan.flagged >= 0, scan.flagged <= scan.total,
+                  ["completed", "failed", "cancelled"].contains(scan.result) else { return }
+        }
         let id = UUID()
-        let payload: [String: Any] = [
-            "schema_version": 1, "event_id": id.uuidString.lowercased(), "event": event,
+        var payload: [String: Any] = [
+            "schema_version": scan == nil ? 1 : 2, "event_id": id.uuidString.lowercased(), "event": event,
             "app_version": Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "development",
             "mode": mode, "full_size": outcome?.fullSize ?? 0,
             "previews": outcome?.previews ?? 0, "thumbnails": outcome?.thumbnails ?? 0,
             "review": outcome?.review ?? 0, "unrecovered": outcome?.unrecovered.map { $0 as Any } ?? NSNull()
         ]
+        if let scan {
+            payload["scan_total"] = scan.total; payload["scan_flagged"] = scan.flagged; payload["scan_result"] = scan.result
+        }
         var request = URLRequest(url: endpoint)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -103,7 +118,7 @@ struct UsageSettingsView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Privacy").font(.title2.bold())
             Toggle("Share usage statistics", isOn: $statistics.enabled)
-            Text("Help improve CardMe by sharing app opens, rescue result counts and coffee-link clicks with our service. Enabled by default. No installation ID is used; photos, file names, paths and card details stay on your Mac.")
+            Text("Help improve CardMe by sharing app opens, scan totals and outcomes, rescue result counts and coffee-link clicks with our service. Enabled by default. No installation ID is used; photos, file names, paths and card details stay on your Mac.")
             Text("Turning this off stops future uploads. Already received reports are normally kept for 90 days. Network requests expose your IP address to the hosting service; infrastructure logs may retain request metadata.")
                 .font(.callout).foregroundStyle(.secondary)
         }.padding(24).frame(width: 480).tint(.teal)
@@ -208,6 +223,7 @@ final class RescueSession: ObservableObject {
     private var quitAfterStop = false
     private var recoveryMode = "normal"
     private var completionReported = false
+    private var scannedCount = 0
 
     func chooseSource(folder: Bool = true, cardRoot: URL? = nil, freshImageDestination: Bool = false) {
         guard !running else { return }
@@ -439,6 +455,7 @@ final class RescueSession: ObservableObject {
         if line.hasPrefix("SCANNING\t"), let data = String(line.dropFirst(9)).data(using: .utf8),
            let progress = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
            let checked = progress["checked"] as? Int {
+            scannedCount = max(scannedCount, checked)
             status = "Checking photos… \(checked) checked"
             return
         }
@@ -691,6 +708,7 @@ final class RescueSession: ObservableObject {
         let folderMode = scanFolder && !rescueFolder
         recoveryMode = folderMode || rescueFolder ? "normal" : "deep"
         completionReported = false
+        if folderMode { scannedCount = 0 }
         let finish = {
             DispatchQueue.main.async {
                 if !self.pending.isEmpty {
@@ -731,6 +749,10 @@ final class RescueSession: ObservableObject {
                         self.error = "We couldn’t finish this step. Check that your card and save drive are connected, then try again. The activity log has more information."
                     }
                 }
+                if folderMode {
+                    let result = self.paused ? "cancelled" : ((task.terminationStatus == 0 || task.terminationStatus == 2) ? "completed" : "failed")
+                    UsageStatistics.shared.send("scan_finished", mode: "normal", scan: ScanOutcome(total: self.scannedCount, flagged: min(self.damaged.count, self.scannedCount), result: result))
+                }
                 if !self.running && self.destinationAccess {
                     self.destination?.stopAccessingSecurityScopedResource(); self.destinationAccess = false
                 }
@@ -750,6 +772,7 @@ final class RescueSession: ObservableObject {
             process = nil; pipe = nil; running = false
             canContinueRecovery = !scanFolder && !rescueFolder
             self.error = error.localizedDescription; status = "Could not start."
+            if folderMode { UsageStatistics.shared.send("scan_finished", mode: "normal", scan: ScanOutcome(total: 0, flagged: 0, result: "failed")) }
         }
     }
     func presentCompletion() {
@@ -773,6 +796,7 @@ final class RescueSession: ObservableObject {
         } else if let photos = object["photos"] as? [[String: Any]] { photos.forEach(updateFile) }
         if folderMode, let counts = object["counts"] as? [String: Int] {
             let total = counts.values.reduce(0, +)
+            scannedCount = total
             let flagged = counts.filter { !$0.key.hasPrefix("ok_") }.values.reduce(0, +)
             summary = "\(total) photos checked · \(flagged) need attention"
             if total == 0 && selectedCard != nil { needsDeepRescue = true }

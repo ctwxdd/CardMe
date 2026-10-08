@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.23 · build 36
+
+- Report anonymous scan totals, photos needing review and completed, failed or cancelled scan outcomes when usage statistics are enabled.
+- Keep scan failures separate from unrecovered photos; earlier versions did not report scan totals.
+
 ## 0.3.22 · build 35
 
 - Keep rescue results and actions visible while the photo list scrolls independently.
