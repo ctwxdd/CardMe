@@ -18,6 +18,7 @@ class Page(HTMLParser):
         if tag == 'script': self.in_schema = False
     def handle_data(self, data):
         if self.in_schema: self.schema += data
+version = json.loads((root/'VERSION.json').read_text())['version']
 locales = {p.stem: json.loads(p.read_text()) for p in (root/'website/locales').glob('*.json')}
 expected = {'https://getpickology.com/cardme' if lang == 'en' else 'https://getpickology.com/cardme/'+lang.lower() for lang in locales}
 for lang in locales:
@@ -33,7 +34,7 @@ for lang in locales:
     assert schema['offers']['price'] == '0' and schema['inLanguage'] == lang
     assert schema['downloadUrl'] == 'https://getpickology.com/cardme/download'
     assert 'aggregateRating' not in schema and 'review' not in schema
-    assert '0.3.16' in body and '/cardme/assets/cardme-mark.svg' in body
+    assert version in body and '/cardme/assets/cardme-mark.svg' in body
     assert 'class="wrap support"' not in body
     assert body.count('href="https://ko-fi.com/alittleseal"') == 2
     assert 'ko-fi.com' not in body.split('<footer')[1]
