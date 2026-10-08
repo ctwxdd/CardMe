@@ -21,7 +21,7 @@ for lang, d in locales.items():
         language_links.append(f'<a href="{route(code)}" hreflang="{code}" lang="{code}"{current}>{esc(copy["name"])}</a>')
     links = ' · '.join(language_links)
     steps = ''.join(f'<article><span class="number">{i}</span><h3>{esc(title)}</h3><p>{esc(body)}</p></article>' for i, (title, body) in enumerate(d['steps'], 1))
-    questions = ''.join(f'<details{" open" if i == 0 else ""}><summary>{esc(title)}</summary><p>{esc(body)}</p></details>' for i, (title, body) in enumerate(d['faq']))
+    questions = ''.join(f'<details><summary>{esc(title)}</summary><p>{esc(body)}</p></details>' for i, (title, body) in enumerate(d['faq']))
     trust = ''.join(f'<p>{esc(text)}</p>' for text in d['trust'])
     html = f'''<!doctype html>
 <html lang="{lang}"><head>
@@ -38,11 +38,11 @@ for lang, d in locales.items():
 <script type="application/ld+json">{json.dumps(schema, ensure_ascii=False, separators=(',', ':')).replace('<', chr(92)+'u003c')}</script>
 </head><body>
 <header class="wrap header"><a class="brand" href="{route(lang)}" aria-label="CardMe"><img src="/cardme/assets/cardme-mark.svg" width="40" height="40" alt="">CardMe</a><nav><a href="#how-it-works">{esc(d['nav'][0])}</a><a href="#questions">{esc(d['nav'][1])}</a></nav></header>
-<main><section class="wrap hero" aria-labelledby="intro"><div class="intro"><p class="eyebrow">{esc(d['kicker'])}</p><h1 id="intro">{d['heading']}</h1><p class="lead">{esc(d['lead'])}</p><a class="primary" href="/cardme/download">{esc(d['download'])}</a><p class="requirements">macOS 14+ · Apple silicon</p><p class="quiet">{esc(d['appNote'])}</p><p class="quiet">{esc(d['version'])}</p></div><figure class="app-preview"><img src="/cardme/assets/cardme-app.png" width="1480" height="1084" alt="{esc(d['caption'], quote=True)}"><figcaption>{esc(d['caption'])}</figcaption></figure></section>
-<div class="wrap trust">{trust}</div><section class="wrap steps-section" id="how-it-works"><h2>{esc(d['stepsTitle'])}</h2><div class="steps">{steps}</div></section>
-<section class="wrap questions" id="questions"><div><h2>{esc(d['warningTitle'])}</h2><p class="section-note">{esc(d['warning'])}</p></div><div class="answers">{questions}</div></section></main>
-<nav class="wrap languages" aria-label="Language">{links}</nav>
-<footer class="wrap footer"><span>CardMe</span><span>{esc(d['licenses'])}</span><a href="https://ko-fi.com/alittleseal" target="_blank" rel="noopener noreferrer">{esc(d['coffee'])}</a></footer>
+<main><section class="wrap hero" aria-labelledby="intro"><div class="intro"><h1 id="intro">{d['heading']}</h1><p class="lead">{esc(d['lead'])}</p><a class="primary" href="/cardme/download">{esc(d['download'])}</a><p class="requirements">macOS 14+ · Apple silicon<br>{esc(d['appNote'])}</p></div><figure class="app-preview"><img src="/cardme/assets/cardme-app.png" width="1480" height="1084" alt="{esc(d['caption'], quote=True)}"><figcaption>{esc(d['caption'])}</figcaption></figure></section>
+<p class="wrap safety-note">{esc(d['warning'])}</p><section class="wrap steps-section" id="how-it-works"><h2>{esc(d['stepsTitle'])}</h2><div class="steps">{steps}</div></section>
+<section class="wrap questions" id="questions"><div><h2>{esc(d['nav'][1])}</h2></div><div class="answers">{questions}</div></section></main>
+<details class="wrap language-picker"><summary>{esc(d['name'])}</summary><nav class="languages" aria-label="Language">{links}</nav></details>
+<footer class="wrap footer"><span>CardMe</span><span>{esc(d['version'])}</span><a href="https://ko-fi.com/alittleseal" target="_blank" rel="noopener noreferrer">{esc(d['coffee'])}</a></footer>
 </body></html>
 '''
     target = site / ('index.html' if lang == 'en' else lang.lower() + '/index.html')
