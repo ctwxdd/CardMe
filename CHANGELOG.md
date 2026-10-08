@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.22 · build 35
+
+- Keep rescue results and actions visible while the photo list scrolls independently.
+- Use a compact main window that grows only when the activity log is expanded.
+- Give the Dock icon more breathing room.
+
 ## 0.3.21 · build 34
 
 - Automatically analyze mounted exFAT cards for JPEG fragments using read-only card access, without a whole-card image or private recovery profile.

@@ -7,8 +7,8 @@ NSGraphicsContext.saveGraphicsState()
 NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: bitmap)
 NSColor(calibratedRed: 1, green: 1, blue: 0.97, alpha: 1).setFill()
 NSBezierPath(roundedRect: NSRect(x: 80, y: 80, width: 864, height: 864), xRadius: 192, yRadius: 192).fill()
-// Keep the shared mark large enough to read at Dock size, with only one background tile.
-artwork.draw(in: NSRect(x: 112, y: 181, width: 800, height: 663))
+// Leave breathing room around the mark at Dock size.
+artwork.draw(in: NSRect(x: 162, y: 222, width: 700, height: 580))
 NSGraphicsContext.restoreGraphicsState()
 assert(bitmap.colorAt(x: 0, y: 0)!.alphaComponent == 0)
 try bitmap.representation(using: .png, properties: [:])!.write(to: URL(fileURLWithPath: output))

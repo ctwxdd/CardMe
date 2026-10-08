@@ -840,10 +840,11 @@ private struct SupportLink: View {
 struct RescueView: View {
     @ObservedObject var session = RescueSession.shared
     @State private var choosingCard = false
+    @State private var activityExpanded = false
     private var hasSource: Bool { session.source != nil || session.selectedCard != nil }
     private var step: Int { session.hasSavedPhotos ? 3 : (hasSource ? 2 : 1) }
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
+        VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 12) {
                 Image(nsImage: NSImage(contentsOf: Bundle.main.resourceURL!.appendingPathComponent("cardme-mark.png")) ?? NSImage()).resizable().scaledToFit().frame(width: 40, height: 40)
                 VStack(alignment: .leading, spacing: 3) {
@@ -865,99 +866,101 @@ struct RescueView: View {
                 }
             }.accessibilityElement(children: .ignore)
                 .accessibilityLabel("Step \(step) of 3: \(["Choose card", "Rescue photos", "View photos"][step - 1])")
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    VStack(alignment: .leading, spacing: 12) {
-                        if hasSource {
-                            HStack {
-                                if let source = session.source {
-                                    Label(session.selectedCard?.name ?? source.lastPathComponent, systemImage: session.scanFolder ? "externaldrive" : "doc")
-                                        .font(.callout).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
-                                } else if let card = session.selectedCard {
-                                    Label(card.name, systemImage: "externaldrive").font(.callout).foregroundStyle(.secondary)
-                                }
-                                Spacer()
-                                if !session.running {
-                                    Button { choosingCard = true } label: { actionLabel("Change…") }.buttonStyle(.borderless)
-                                }
-                            }
-                        }
-                        Text(session.guidanceTitle).font(.system(size: 22, weight: .semibold))
-                        if !hasSource {
-                            Text("Connect your memory card to check for damaged or missing photos.")
-                                .foregroundStyle(.secondary)
-                        } else if session.running || session.error != nil || session.canContinueRecovery || session.canSearchDeeper {
-                            Text(session.status).font(.callout).fixedSize(horizontal: false, vertical: true)
-                        }
-                        if session.running {
-                            if let value = session.fraction { ProgressView(value: value) } else { ProgressView().progressViewStyle(.linear) }
-                            Text("Keep the card and save drive connected until this step finishes.")
-                                .font(.callout).foregroundStyle(.secondary)
-                        }
-                        if !session.summary.isEmpty { Text(session.summary).font(.callout).foregroundStyle(.secondary) }
-                        if let warning = session.copyWarning {
-                            Label(warning, systemImage: "exclamationmark.triangle").font(.callout).foregroundStyle(.orange)
-                        }
-                        if let error = session.error {
-                            Label(error, systemImage: "exclamationmark.circle").font(.callout).textSelection(.enabled)
-                        }
-                        if !session.running && session.canSearchDeeper && !session.hasSavedPhotos {
-                            Text("Search the whole card for missing photos. A safety copy is saved first; the next step explains the time and space needed.")
-                                .font(.callout).foregroundStyle(.secondary)
-                        } else if session.readyToRescue {
-                            Text("Choose where to save the photos. Recovery starts automatically after you select a folder.")
-                                .font(.callout).foregroundStyle(.secondary)
-                        } else if !session.running && session.selectedCard != nil && session.scanReport != nil && session.damaged.isEmpty && !session.folderRescued {
-                            Text("If photos are missing, try searching for deleted photos.")
-                                .font(.callout).foregroundStyle(.secondary)
-                        }
-                        HStack(spacing: 12) {
-                            if session.running {
-                                Button(action: session.stop) { actionLabel(session.scanFolder ? "Stop safely" : "Pause safely") }
-                            } else if session.hasSavedPhotos, let results = session.results {
-                                if session.canShowSupport { SupportLink() }
-                                Button { NSWorkspace.shared.open(results) } label: { actionLabel("View saved photos") }
-                                    .buttonStyle(.borderedProminent)
-                            } else if session.canSearchDeeper {
-                                Button(action: session.deepRescue) { actionLabel("Search deeper…") }.buttonStyle(.borderedProminent)
-                            } else if session.readyToRescue {
-                                Button(action: session.rescueFolder) { actionLabel("Rescue to…") }.buttonStyle(.borderedProminent)
-                            } else if session.canContinueRecovery {
-                                Button(action: session.continueRecovery) { actionLabel("Continue rescue") }.buttonStyle(.borderedProminent)
-                            } else if hasSource && session.scanFolder {
-                                Button { session.start() } label: { actionLabel("Check photos again") }.buttonStyle(.borderedProminent)
-                            } else if !hasSource {
-                                Button { choosingCard = true } label: { actionLabel("Choose card…") }.buttonStyle(.borderedProminent)
-                            }
-                        }
-                        if !session.running && session.selectedCard != nil && session.scanReport != nil && (session.folderRescued || session.damaged.isEmpty) {
-                            Button(action: session.deepRescue) {
-                                Text(session.canSearchDeeper ? "Search for remaining photos…" : "Find deleted photos…")
-                            }.buttonStyle(.link)
-                        }
-                    }
-                    .padding(20).frame(maxWidth: .infinity, alignment: .leading)
-                    .background(.background, in: RoundedRectangle(cornerRadius: 12))
-                    .overlay(RoundedRectangle(cornerRadius: 12).stroke(.quaternary, lineWidth: 1))
-                    if !session.damaged.isEmpty { PhotoReviewList(session: session) }
+            VStack(alignment: .leading, spacing: 14) {
+                VStack(alignment: .leading, spacing: 12) {
                     if hasSource {
-                        DisclosureGroup("Activity log and settings") {
-                            VStack(alignment: .leading, spacing: 10) {
-                                Toggle("Check photos more thoroughly next time (slower)", isOn: $session.fullScan).disabled(session.running)
-                                    .help("Decode every pixel on the next folder check")
-                                Text("The quick check can miss some image damage. RAW photos aren’t checked. Open the saved photos to confirm the result.")
-                                    .font(.caption).foregroundStyle(.secondary)
-                                if let image = session.safetyImage {
-                                    Button { NSWorkspace.shared.activateFileViewerSelecting([image]) } label: { actionLabel("Show safety copy") }
-                                }
-                                ScrollView {
-                                    Text(session.log.isEmpty ? "No activity yet." : session.log).font(.system(.caption, design: .monospaced))
-                                        .textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading)
-                                }.frame(height: 96)
-                            }.padding(.top, 8).frame(maxWidth: .infinity, alignment: .leading)
+                        HStack {
+                            if let source = session.source {
+                                Label(session.selectedCard?.name ?? source.lastPathComponent, systemImage: session.scanFolder ? "externaldrive" : "doc")
+                                    .font(.callout).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
+                            } else if let card = session.selectedCard {
+                                Label(card.name, systemImage: "externaldrive").font(.callout).foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            if !session.running {
+                                Button { choosingCard = true } label: { actionLabel("Change…") }.buttonStyle(.borderless)
+                            }
                         }
                     }
-                }.frame(maxWidth: .infinity, alignment: .leading)
+                    Text(session.guidanceTitle).font(.system(size: 22, weight: .semibold))
+                    if !hasSource {
+                        Text("Connect your memory card to check for damaged or missing photos.")
+                            .foregroundStyle(.secondary)
+                    } else if session.running || session.error != nil || session.canContinueRecovery || session.canSearchDeeper {
+                        Text(session.status).font(.callout).fixedSize(horizontal: false, vertical: true)
+                    }
+                    if session.running {
+                        if let value = session.fraction { ProgressView(value: value) } else { ProgressView().progressViewStyle(.linear) }
+                        Text("Keep the card and save drive connected until this step finishes.")
+                            .font(.callout).foregroundStyle(.secondary)
+                    }
+                    if !session.summary.isEmpty { Text(session.summary).font(.callout).foregroundStyle(.secondary) }
+                    if let warning = session.copyWarning {
+                        Label(warning, systemImage: "exclamationmark.triangle").font(.callout).foregroundStyle(.orange)
+                    }
+                    if let error = session.error {
+                        Label(error, systemImage: "exclamationmark.circle").font(.callout).textSelection(.enabled)
+                    }
+                    if !session.running && session.canSearchDeeper && !session.hasSavedPhotos {
+                        Text("Search the whole card for missing photos. A safety copy is saved first; the next step explains the time and space needed.")
+                            .font(.callout).foregroundStyle(.secondary)
+                    } else if session.readyToRescue {
+                        Text("Choose where to save the photos. Recovery starts automatically after you select a folder.")
+                            .font(.callout).foregroundStyle(.secondary)
+                    } else if !session.running && session.selectedCard != nil && session.scanReport != nil && session.damaged.isEmpty && !session.folderRescued {
+                        Text("If photos are missing, try searching for deleted photos.")
+                            .font(.callout).foregroundStyle(.secondary)
+                    }
+                    HStack(spacing: 12) {
+                        if session.running {
+                            Button(action: session.stop) { actionLabel(session.scanFolder ? "Stop safely" : "Pause safely") }
+                        } else if session.hasSavedPhotos, let results = session.results {
+                            if session.canShowSupport { SupportLink() }
+                            Button { NSWorkspace.shared.open(results) } label: { actionLabel("View saved photos") }
+                                .buttonStyle(.borderedProminent)
+                        } else if session.canSearchDeeper {
+                            Button(action: session.deepRescue) { actionLabel("Search deeper…") }.buttonStyle(.borderedProminent)
+                        } else if session.readyToRescue {
+                            Button(action: session.rescueFolder) { actionLabel("Rescue to…") }.buttonStyle(.borderedProminent)
+                        } else if session.canContinueRecovery {
+                            Button(action: session.continueRecovery) { actionLabel("Continue rescue") }.buttonStyle(.borderedProminent)
+                        } else if hasSource && session.scanFolder {
+                            Button { session.start() } label: { actionLabel("Check photos again") }.buttonStyle(.borderedProminent)
+                        } else if !hasSource {
+                            Button { choosingCard = true } label: { actionLabel("Choose card…") }.buttonStyle(.borderedProminent)
+                        }
+                    }
+                    if !session.running && session.selectedCard != nil && session.scanReport != nil && (session.folderRescued || session.damaged.isEmpty) {
+                        Button(action: session.deepRescue) {
+                            Text(session.canSearchDeeper ? "Search for remaining photos…" : "Find deleted photos…")
+                        }.buttonStyle(.link)
+                    }
+                }
+                .padding(20).frame(maxWidth: .infinity, alignment: .leading)
+                .background(.background, in: RoundedRectangle(cornerRadius: 12))
+                .overlay(RoundedRectangle(cornerRadius: 12).stroke(.quaternary, lineWidth: 1))
+                if !session.damaged.isEmpty {
+                    PhotoReviewList(session: session, flexibleHeight: true)
+                } else {
+                    Spacer(minLength: 0)
+                }
+                if hasSource {
+                    DisclosureGroup("Activity log and settings", isExpanded: $activityExpanded) {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Toggle("Check photos more thoroughly next time (slower)", isOn: $session.fullScan).disabled(session.running)
+                                .help("Decode every pixel on the next folder check")
+                            Text("The quick check can miss some image damage. RAW photos aren’t checked. Open the saved photos to confirm the result.")
+                                .font(.caption).foregroundStyle(.secondary)
+                            if let image = session.safetyImage {
+                                Button { NSWorkspace.shared.activateFileViewerSelecting([image]) } label: { actionLabel("Show safety copy") }
+                            }
+                            ScrollView {
+                                Text(session.log.isEmpty ? "No activity yet." : session.log).font(.system(.caption, design: .monospaced))
+                                    .textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading)
+                            }.frame(height: 96)
+                        }.padding(.top, 8).frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
             }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             VStack(alignment: .leading, spacing: 12) {
                 Divider()
@@ -972,7 +975,9 @@ struct RescueView: View {
                         .help("Stop safely and close CardMe")
                 }
             }
-        }.padding(24).frame(minWidth: 740, minHeight: 510)
+        }.padding(24).frame(minWidth: 740, minHeight: 660)
+            .background(ActivityWindowSizing(expanded: activityExpanded))
+            .onChange(of: hasSource) { _, value in if !value { activityExpanded = false } }
             .buttonStyle(.bordered).controlSize(.regular).tint(.teal)
             .sheet(isPresented: $choosingCard) { CardChooser(session: session) }
             .sheet(isPresented: $session.showingAbout) { AboutView() }
@@ -986,9 +991,34 @@ struct RescueView: View {
     }
 }
 
+// Resize the owning window while keeping its top edge and the user's chosen width.
+struct ActivityWindowSizing: NSViewRepresentable {
+    var expanded: Bool
+    func makeNSView(context: Context) -> WindowView { WindowView() }
+    func updateNSView(_ view: WindowView, context: Context) { view.setExpanded(expanded) }
+    final class WindowView: NSView {
+        private var expanded = false
+        private var addedHeight: CGFloat = 190
+        func setExpanded(_ value: Bool) {
+            guard value != expanded else { return }
+            expanded = value
+            guard let window, let screen = window.screen else { return }
+            var frame = window.frame
+            let height = min(frame.height + (value ? 190 : -addedHeight), screen.visibleFrame.height)
+            if value { addedHeight = height - frame.height }
+            frame.origin.y += frame.height - height
+            frame.size.height = height
+            frame.origin.y = max(screen.visibleFrame.minY, min(frame.origin.y, screen.visibleFrame.maxY - height))
+            // Apply after SwiftUI has laid out the disclosure content.
+            DispatchQueue.main.async { window.setFrame(frame, display: true, animate: true) }
+        }
+    }
+}
+
 private struct PhotoReviewList: View {
     @ObservedObject var session: RescueSession
     var showsFinder = true
+    var flexibleHeight = false
     @FocusState private var listFocused: Bool
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -1015,7 +1045,7 @@ private struct PhotoReviewList: View {
                         .listRowBackground(row.fullSizeRecovered ? Color.teal.opacity(0.07) : Color.clear)
                         .contentShape(Rectangle())
                         .onTapGesture { session.selectedID = row.id; listFocused = true }
-                }.frame(height: 180)
+                }.frame(minHeight: flexibleHeight ? 140 : 180, maxHeight: flexibleHeight ? .infinity : 180)
                     .focused($listFocused)
                     .onKeyPress(.space) { session.previewSelected(); return .handled }
                     .onKeyPress(.downArrow) { session.moveSelection(1); return .handled }
@@ -1209,7 +1239,7 @@ struct AboutView: View {
 struct CardRescueApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var delegate
     var body: some Scene {
-        WindowGroup { RescueView() }.defaultSize(width: 800, height: 680)
+        WindowGroup { RescueView() }.defaultSize(width: 780, height: 700)
             .commands {
                 CommandGroup(replacing: .newItem) {}
                 CommandGroup(replacing: .appInfo) {
