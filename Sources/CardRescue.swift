@@ -845,7 +845,7 @@ struct RescueView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             HStack(spacing: 12) {
-                Image(systemName: "photo.on.rectangle").font(.system(size: 28)).foregroundStyle(.teal)
+                Image(nsImage: NSImage(contentsOf: Bundle.main.resourceURL!.appendingPathComponent("CardRescue.icns")) ?? NSImage()).resizable().scaledToFit().frame(width: 40, height: 40)
                 VStack(alignment: .leading, spacing: 3) {
                     Text("CardMe").font(.title2.bold())
                     Text("Photo recovery for memory cards.").font(.callout).foregroundStyle(.secondary)

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.18 · build 31
+
+- Use the new double-arrow photo recovery icon in the app, website and repository page.
+
+
 ## 0.3.17 · build 30
 
 - Add default-on usage statistics with a Privacy switch in Settings. No installation identifier, photos, filenames, paths or card details are sent.

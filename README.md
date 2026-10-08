@@ -1,5 +1,7 @@
 # CardMe
 
+<img src="website/dist/assets/cardme-icon.png" width="112" height="112" alt="CardMe: photo recovery from memory cards">
+
 **A free Mac app to help rescue photos from memory cards.**
 
 I know how it feels to lose photos you can’t take again. A faulty card adapter damaged my own memory card, and trying to recover those photographs became the beginning of CardMe.
