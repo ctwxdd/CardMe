@@ -1,0 +1,68 @@
+{
+  "name": "Deutsch",
+  "title": "Kostenlose SD-Karten- und Speicherkarten-Fotowiederherstellung für Mac — CardMe",
+  "description": "Kostenlose Mac-App für beschädigte JPEG-Fotos und die Suche nach gelöschten Fotos oder nach Schnellformatierung. Nur lesender Kartenzugriff, kein Konto nötig.",
+  "heading": "Fotos von Speicherkarten<br>kostenlos wiederherstellen.",
+  "kicker": "Eine kostenlose App für Mac",
+  "lead": "Wenn Fotos auf der SD-Karte fehlen oder sich nicht öffnen lassen, hilft CardMe, wiederherstellbare Daten zu finden und auf einem anderen Laufwerk zu speichern.",
+  "download": "Für Mac herunterladen",
+  "nav": [
+    "So funktioniert es",
+    "Fragen"
+  ],
+  "stepsTitle": "Ein klarer nächster Schritt.",
+  "steps": [
+    [
+      "Karte auswählen",
+      "Mit einem funktionierenden Kartenleser verbinden und Fotos prüfen."
+    ],
+    [
+      "Speicherort auswählen",
+      "„Rescue to…“ anklicken und einen Ordner auf dem Mac oder einem anderen Laufwerk wählen."
+    ],
+    [
+      "Ergebnisse prüfen",
+      "Fotos in voller Größe, kleine Vorschauen und nicht gerettete Fotos werden unterschieden."
+    ]
+  ],
+  "warningTitle": "Vor dem Start.",
+  "warning": "Keine neuen Fotos oder Dateien auf die Karte schreiben. Neue Daten können fehlende Fotos überschreiben.",
+  "faq": [
+    [
+      "Ist die Wiederherstellung kostenlos?",
+      "Ja. Prüfen, Wiederherstellen und Speichern sind kostenlos und erfordern kein Konto. Spenden sind freiwillig."
+    ],
+    [
+      "Geht das nach Löschen oder Formatieren der SD-Karte?",
+      "Deep Rescue erstellt eine vollständige Sicherheitskopie und sucht nach intakten, zusammenhängenden JPEG-Daten nach Löschen oder Schnellformatierung. Erfolg ist nicht garantiert."
+    ],
+    [
+      "Wird meine Karte verändert?",
+      "CardMe liest die Karte nur und speichert Ergebnisse auf einem anderen Laufwerk. Es repariert oder formatiert sie nicht. macOS und andere Apps können weiterhin auf die Karte zugreifen."
+    ],
+    [
+      "Was benötigt die tiefe Suche?",
+      "Einen funktionierenden Leser, mehr freien Speicher als die gesamte Kartenkapazität und zusätzlichen Platz für Fotos. Große Karten brauchen länger zum Kopieren."
+    ],
+    [
+      "Was wird derzeit nicht unterstützt?",
+      "RAW, die allgemeine Rekonstruktion fragmentierter Fotos und überschriebene Daten. Manchmal bleibt nur eine Vorschau erhalten."
+    ],
+    [
+      "Werden Fotos hochgeladen?",
+      "Nein. Die Wiederherstellung läuft auf dem Mac. Nutzungsstatistiken neuerer Versionen lassen sich in den Einstellungen deaktivieren. Fotos, Dateinamen, Pfade und Kartendaten werden nicht hochgeladen."
+    ]
+  ],
+  "trust": [
+    "Nur lesender Kartenzugriff.",
+    "Fotos bleiben auf dem Mac.",
+    "Kopien auf anderem Laufwerk."
+  ],
+  "caption": "Von der Kartenprüfung zu den geretteten Fotos.",
+  "appNote": "Die App-Oberfläche ist derzeit auf Englisch.",
+  "free": "Kostenlos nutzbar.",
+  "support": "Wenn es geholfen hat, kannst du mir einen Kaffee spendieren.",
+  "coffee": "Einen Kaffee spendieren ☕️",
+  "licenses": "Lizenzen und Quellcode-Informationen sind in der App enthalten.",
+  "version": "Öffentlicher Download: 0.3.16 · Von Apple notarisiert."
+}

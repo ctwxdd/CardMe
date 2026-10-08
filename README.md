@@ -8,7 +8,7 @@ I know how it feels to lose photos you can’t take again. A faulty card adapter
 
 I made this tool to help others save their priceless memories. It offers a clear next step, keeps recovery on your Mac, and shows honestly what it could save. Sometimes that is a full-size photo; sometimes only a smaller preview survives. No tool can promise to recover everything, but you shouldn’t have to face the process alone.
 
-[Website](https://getpickology.com/cardme) · [Download for Mac](https://getpickology.com/cardme) · [Buy me a coffee ☕️](https://ko-fi.com/alittleseal)
+[Website](https://getpickology.com/cardme) · [繁體中文](https://getpickology.com/cardme/zh-hant) · [Download for Mac](https://getpickology.com/cardme) · [Buy me a coffee ☕️](https://ko-fi.com/alittleseal)
 
 ## Getting started
 

@@ -1,0 +1,68 @@
+{
+  "name": "English",
+  "title": "Free Memory Card Recovery for Mac — CardMe",
+  "description": "Free SD card and memory card photo recovery for Mac. Recover damaged JPEG photos and search deleted or quickly formatted cards. Read-only card access, no account required.",
+  "heading": "Free photo recovery<br>for memory cards.",
+  "kicker": "A free app for Mac",
+  "lead": "Recover photos from SD cards and other memory cards when files won’t open or go missing. CardMe helps you save what can be recovered to another drive.",
+  "download": "Download for Mac",
+  "nav": [
+    "How it works",
+    "Questions"
+  ],
+  "stepsTitle": "A clear next step.",
+  "steps": [
+    [
+      "Choose your card",
+      "Connect it with a working reader. CardMe checks for damaged or missing photos."
+    ],
+    [
+      "Choose where to save",
+      "Click “Rescue to…” and choose a folder on your Mac or another drive."
+    ],
+    [
+      "Review your photos",
+      "Full-size photos, smaller previews and unsuccessful recovery are clearly distinguished."
+    ]
+  ],
+  "warningTitle": "Before you begin.",
+  "warning": "Stop taking photos on the card. New files can overwrite missing data.",
+  "faq": [
+    [
+      "Is memory card recovery free?",
+      "Yes. CardMe is free to use, including rescuing and saving photos. No account or payment is required. Donations are optional."
+    ],
+    [
+      "Can it recover deleted or formatted SD cards?",
+      "Deep Rescue can search for intact, contiguous JPEG data after deletion or a quick format. It first creates a safety copy of the whole card. Recovery is not guaranteed."
+    ],
+    [
+      "Will it write to my memory card?",
+      "CardMe’s card operations are read only. Recovered photos and safety copies are saved to another drive. It does not format or repair the card. Other apps and macOS can still access the card."
+    ],
+    [
+      "What do I need for Deep Rescue?",
+      "A working card reader and more free storage than the card’s total capacity, plus space for rescued photos. Larger cards take longer to copy."
+    ],
+    [
+      "What is currently not supported?",
+      "RAW recovery, general reconstruction of fragmented photos and overwritten data are currently not supported. Sometimes only a preview or thumbnail survives."
+    ],
+    [
+      "Are my photos uploaded?",
+      "No. Recovery runs locally on your Mac. Newer builds include usage statistics that can be turned off in Settings; photos, file names, paths and card details are never uploaded."
+    ]
+  ],
+  "trust": [
+    "Read-only card access.",
+    "Photos stay on your Mac.",
+    "Save recovered copies elsewhere."
+  ],
+  "caption": "From checking your card to reviewing saved photos.",
+  "appNote": "The app interface is currently in English.",
+  "free": "Free to use.",
+  "support": "If this helped you, you’re welcome to buy me a coffee.",
+  "coffee": "Buy me a coffee ☕️",
+  "licenses": "Licenses and source information are included in the app.",
+  "version": "Public download: 0.3.16 · Apple notarized."
+}

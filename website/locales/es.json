@@ -1,0 +1,68 @@
+{
+  "name": "Español",
+  "title": "Recuperación gratis de tarjetas SD y de memoria para Mac — CardMe",
+  "description": "Recupera fotos JPEG dañadas y busca fotos borradas o tras un formateo rápido. App gratuita para Mac, acceso de solo lectura y sin cuenta.",
+  "heading": "Recupera fotos de tarjetas<br>de memoria gratis.",
+  "kicker": "Una app gratuita para Mac",
+  "lead": "Si las fotos de tu tarjeta SD no se abren o desaparecen, CardMe te ayuda a encontrar lo que se puede recuperar y guardarlo en otra unidad.",
+  "download": "Descargar para Mac",
+  "nav": [
+    "Cómo funciona",
+    "Preguntas"
+  ],
+  "stepsTitle": "Un siguiente paso claro.",
+  "steps": [
+    [
+      "Elige tu tarjeta",
+      "Conéctala con un lector que funcione y comprueba las fotos."
+    ],
+    [
+      "Elige dónde guardar",
+      "Pulsa “Rescue to…” y elige una carpeta en tu Mac u otra unidad."
+    ],
+    [
+      "Revisa el resultado",
+      "Distingue fotos completas, vistas previas pequeñas y fotos no recuperadas."
+    ]
+  ],
+  "warningTitle": "Antes de empezar.",
+  "warning": "Deja de guardar fotos o archivos en la tarjeta. Los nuevos datos pueden sobrescribir los que faltan.",
+  "faq": [
+    [
+      "¿La recuperación es gratis?",
+      "Sí. Comprobar, recuperar y guardar fotos es gratis y no requiere cuenta. Las donaciones son opcionales."
+    ],
+    [
+      "¿Puede recuperar una SD borrada o formateada?",
+      "Deep Rescue crea una copia de seguridad de toda la tarjeta y busca JPEG intactos y contiguos tras un borrado o formateo rápido. La recuperación no está garantizada."
+    ],
+    [
+      "¿Modifica mi tarjeta?",
+      "CardMe solo lee la tarjeta y guarda copias en otra unidad. No la repara ni la formatea. macOS y otras apps aún pueden acceder a ella."
+    ],
+    [
+      "¿Qué necesito para una búsqueda profunda?",
+      "Un lector que funcione, espacio libre superior a la capacidad total de la tarjeta y espacio adicional para las fotos. Las tarjetas grandes tardan más en copiarse."
+    ],
+    [
+      "¿Qué no admite actualmente?",
+      "RAW, reconstrucción general de fotos fragmentadas y datos sobrescritos. A veces solo queda una vista previa o miniatura."
+    ],
+    [
+      "¿Se suben mis fotos?",
+      "No. La recuperación se hace en tu Mac. Las estadísticas de uso de las versiones nuevas pueden desactivarse en Ajustes. No se suben fotos, nombres, rutas ni datos de la tarjeta."
+    ]
+  ],
+  "trust": [
+    "Tarjeta de solo lectura.",
+    "Tus fotos quedan en tu Mac.",
+    "Copias en otra unidad."
+  ],
+  "caption": "De comprobar la tarjeta a revisar tus fotos.",
+  "appNote": "La interfaz de la app está actualmente en inglés.",
+  "free": "Gratis para usar.",
+  "support": "Si te ayudó, puedes invitarme a un café.",
+  "coffee": "Invítame a un café ☕️",
+  "licenses": "La app incluye licencias e información del código fuente.",
+  "version": "Descarga pública: 0.3.16 · Notarizada por Apple."
+}

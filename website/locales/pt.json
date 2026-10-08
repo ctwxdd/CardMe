@@ -1,0 +1,68 @@
+{
+  "name": "Português",
+  "title": "Recuperação gratuita de fotos de cartão SD e de memória para Mac — CardMe",
+  "description": "App gratuito para Mac que recupera JPEGs danificados e busca fotos excluídas ou após formatação rápida. Acesso somente de leitura, sem conta.",
+  "heading": "Recupere fotos do cartão<br>de memória gratuitamente.",
+  "kicker": "Um app gratuito para Mac",
+  "lead": "Se as fotos do cartão SD não abrem ou desapareceram, o CardMe ajuda a encontrar o que pode ser recuperado e salvar em outra unidade.",
+  "download": "Baixar para Mac",
+  "nav": [
+    "Como funciona",
+    "Perguntas"
+  ],
+  "stepsTitle": "Um próximo passo claro.",
+  "steps": [
+    [
+      "Escolha o cartão",
+      "Conecte com um leitor funcionando e verifique as fotos."
+    ],
+    [
+      "Escolha onde salvar",
+      "Clique em “Rescue to…” e escolha uma pasta no Mac ou em outra unidade."
+    ],
+    [
+      "Confira os resultados",
+      "Fotos completas, prévias menores e fotos não recuperadas são diferenciadas."
+    ]
+  ],
+  "warningTitle": "Antes de começar.",
+  "warning": "Pare de salvar fotos e arquivos no cartão. Novos dados podem sobrescrever fotos perdidas.",
+  "faq": [
+    [
+      "A recuperação é gratuita?",
+      "Sim. Verificar, recuperar e salvar fotos é gratuito e não exige conta. Doações são opcionais."
+    ],
+    [
+      "Recupera cartão SD apagado ou formatado?",
+      "Deep Rescue cria uma cópia segura do cartão inteiro e busca JPEGs intactos e contíguos após exclusão ou formatação rápida. Não há garantia de recuperação."
+    ],
+    [
+      "O cartão será modificado?",
+      "CardMe apenas lê o cartão e salva os resultados em outra unidade. Não repara nem formata o cartão. macOS e outros apps ainda podem acessar o cartão."
+    ],
+    [
+      "O que preciso para a busca profunda?",
+      "Um leitor funcionando, mais espaço livre que a capacidade total do cartão e espaço extra para as fotos. Cartões grandes demoram mais para copiar."
+    ],
+    [
+      "Quais são as limitações atuais?",
+      "RAW, reconstrução geral de fotos fragmentadas e dados sobrescritos não são suportados. Às vezes só resta uma prévia ou miniatura."
+    ],
+    [
+      "Minhas fotos são enviadas?",
+      "Não. A recuperação ocorre no Mac. Estatísticas de versões mais novas podem ser desligadas nos ajustes. Fotos, nomes, caminhos e detalhes do cartão nunca são enviados."
+    ]
+  ],
+  "trust": [
+    "Cartão somente de leitura.",
+    "Fotos ficam no seu Mac.",
+    "Cópias em outra unidade."
+  ],
+  "caption": "Da verificação do cartão às fotos salvas.",
+  "appNote": "A interface do app está atualmente em inglês.",
+  "free": "Uso gratuito.",
+  "support": "Se ajudou, você pode me oferecer um café.",
+  "coffee": "Oferecer um café ☕️",
+  "licenses": "Licenças e informações do código-fonte incluídas no app.",
+  "version": "Download público: 0.3.16 · Autenticado pela Apple."
+}

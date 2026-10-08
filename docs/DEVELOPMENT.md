@@ -90,3 +90,5 @@ work/usage-check
 ```
 
 The frameless UI mark is generated from shared vector geometry with `swift scripts/brand.swift website/dist/assets`. The Dock icon retains its separate approved artwork.
+
+Localized website copy lives in `website/locales/*.json`. Run `python3 scripts/build-website.py` and `python3 tests/website-check.py` after edits. The app UI remains English.
