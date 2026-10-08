@@ -4,6 +4,9 @@ import AppKit
 @main
 struct NavigationCheck {
     @MainActor static func main() {
+        let statisticsWereEnabled = UsageStatistics.shared.enabled
+        defer { UsageStatistics.shared.enabled = statisticsWereEnabled }
+        UsageStatistics.shared.enabled = false
         assert(CardDevices.isCardCandidate(internalDevice: true, removable: true, connection: "Secure Digital"))
         assert(CardDevices.isCardCandidate(internalDevice: false, removable: false, connection: "USB"))
         assert(!CardDevices.isCardCandidate(internalDevice: true, removable: false, connection: "Apple Fabric"))

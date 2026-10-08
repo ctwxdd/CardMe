@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.17 · build 30
+
+- Add default-on usage statistics with a Privacy switch in Settings. No installation identifier, photos, filenames, paths or card details are sent.
+- Report app opens, completed rescue result counts and coffee-link clicks in the background; network failures never block rescue. Coffee clicks do not indicate donations.
+- Update privacy disclosures. No new startup popup.
+
+
 Versions follow semantic versioning while CardMe remains a 0.x beta. Release dates use the maintainer’s local date.
 
 ## 0.3.16 — 2026-10-08

@@ -39,6 +39,77 @@ struct RecoveryOutcome {
     }
 }
 
+// Only fixed counters leave the app; recovery never waits for this service.
+@MainActor
+final class UsageStatistics: ObservableObject {
+    static let shared = UsageStatistics()
+    static let settingKey = "shareUsageStatistics"
+    private let defaults: UserDefaults
+    private let network: URLSession
+    private let endpoint: URL
+    private var tasks: [UUID: URLSessionDataTask] = [:]
+    @Published var enabled: Bool {
+        didSet {
+            defaults.set(enabled, forKey: Self.settingKey)
+            if !enabled { tasks.values.forEach { $0.cancel() }; tasks.removeAll() }
+        }
+    }
+    init(defaults: UserDefaults = .standard, network: URLSession? = nil,
+         endpoint: URL = URL(string: "https://pickology-control-plane.azurewebsites.net/api/v1/cardme/usage")!) {
+        self.defaults = defaults
+        self.endpoint = endpoint
+        defaults.register(defaults: [Self.settingKey: true])
+        enabled = defaults.bool(forKey: Self.settingKey)
+        let config = URLSessionConfiguration.ephemeral
+        config.timeoutIntervalForRequest = 5
+        config.timeoutIntervalForResource = 8
+        config.httpCookieStorage = nil
+        config.urlCache = nil
+        self.network = network ?? URLSession(configuration: config)
+    }
+    func send(_ event: String, mode: String = "none", outcome: RecoveryOutcome? = nil) {
+        guard enabled, tasks.count < 8,
+              ["app_open", "rescue_complete", "coffee_click"].contains(event),
+              ["none", "normal", "deep"].contains(mode),
+              (event == "rescue_complete") == (outcome != nil),
+              (event == "rescue_complete") == (mode != "none") else { return }
+        let id = UUID()
+        let payload: [String: Any] = [
+            "schema_version": 1, "event_id": id.uuidString.lowercased(), "event": event,
+            "app_version": Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "development",
+            "mode": mode, "full_size": outcome?.fullSize ?? 0,
+            "previews": outcome?.previews ?? 0, "thumbnails": outcome?.thumbnails ?? 0,
+            "review": outcome?.review ?? 0, "unrecovered": outcome?.unrecovered.map { $0 as Any } ?? NSNull()
+        ]
+        var request = URLRequest(url: endpoint)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try? JSONSerialization.data(withJSONObject: payload)
+        let task = network.dataTask(with: request) { [weak self] _, _, _ in
+            Task { @MainActor in self?.tasks.removeValue(forKey: id) }
+        }
+        tasks[id] = task
+        task.resume()
+    }
+    func openCoffee() {
+        send("coffee_click")
+        NSWorkspace.shared.open(URL(string: "https://ko-fi.com/alittleseal")!)
+    }
+}
+
+struct UsageSettingsView: View {
+    @ObservedObject private var statistics = UsageStatistics.shared
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Privacy").font(.title2.bold())
+            Toggle("Share usage statistics", isOn: $statistics.enabled)
+            Text("Help improve CardMe by sharing app opens, rescue result counts and coffee-link clicks with our service. Enabled by default. No installation ID is used; photos, file names, paths and card details stay on your Mac.")
+            Text("Turning this off stops future uploads. Already received reports are kept for up to 90 days. Network requests expose your IP address to the hosting service; infrastructure logs may retain request metadata.")
+                .font(.callout).foregroundStyle(.secondary)
+        }.padding(24).frame(width: 480).tint(.teal)
+    }
+}
+
 @MainActor
 final class SystemPreview: NSResponder, @preconcurrency QLPreviewPanelDataSource, @preconcurrency QLPreviewPanelDelegate {
     static let shared = SystemPreview()
@@ -135,6 +206,8 @@ final class RescueSession: ObservableObject {
     private var lines: [String] = []
     private var paused = false
     private var quitAfterStop = false
+    private var recoveryMode = "normal"
+    private var completionReported = false
 
     func chooseSource(folder: Bool = true, cardRoot: URL? = nil, freshImageDestination: Bool = false) {
         guard !running else { return }
@@ -616,6 +689,8 @@ final class RescueSession: ObservableObject {
         let stream = Pipe()
         task.standardOutput = stream; task.standardError = stream
         let folderMode = scanFolder && !rescueFolder
+        recoveryMode = folderMode || rescueFolder ? "normal" : "deep"
+        completionReported = false
         let finish = {
             DispatchQueue.main.async {
                 if !self.pending.isEmpty {
@@ -679,6 +754,10 @@ final class RescueSession: ObservableObject {
     }
     func presentCompletion() {
         guard !running, !quitAfterStop, recoveryOutcome != nil else { return }
+        if !completionReported {
+            completionReported = true
+            UsageStatistics.shared.send("rescue_complete", mode: recoveryMode, outcome: recoveryOutcome)
+        }
         supportPromptPending = (recoveryOutcome?.saved ?? 0) > 0
         showingCompletion = true
     }
@@ -732,6 +811,9 @@ final class RescueSession: ObservableObject {
 }
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        MainActor.assumeIsolated { UsageStatistics.shared.send("app_open") }
+    }
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         MainActor.assumeIsolated { RescueSession.shared.requestQuit() }
     }
@@ -744,7 +826,7 @@ private func actionLabel(_ title: String) -> some View {
 
 private struct SupportLink: View {
     var body: some View {
-        Link(destination: URL(string: "https://ko-fi.com/alittleseal")!) {
+        Button { UsageStatistics.shared.openCoffee() } label: {
             HStack(spacing: 6) {
                 Image(systemName: "cup.and.saucer")
                 Text("Buy me a coffee")
@@ -898,7 +980,7 @@ struct RescueView: View {
                 RecoveryCompleteView(session: session)
             }
             .alert("If this helped you, you’re welcome to buy me a coffee ☕️", isPresented: $session.showingSupportPrompt) {
-                Button("Sure") { NSWorkspace.shared.open(URL(string: "https://ko-fi.com/alittleseal")!) }
+                Button("Sure") { UsageStatistics.shared.openCoffee() }
                 Button("Close", role: .cancel) { }
             }
     }
@@ -1076,7 +1158,7 @@ struct AboutView: View {
             }
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    Text("Photo recovery runs locally. CardMe reads your card and saves copies on another drive. Nothing is uploaded.")
+                    Text("Photo recovery runs locally. CardMe reads your card and saves copies on another drive. Photos are never uploaded. Optional usage statistics can be turned off in Settings.")
                     Text("Small, useful things. Free to use.")
                         .font(.headline)
                     Text("If this helped, you’re welcome to buy me a coffee.")
@@ -1127,6 +1209,7 @@ struct AboutView: View {
 struct CardRescueApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var delegate
     var body: some Scene {
+        Settings { UsageSettingsView() }
         WindowGroup { RescueView() }.defaultSize(width: 800, height: 680)
             .commands {
                 CommandGroup(replacing: .newItem) {}

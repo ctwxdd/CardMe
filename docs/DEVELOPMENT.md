@@ -81,3 +81,10 @@ python3 tests/carving-check.py
 Imaging checks use the real bundled ddrescue on disposable regular-file fixtures, including modeled bad sectors, cancellation and conflicting outputs. They never read a card. Package checks verify signatures, source/license contents, non-sandboxed direct-download executables and DMG integrity.
 
 Run `tests/check.py` and `tests/folder-rescue-check.py` with the bundled interpreter and its PYTHONHOME to verify scanning and recovery under the actual relocated runtime. Private real-card benchmarks are excluded from this repository; fixtures use synthetic data. Temporary fixtures clean up after themselves. A real raw-card authorization and full imaging run require user interaction and have not been qualified by fixture tests.
+
+Usage statistics checks run with an intercepted URLSession, without contacting production:
+
+```sh
+xcrun swiftc -D TESTING -parse-as-library -swift-version 5 Sources/CardRescue.swift Sources/ResultExport.swift tests/UsageStatisticsCheck.swift -o work/usage-check
+work/usage-check
+```
