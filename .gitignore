@@ -1,0 +1,7 @@
+/build/
+/work/
+__pycache__/
+.DS_Store
+/investigations/
+*.dmg
+*.zip

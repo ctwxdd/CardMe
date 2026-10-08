@@ -1,0 +1,75 @@
+--- a/main.cc
++++ b/main.cc
+@@ -25,6 +25,7 @@
+ 
+ #include <cctype>
+ #include <cerrno>
++#include <climits>
+ #include <cstdlib>
+ #include <cstring>
+ #include <ctime>
+@@ -60,6 +61,28 @@
+ 
+ 
+ namespace {
++
++// Modified by CardRescue contributors, 2026-10-07, under GPL-2.0-or-later.
++// macOS fdesc reopening rechecks raw-device permissions. Duplicate the
++// already-authorized read-only descriptor instead; no privileged process needed.
++int open_input( const char * const name, const int flags )
++  {
++  const char * const prefix = "/dev/fd/";
++  if( std::strncmp( name, prefix, std::strlen( prefix ) ) != 0 )
++    return open( name, flags );
++  const char * const number = name + std::strlen( prefix );
++  char * end = 0;
++  errno = 0;
++  const long fd = std::strtol( number, &end, 10 );
++  if( errno || end == number || *end || fd < 0 || fd > INT_MAX )
++    { errno = EINVAL; return -1; }
++  const int mode = fcntl( fd, F_GETFL );
++  if( mode < 0 ) return -1;
++  if( ( mode & O_ACCMODE ) != O_RDONLY )
++    { errno = EACCES; return -1; }
++  if( flags & O_DIRECT ) { errno = ENOTSUP; return -1; }
++  return dup( fd );
++  }
+ 
+ const char * const Program_name = "GNU ddrescue";
+ const char * const program_name = "ddrescue";
+@@ -302,7 +325,7 @@
+   if( fillbook.domain().empty() ) return empty_domain();
+   if( fillbook.read_only() ) return not_writable( fillbook.pname( false ) );
+ 
+-  const int ides = open( iname, O_RDONLY | O_BINARY );
++  const int ides = open_input( iname, O_RDONLY | O_BINARY );
+   if( ides < 0 )
+     { show_file_error( iname, "Can't open input file", errno ); return 1; }
+   if( !fillbook.read_buffer( ides ) )
+@@ -349,7 +372,7 @@
+     return 1;
+     }
+ 
+-  const int ides = open( iname, O_RDONLY | O_BINARY );
++  const int ides = open_input( iname, O_RDONLY | O_BINARY );
+   if( ides < 0 )
+     { show_file_error( iname, "Can't open input file", errno ); return 1; }
+   const long long insize = lseek( ides, 0, SEEK_END );
+@@ -533,7 +556,7 @@
+                   0, true ); return 1; }
+ 
+   // use same flags as reopen_infile
+-  const int ides = open( iname, O_RDONLY | rb_opts.o_direct_in | O_BINARY );
++  const int ides = open_input( iname, O_RDONLY | rb_opts.o_direct_in | O_BINARY );
+   if( ides < 0 )
+     { show_file_error( iname, "Can't open input file", errno ); return 1; }
+   const long long insize =
+@@ -751,7 +774,7 @@
+   {
+   if( ides_ >= 0 ) close( ides_ );
+   // use same flags as do_rescue
+-  ides_ = open( iname_, O_RDONLY | o_direct_in | O_BINARY );
++  ides_ = open_input( iname_, O_RDONLY | o_direct_in | O_BINARY );
+   if( ides_ < 0 )
+     { final_msg( iname_, "Can't reopen input file", errno ); return false; }
+   const long long insize = lseek( ides_, 0, SEEK_END );

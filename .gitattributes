@@ -1,0 +1,5 @@
+# Unified-diff context lines must keep their leading space.
+vendor/ddrescue/input-fd.patch -whitespace
+*.tar.xz binary
+*.tar.lz binary
+*.whl binary

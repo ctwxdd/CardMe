@@ -1,0 +1,19 @@
+# Changelog
+
+Versions follow semantic versioning while CardMe remains a 0.x beta. Release dates use the maintainer’s local date.
+
+## 0.3.16 — 2026-10-08
+
+- First versioned release in the private CardMe repository.
+- Add an MIT license for CardMe’s original code and include it in the app’s About page.
+- Record version and build in VERSION.json, with checks against the built package and Xcode project.
+- Add installation, safety, contribution, and release documentation, website source, and optional Ko-fi support.
+- Exclude private card fingerprints, directory metadata, and investigation scripts from the repository source and app.
+
+## 0.3.15 — 2026-10-08
+
+- Earlier direct-download development release, subsequently signed and Apple notarized.
+- Compact, stable card chooser with loading state and scrollable device list.
+- Scanning, normal rescue, deeper JPEG searching, clear result categories, and optional support after recovery.
+
+Earlier 0.3.x versions were development iterations, not separately published releases in this repository.
