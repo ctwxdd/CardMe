@@ -27,6 +27,7 @@ for lang, d in locales.items():
 <html lang="{lang}"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{esc(d['title'])}</title><meta name="description" content="{esc(d['description'], quote=True)}">
+<script src="/cardme/metrics.js" defer></script>
 <meta name="theme-color" content="#ffffff"><meta name="robots" content="index,follow">
 <link rel="canonical" href="{url}">{alternates}
 <meta property="og:type" content="website"><meta property="og:title" content="{esc(d['title'], quote=True)}">

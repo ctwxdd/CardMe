@@ -50,7 +50,7 @@
     ],
     [
       "Are my photos uploaded?",
-      "No. Recovery runs locally on your Mac. Newer builds include usage statistics that can be turned off in Settings; photos, file names, paths and card details are never uploaded."
+      "No. Recovery runs locally on your Mac. Newer builds include usage statistics that can be turned off in Settings; photos, file names, paths and card details are never uploaded. The website counts visits, download clicks and coffee-link clicks without cookies or persistent identifiers. Do Not Track and Global Privacy Control are respected. Hosting necessarily receives network addresses."
     ]
   ],
   "trust": [
