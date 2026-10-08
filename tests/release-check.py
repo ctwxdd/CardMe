@@ -20,3 +20,6 @@ for path in [root / 'README.md', root / 'CONTRIBUTING.md', root / 'docs/RELEASIN
         if not link.startswith(('https://', '#')):
             assert (path.parent / link).exists(), (path.name, link)
 print('Version, license, documentation links, and private-fixture exclusions checked.')
+
+app = (root / "Sources/CardRescue.swift").read_text().split("struct CardRescueApp: App", 1)[1]
+assert app.index("WindowGroup") < app.index("Settings {"), "Recovery window must be the primary launch scene"

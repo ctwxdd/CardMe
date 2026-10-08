@@ -1209,7 +1209,6 @@ struct AboutView: View {
 struct CardRescueApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var delegate
     var body: some Scene {
-        Settings { UsageSettingsView() }
         WindowGroup { RescueView() }.defaultSize(width: 800, height: 680)
             .commands {
                 CommandGroup(replacing: .newItem) {}
@@ -1217,6 +1216,7 @@ struct CardRescueApp: App {
                     Button("About CardMe…") { RescueSession.shared.showingAbout = true }
                 }
             }
+        Settings { UsageSettingsView() }
     }
 }
 

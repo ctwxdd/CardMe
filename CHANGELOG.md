@@ -3,6 +3,7 @@
 ## 0.3.18 · build 31
 
 - Use the new double-arrow photo recovery icon in the app, website and repository page.
+- Keep the recovery window as the primary launch scene, with Privacy available in Settings.
 
 
 ## 0.3.17 · build 30
