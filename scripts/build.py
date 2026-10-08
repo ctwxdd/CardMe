@@ -46,7 +46,7 @@ else:
     resources = app / 'Contents/Resources'
     macos.mkdir(parents=True)
     resources.mkdir()
-    subprocess.run(['xcrun', 'swiftc', '-parse-as-library', '-swift-version', '5', '-O', '-target', 'arm64-apple-macosx14.0', str(ROOT / 'Sources/CardRescue.swift'), str(ROOT / 'Sources/ResultExport.swift'), '-o', str(macos / 'CardRescue')], check=True)
+    subprocess.run(['xcrun', 'swiftc', '-parse-as-library', '-swift-version', '5', '-O', '-target', 'arm64-apple-macosx14.0', '-module-cache-path', str(build_dir / 'ModuleCache'), str(ROOT / 'Sources/CardRescue.swift'), str(ROOT / 'Sources/ResultExport.swift'), '-o', str(macos / 'CardRescue')], check=True)
 shutil.copytree(ROOT / 'engine', resources / 'engine', ignore=shutil.ignore_patterns('__pycache__', '*.pyc'))
 shutil.copy2(ROOT / 'Config/PrivacyInfo.xcprivacy', resources / 'PrivacyInfo.xcprivacy')
 shutil.copy2(ROOT / 'website/dist/assets/cardme-mark.png', resources / 'cardme-mark.png')

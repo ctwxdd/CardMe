@@ -25,6 +25,51 @@ def atomic_json(path, value):
         os.fsync(out.fileno())
     os.replace(temp, path)
 
+def analyze_card(args, image, output):
+    imaging = importlib.import_module('image-card')
+    analysis = importlib.import_module('fragment-rescue')
+    expected = (args.registry_id, args.bytes)
+    card = imaging.device_identity(args.device)
+    before = image.stat()
+    if card[:2] != expected or not statlib.S_ISCHR(before.st_mode):
+        raise ValueError('The selected card changed. Select it again.')
+    print('Analyzing photo allocation directly from your card, read only…', flush=True)
+    fd = imaging.authorized_read(str(image))
+    try:
+        if os.fstat(fd).st_rdev != before.st_rdev:
+            raise ValueError('The selected card changed during authorization.')
+        checked_at = 0.0
+        read_bytes = 0
+        def verify(force=True):
+            nonlocal checked_at
+            now = time.monotonic()
+            if force or now - checked_at >= 0.25:
+                if imaging.device_identity(args.device)[:2] != expected:
+                    raise ValueError('The card was disconnected or changed. Completed copies are preserved.')
+                checked_at = now
+        def read(offset, length):
+            nonlocal read_bytes
+            verify(False)
+            data = imaging.read_card_range(fd, offset, length, args.bytes, card[2])
+            read_bytes += ((offset + length + card[2] - 1) // card[2] - offset // card[2]) * card[2]
+            return data
+        output.mkdir(parents=True, exist_ok=True)
+        with (output / '.pipeline.lock').open('a') as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            try:
+                result = analysis.recover(read, args.bytes, args.source.resolve(), json.loads(args.scan.read_text()), output, verify)
+                report = json.loads((output / 'pipeline-report.json').read_text())
+                report['source_bytes_read_this_run'] = read_bytes
+                report['identity'] = {'device': args.device, 'registry_id': args.registry_id, 'bytes': args.bytes}
+                atomic_json(output / 'pipeline-report.json', report)
+                return result
+            except analysis.Unsupported as error:
+                print(str(error) + ' Trying readable photos instead.', flush=True)
+    finally:
+        os.close(fd)
+    return importlib.import_module('rescue-folder').main(['--source', str(args.source), '--scan', str(args.scan), '--output', str(output)])
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     inputs = parser.add_mutually_exclusive_group(required=True)
@@ -54,7 +99,7 @@ def main():
     directory = ROOT / 'card_directory.json'
     if not profile_path.is_file() or not directory.is_file():
         if args.device:
-            return folder_fallback()
+            return analyze_card(args, image, output)
         return importlib.import_module('carve-photos').recover(image, output)
     profile_bytes = profile_path.read_bytes()
     profile = json.loads(profile_bytes)

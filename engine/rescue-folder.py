@@ -18,7 +18,7 @@ def recover(path, flagged):
                 orientation = image.getexif().get(274, 1)
             except (OSError, ValueError, SyntaxError, Warning):
                 pass
-            # ponytail: embedded data only; missing filesystem fragments need a disk image.
+            # This folder-only path cannot read filesystem-hidden fragments.
             try:
                 frames = min(getattr(image, 'n_frames', 1), 16)
             except (OSError, ValueError, SyntaxError, struct.error):

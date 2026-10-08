@@ -1165,7 +1165,7 @@ struct AboutView: View {
                         .font(.callout).foregroundStyle(.secondary)
                     SupportLink()
                     Text("Thank you for your support.").font(.callout).foregroundStyle(.secondary)
-                    Text("Deep Rescue searches safety copies for contiguous JPEGs, including after deletion or quick formatting. General fragmented-photo and RAW recovery are currently not supported.")
+                    Text("Deep Rescue searches safety copies for contiguous JPEGs, including after deletion or quick formatting. Direct exFAT rescue can try surviving photo fragments. Arbitrary fragment reconstruction and RAW recovery are currently not supported.")
                         .font(.callout).foregroundStyle(.secondary)
                     DisclosureGroup("Licenses and acknowledgements") {
                         VStack(alignment: .leading, spacing: 16) {

@@ -77,8 +77,10 @@ with tempfile.TemporaryDirectory(prefix='cardrescue-direct-check-') as temp:
     directory_path.unlink()
     descriptor_count = len(descriptors)
     no_profile = base / 'no-profile'
+    card.write_bytes(bytes(data[:3]) + b'NOTFAT  ' + bytes(data[11:]))
     assert run(no_profile) == 2
-    assert len(descriptors) == descriptor_count  # generic folder rescue never requests raw card access
+    assert len(descriptors) == descriptor_count + 1  # public analysis requests a read-only descriptor
+    card.write_bytes(data)
     assert json.loads((no_profile / 'pipeline-report.json').read_text())['quality_counts'] == {
         'full_resolution_copy': 1, 'manual_review': 1}
     saved_image = base / 'saved.img'
