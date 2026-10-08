@@ -35,6 +35,8 @@ for lang in locales:
     assert 'aggregateRating' not in schema and 'review' not in schema
     assert '0.3.16' in body and '/cardme/assets/cardme-mark.svg' in body
     assert 'class="wrap support"' not in body
+    assert body.count('href="https://ko-fi.com/alittleseal"') == 2
+    assert 'ko-fi.com' not in body.split('<footer')[1]
 ns = {'s': 'http://www.sitemaps.org/schemas/sitemap/0.9'}
 assert {n.text for n in ET.parse(root/'website/dist/sitemap.xml').findall('.//s:loc', ns)} == expected
 print(f'{len(locales)} languages: unique canonicals, reciprocal hreflang, sitemap, free app schema and secondary donation link checked.')
