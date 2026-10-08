@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.19 · build 32
+
+- Use a frameless recovery mark inside the app and website; retain the full macOS app icon.
+
+
 ## 0.3.18 · build 31
 
 - Use the new double-arrow photo recovery icon in the app, website and repository page.

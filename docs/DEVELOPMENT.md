@@ -88,3 +88,5 @@ Usage statistics checks run with an intercepted URLSession, without contacting p
 xcrun swiftc -D TESTING -parse-as-library -swift-version 5 Sources/CardRescue.swift Sources/ResultExport.swift tests/UsageStatisticsCheck.swift -o work/usage-check
 work/usage-check
 ```
+
+The frameless UI mark is generated from shared vector geometry with `swift scripts/brand.swift website/dist/assets`. The Dock icon retains its separate approved artwork.
