@@ -104,7 +104,7 @@ struct UsageSettingsView: View {
             Text("Privacy").font(.title2.bold())
             Toggle("Share usage statistics", isOn: $statistics.enabled)
             Text("Help improve CardMe by sharing app opens, rescue result counts and coffee-link clicks with our service. Enabled by default. No installation ID is used; photos, file names, paths and card details stay on your Mac.")
-            Text("Turning this off stops future uploads. Already received reports are kept for up to 90 days. Network requests expose your IP address to the hosting service; infrastructure logs may retain request metadata.")
+            Text("Turning this off stops future uploads. Already received reports are normally kept for 90 days. Network requests expose your IP address to the hosting service; infrastructure logs may retain request metadata.")
                 .font(.callout).foregroundStyle(.secondary)
         }.padding(24).frame(width: 480).tint(.teal)
     }
