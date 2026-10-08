@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.20 · build 33
+
+- Enlarge the shared recovery mark on one macOS icon tile for clearer Dock visibility.
+
 ## 0.3.19 · build 32
 
 - Use a frameless recovery mark inside the app and website; retain the full macOS app icon.
