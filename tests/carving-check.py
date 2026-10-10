@@ -114,4 +114,34 @@ with tempfile.TemporaryDirectory(prefix='cardrescue-carving-') as temporary:
     subprocess.run([sys.executable, '-B', str(ROOT/'engine/sd-rescue.py'), '--image', str(image), '--output', str(fallback)], check=True, stdout=subprocess.DEVNULL)
     assert len(json.loads((fallback/'pipeline-report.json').read_text())['photos']) == 3
     assert sha(image.read_bytes()) == source_hash
+# Camera EXIF, not pixel dimensions alone, qualifies a full-size recovered copy.
+with tempfile.TemporaryDirectory(prefix='cardrescue-camera-classification-') as temporary:
+    root = Path(temporary); image = root / 'card.img'; output = root / 'saved'
+    exif = Image.Exif(); exif[271] = 'Canon'; exif[272] = 'Fixture Camera'
+    exif[34665] = {40962: 3000, 40963: 2000}
+    raw = jpeg((3000, 2000), 'blue', exif=exif)
+    image.write_bytes(bytes(512) + raw + bytes(512))
+    source_hash = sha(image.read_bytes())
+    assert carve.recover(image, output) == 0
+    report_path = output / 'pipeline-report.json'
+    report = json.loads(report_path.read_text()); row = report['photos'][0]
+    assert row['quality'] == 'full_resolution_copy'
+    target = Path(row['output']); before = target.stat().st_mtime_ns
+    row['quality'] = 'carved_jpeg'  # A completed report written by 0.3.24.
+    report_path.write_text(json.dumps(report))
+    with patch.object(carve, 'jpeg_extent', side_effect=AssertionError('Completed image was rescanned')):
+        assert carve.recover(image, output) == 0
+    assert json.loads(report_path.read_text())['quality_counts'] == {'full_resolution_copy': 1}
+    assert target.stat().st_mtime_ns == before and sha(target.read_bytes()) == sha(raw)
+    assert sha(image.read_bytes()) == source_hash
+    with Image.open(io.BytesIO(raw)) as photo:
+        assert carve.photo_quality(photo, 6) == 'manual_review'
+    without_exif = jpeg((3000, 2000), 'blue')
+    with Image.open(io.BytesIO(without_exif)) as photo:
+        assert carve.photo_quality(photo, None) == 'carved_jpeg'
+    exif[34665] = {40962: 6000, 40963: 4000}
+    with Image.open(io.BytesIO(jpeg((3000, 2000), 'blue', exif=exif))) as photo:
+        assert carve.photo_quality(photo, None) == 'carved_jpeg'
+    with Image.open(io.BytesIO(jpeg((1600, 1080), 'blue', exif=exif))) as photo:
+        assert carve.photo_quality(photo, None) == 'carved_jpeg'
 print('Formatted JPEG recovery checks passed: exact bytes, progressive JPEG, chunk/APP boundaries, cancellation, resume, conflicts, source identity and read-only source.')

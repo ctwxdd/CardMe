@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.25 · build 38
+
+- Recognize decoded large camera JPEGs whose camera EXIF dimensions match, so Deep Rescue reports full-size copies rather than counting every found photo as unclassified.
+- Upgrade completed recovery reports from saved photos without rescanning the card image or rewriting recovered files; uncertain candidates remain for review.
+
 ## 0.3.24 · build 37
 
 - Start the photo search automatically after creating a whole-card safety copy in the selected save folder.

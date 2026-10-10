@@ -79,6 +79,20 @@ def jpeg_extent(fd, start, total):
     raise ValueError('No JPEG end within safety limit')
 
 
+def photo_quality(photo, difference):
+    if difference is not None and difference > 5:
+        return 'manual_review'
+    if max(photo.size) <= 256:
+        return 'thumbnail_only'
+    exif = photo.getexif()
+    frame = exif.get_ifd(34665) if 34665 in exif else {}
+    # Conservatively distinguish camera photos from embedded previews; size alone is insufficient.
+    if (max(photo.size) > 2048 and exif.get(271) and exif.get(272)
+            and (frame.get(40962), frame.get(40963)) == photo.size):
+        return 'full_resolution_copy'
+    return 'carved_jpeg'
+
+
 def atomic_json(path, value):
     with tempfile.NamedTemporaryFile(mode='w', dir=path.parent, delete=False) as out:
         temp = Path(out.name)
@@ -155,6 +169,10 @@ def recover(image, output):
             target = best / f"Photo-{row['offset']:012x}.JPG"
             if target.is_symlink() or not target.is_file() or hashlib.sha256(target.read_bytes()).hexdigest() != row['sha256']:
                 raise ValueError('A saved photo changed or is missing; choose a fresh output folder.')
+            # Upgrade old completed reports without rescanning the card image or rewriting photos.
+            if row['quality'] == 'carved_jpeg':
+                with Image.open(target) as photo:
+                    row['quality'] = photo_quality(photo, row.get('thumbnail_difference'))
         started = last_update = time.monotonic()
         def checkpoint(complete=False):
             verify(fd)
@@ -190,11 +208,9 @@ def recover(image, output):
                                     photo.load()
                                     thumb = scan.embedded_thumbnail(photo.info.get('exif'))
                                     difference = scan.thumbnail_difference(photo, thumb) if thumb is not None else None
+                                    quality = photo_quality(photo, difference)
                         except OSError as error:
                             raise ValueError('JPEG could not decode') from error
-                        quality = 'thumbnail_only' if max(dimensions) <= 256 else 'carved_jpeg'
-                        if difference is not None and difference > 5:
-                            quality = 'manual_review'
                     except (ValueError, SyntaxError, EOFError, Warning):
                         state['rejected_candidates'] += 1
                         continue
