@@ -178,9 +178,9 @@ if args.dmg:
             'It lists connected devices and scans accessible photos without writing to the card.\n'
             'Normal rescue reads flagged files. Deep Rescue first makes a whole-card safety copy; macOS may ask for authorization.\n'
             'GNU ddrescue source and licenses are inside the app: Contents/Resources/ThirdPartySources and ThirdPartyLicenses.\n'
-            'Deleted or quickly formatted cards: Deep Rescue searches the safety copy for contiguous JPEG photos.\n'
+            'Deleted or quickly formatted cards: Deep Rescue searches the safety copy for JPEG photos and can reassemble some two-part camera JPEGs using their indexed previews.\n'
             'Original filenames may be unavailable. Found JPEGs can include previews; check the results.\n'
-            'Fragmented JPEGs, RAW files and overwritten data are not reconstructed by this general search.\n'
+            'Other fragmented JPEGs, RAW files and overwritten data may remain unresolved. Rebuilt photos need checking.\n'
         )
         subprocess.run(['hdiutil', 'create', '-ov', '-format', 'UDZO', '-volname', 'CardMe', '-srcfolder', str(staging), str(dmg)], check=True)
     if args.sign_identity != '-':
