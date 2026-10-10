@@ -57,4 +57,24 @@ with tempfile.TemporaryDirectory() as tmp:
     report.write_text(json.dumps({'complete':True,'method':'contiguous_jpeg_carving_v1','photos':rows}))
     try:assembly.assemble(report);raise AssertionError('Changed source accepted')
     except ValueError:pass
+# A suspect embedded thumbnail must not prevent pairing when actual image pixels agree.
+with tempfile.TemporaryDirectory() as tmp:
+    root=Path(tmp);best=root/'best_available';best.mkdir()
+    with Image.open(io.BytesIO(jpeg(picture((3000,2000)),exif))) as donor:
+        metadata=assembly.preview_exif(donor,(3000,2000),Image.new('RGB',(160,120),'green'))
+    primary=assembly.replace_exif(jpeg(picture((3000,2000))),metadata)
+    preview=jpeg(picture((1620,1080)));rows=[]
+    for offset,data,quality,size in [(512,primary,'manual_review',[3000,2000]),(5000000,preview,'carved_jpeg',[1620,1080])]:
+        path=best/f'Photo-{offset:012x}.JPG';path.write_bytes(data)
+        rows.append({'offset':offset,'output':str(path),'quality':quality,'dimensions':size,'sha256':hashlib.sha256(data).hexdigest()})
+    report=root/'pipeline-report.json';report.write_text(json.dumps({'complete':True,'method':'contiguous_jpeg_carving_v1','photos':rows}))
+    groups=assembly.assemble(report);assert len(groups)==1 and groups[0]['comparison']=='primary_pixels'
+    repaired=Path(groups[0]['metadata_copy']).read_bytes()
+    assert assembly.replace_exif(repaired)==assembly.replace_exif(preview)
+    with Image.open(io.BytesIO(repaired)) as photo:
+        assert photo.getexif()[274]==8
+        thumbnail=scan.embedded_thumbnail(photo.info['exif'])
+        assert scan.thumbnail_difference(photo,thumbnail)<3
+    assert Path(rows[0]['output']).read_bytes()==primary
+    assert json.loads(report.read_text())['photos'][0]['quality']=='manual_review'
 print('Metadata pairing checks passed: unambiguous matching, EXIF orientation/date/dimensions, embedded thumbnail, unchanged image stream, original preservation, idempotence and changed-source refusal.')

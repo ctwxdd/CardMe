@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.27 · build 40
+
+- Compare nearby primary JPEG pixels when embedded thumbnails cannot identify a unique preview match.
+- Create fallback thumbnails from the preview itself, preserve suspect-primary review status, and record the comparison used.
+
 ## 0.3.26 · build 39
 
 - Pair nearby saved previews with camera JPEGs only when thumbnail comparisons give an unambiguous match.

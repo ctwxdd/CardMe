@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Pair saved previews with camera EXIF; never change source JPEGs or invent photo pixels."""
-import argparse, functools, hashlib, importlib, io, json, struct
+import argparse, functools, hashlib, importlib, io, json, struct, warnings
 from pathlib import Path
-from PIL import Image
+from PIL import Image, ImageChops, ImageStat
 
 scan = importlib.import_module('scan-images')
 carve = importlib.import_module('carve-photos')
@@ -80,6 +80,13 @@ def assemble(report_path):
     def thumbnail(path):
         with Image.open(path) as photo:
             return scan.embedded_thumbnail(photo.info.get('exif'))
+    @functools.lru_cache(maxsize=32)
+    def visual(path):
+        with warnings.catch_warnings():
+            warnings.simplefilter('error')
+            with Image.open(path) as photo:
+                photo.draft('RGB', (512, 512)); photo.load()
+                return photo.resize((256, 171), Image.Resampling.LANCZOS).convert('RGB')
     donors = []
     for row in rows:
         path = Path(row['output'])
@@ -103,7 +110,7 @@ def assemble(report_path):
             frame = tags.get_ifd(34665) if 34665 in tags else {}
             identity = (tags.get(271), tags.get(272), frame.get(36867))
             preview.draft('RGB', (256, 256)); preview.load()
-            candidates = []
+            candidates = []; eligible = []
             for donor, size, donor_identity in donors:
                 if any(left and right and left != right for left, right in zip(identity, donor_identity)):
                     continue
@@ -111,15 +118,35 @@ def assemble(report_path):
                     continue
                 if abs(size[0]/size[1] - row['dimensions'][0]/row['dimensions'][1]) > .02:
                     continue
+                eligible.append(donor)
                 thumb = thumbnail(donor['output'])
                 if thumb is None:
                     continue
                 difference = scan.thumbnail_difference(preview, thumb)
                 candidates.append((difference, donor, thumb))
         candidates.sort(key=lambda c: c[0])
+        comparison = 'embedded_thumbnail'
         if not candidates or candidates[0][0] > 5 or (len(candidates)>1 and candidates[1][0]-candidates[0][0] < 2):
-            continue
-        difference, donor, thumb = candidates[0]
+            # A camera thumbnail may differ in crop/color; compare the primary image before giving up.
+            scores = []
+            reference = visual(row['output'])
+            for donor in eligible:
+                try:
+                    difference = sum(ImageStat.Stat(ImageChops.difference(reference, visual(donor['output']))).mean) / 3
+                except (OSError, ValueError, Warning):
+                    continue
+                scores.append((difference, donor))
+            scores.sort(key=lambda value: value[0])
+            if not scores or scores[0][0] > 3 or (len(scores)>1 and scores[1][0]-scores[0][0] < 1.5):
+                continue
+            difference, donor = scores[0]
+            comparison = 'primary_pixels'
+            # Build this copy's thumbnail from its own image, rather than copying a suspect thumbnail.
+            with Image.open(row['output']) as photo:
+                photo.draft('RGB', (256, 256)); photo.load()
+                thumb = photo.convert('RGB'); thumb.thumbnail((160, 120), Image.Resampling.LANCZOS)
+        else:
+            difference, donor, thumb = candidates[0]
         original = Path(row['output']).read_bytes(); primary = Path(donor['output']).read_bytes()
         if hashlib.sha256(original).hexdigest() != row['sha256'] or hashlib.sha256(primary).hexdigest() != donor['sha256']:
             raise ValueError('Saved photo changed; metadata pairing stopped')
@@ -136,7 +163,7 @@ def assemble(report_path):
         target = output / Path(row['output']).name
         digest = carve.save_exact(target, repaired)
         groups.append({'primary': donor['output'], 'preview': row['output'], 'metadata_copy': str(target),
-                       'primary_offset': donor['offset'], 'preview_offset': row['offset'], 'difference': difference,
+                       'primary_offset': donor['offset'], 'preview_offset': row['offset'], 'difference': difference, 'comparison': comparison,
                        'sha256': digest, 'metadata_inferred': True, 'image_stream_unchanged': True})
         matched += 1
         if matched % 100 == 0:
