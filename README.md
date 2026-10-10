@@ -34,10 +34,11 @@ This describes CardMe’s own operations, not a hardware write blocker: macOS, a
 
 - Damaged JPEG files that can still be decoded, or their embedded previews and thumbnails.
 - Intact, contiguous JPEG data after deletion or a quick format, using Deep Rescue.
+- Some fragmented camera JPEGs when a surviving MPF index and preview identify a unique two-part reconstruction on an exFAT safety copy. Rebuilt photos are marked for checking.
 
 Normal rescue may save a decoded full-size photo as PNG. That preserves the decoded image, but is not necessarily the original JPEG file. Deep Rescue copies verified JPEG streams without generating replacement pixels. A successfully decoded photo can still contain visible damage; please inspect your results.
 
-**RAW recovery, general fragmented-photo reconstruction, and overwritten data are currently not supported.** A quick scan checks thumbnails, metadata, and image headers; it does not certify every pixel. Full pixel checks are available in Details. Recovery is never guaranteed.
+**RAW recovery, other fragmented-photo reconstruction, and overwritten data are currently not supported.** A quick scan checks thumbnails, metadata, and image headers; it does not certify every pixel. Full pixel checks are available in Details. Recovery is never guaranteed.
 
 ## License and support
 

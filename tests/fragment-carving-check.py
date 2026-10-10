@@ -1,0 +1,89 @@
+#!/usr/bin/env python3
+"""Formatted-card MPF reconstruction: exact bytes, bounded joins, ambiguity and safety."""
+import hashlib, importlib, io, json, os, struct, sys, tempfile
+from pathlib import Path
+from unittest.mock import patch
+from PIL import Image
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'engine'))
+carve = importlib.import_module('carve-photos')
+fragments = importlib.import_module('fragment-carve')
+allocation = importlib.import_module('fragment-rescue')
+metadata = importlib.import_module('assemble-metadata')
+
+def jpeg(image, exif=None):
+    out = io.BytesIO(); image.save(out, format='JPEG', quality=95, **({'exif':exif} if exif else {})); return out.getvalue()
+
+photo = Image.new('RGB', (2400,1600))
+photo.putdata([(x*255//2400, y*255//1600, (x+y)*255//4000) for y in range(1600) for x in range(2400)])
+preview = jpeg(photo.resize((1620,1080)))
+exif = Image.Exif(); exif[271] = 'Canon'; exif[272] = 'Fixture'; exif[274] = 8
+exif[34665] = {40962:2400, 40963:1600, 36867:'2026:10:10 12:00:00'}
+with Image.open(io.BytesIO(jpeg(photo,exif))) as donor:
+    tags = metadata.preview_exif(donor, photo.size, photo.resize((160,107)))
+plain = metadata.replace_exif(jpeg(photo), tags)
+length = len(plain) + 90; logical = length + 128
+mpf = b'II*\0'+struct.pack('<IH',8,3)
+mpf += struct.pack('<HHI',0xB000,7,4)+b'0100'
+mpf += struct.pack('<HHII',0xB001,4,1,2)+struct.pack('<HHII',0xB002,7,32,50)+bytes(4)
+mpf += struct.pack('<IIIHH',0x80030000,length,0,2,0)
+mpf += struct.pack('<IIIHH',0x40010002,len(preview),logical-10,0,0)
+primary = plain[:2]+b'\xff\xe2'+struct.pack('>H',len(mpf)+6)+b'MPF\0'+mpf+plain[2:]
+assert len(primary) == length
+cluster,heap = 4096,5120
+start = heap+cluster*4; cut=cluster*8; suffix=heap+cluster*1024
+child = suffix+logical-cut
+payload=bytearray(child+len(preview)+cluster)
+payload[start:start+cut]=primary[:cut]
+payload[start+cut:start+cut+20]=b'\xff\xd8\xff\xe1'+bytes(16)
+payload[suffix:suffix+length-cut]=primary[cut:]
+payload[child:child+len(preview)]=preview
+sha=lambda b:hashlib.sha256(b).hexdigest()
+with tempfile.TemporaryDirectory() as temporary:
+    root=Path(temporary); folder=root/'Card Safety Copy test'; folder.mkdir(); source=folder/'card.img'; source.write_bytes(payload); source.chmod(0o444)
+    output=root/'results'; geometry=(0,None,512,cluster,heap,2048,2,b'')
+    with patch.object(allocation,'volume',return_value=geometry):
+        assert carve.recover(source,output)==0
+    report=json.loads((output/'pipeline-report.json').read_text())
+    rebuilt=[r for r in report['photos'] if r['quality']=='full_resolution_reconstructed'];assert len(rebuilt)==1,report['fragment_analysis']
+    row=rebuilt[0];assert Path(row['output']).read_bytes()==primary
+    assert row['source_extents']==[{'offset':start,'bytes':cut},{'offset':suffix,'bytes':length-cut}]
+    assert row['byte_exact_source_fragments'] and not row['byte_exact_source_copy'] and row['review_required']
+    assert report['fragment_analysis']['candidates'][str(start)]['reason']=='reconstructed'
+    assert sha(source.read_bytes())==sha(payload)
+    groups=json.loads((output/'metadata-assembly.json').read_text())['groups']
+    assert any(g['primary_offset']==start and g['preview_offset']==child and g['comparison']=='mpf_index' for g in groups),groups
+    # An indexed preview may rescue bytes while a disagreeing thumbnail keeps review status.
+    review_output = root/'review-results'
+    with patch.object(allocation,'volume',return_value=geometry), patch.object(fragments.scan,'embedded_thumbnail',return_value=Image.new('RGB',(160,107),'green')):
+        assert carve.recover(source,review_output)==2
+    reviewed = json.loads((review_output/'pipeline-report.json').read_text())
+    review_row = next(r for r in reviewed['photos'] if r.get('reconstruction'))
+    assert review_row['quality']=='manual_review' and review_row['review_required']
+    assert Path(review_row['output']).read_bytes()==primary
+    before=Path(row['output']).stat().st_mtime_ns
+    with patch.object(fragments,'reconstruct',side_effect=AssertionError('Completed joins were retried')):
+        assert carve.recover(source,output)==0
+    assert Path(row['output']).stat().st_mtime_ns==before
+    fd=os.open(source,os.O_RDONLY)
+    try:
+        candidate=fragments.header(fd,start,len(payload));assert candidate
+        preview_row=next(r for r in report['photos'] if r['offset']==child)
+        assert fragments.reconstruct(fd,len(payload),candidate,[preview_row,preview_row],cluster,heap,lambda:None)[1]=='missing_or_ambiguous_preview'
+        bad_thumbnail = dict(candidate, thumbnail=Image.new('RGB',(160,107),'green'))
+        matched, reason = fragments.reconstruct(fd,len(payload),bad_thumbnail,[preview_row],cluster,heap,lambda:None)
+        assert reason == 'reconstructed' and matched['data'] == primary and matched['thumbnail_difference'] > 5
+        assert matched['preview_difference'] < 3
+        def cancel():raise KeyboardInterrupt
+        try:fragments.reconstruct(fd,len(payload),candidate,[preview_row],cluster,heap,cancel);raise AssertionError('Cancellation ignored')
+        except KeyboardInterrupt:pass
+        with patch.object(fragments,'MAX_BOUNDARIES',1):
+            assert fragments.reconstruct(fd,len(payload),candidate,[preview_row],cluster,heap,lambda:None)[1]=='fragment_search_budget'
+        with patch.object(fragments.os,'pread',return_value=b''):
+            try:fragments.header(fd,start,len(payload));raise AssertionError('Short source read accepted')
+            except OSError:pass
+    finally:os.close(fd)
+    Path(row['output']).write_bytes(b'keep me')
+    try:carve.recover(source,output);raise AssertionError('Changed output overwritten')
+    except ValueError:pass
+    assert Path(row['output']).read_bytes()==b'keep me'
+print('Fragment carving checks passed: exact source extents, automatic handoff, MPF metadata, resume, ambiguity, cancellation, budgets and no overwrite.')

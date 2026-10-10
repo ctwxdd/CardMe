@@ -11,8 +11,9 @@ MAX_JPEG = 128 * 1024 * 1024
 MAX_PIXELS = 64_000_000
 
 
-def jpeg_extent(fd, start, total):
+def jpeg_extent(fd, start, total, pread=None):
     """Walk marker lengths and entropy stuffing; APP thumbnails/FF D9 are not primary endings."""
+    pread = pread or os.pread
     cap = min(total, start + MAX_JPEG)
     base, buffer = -1, b''
     def read(pos, count):
@@ -21,18 +22,22 @@ def jpeg_extent(fd, start, total):
             raise ValueError('Truncated or oversized JPEG')
         if pos < base or pos + count > base + len(buffer):
             base = pos
-            buffer = os.pread(fd, min(256 * 1024, cap - pos), pos)
+            buffer = pread(fd, min(256 * 1024, cap - pos), pos)
             if len(buffer) != min(256 * 1024, cap - pos):
                 raise OSError('Short source read')
         return buffer[pos-base:pos-base+count]
+    def skip_fill(pos):
+        while read(pos, 1) == b'\xff':
+            part = read(pos, min(4096, cap - pos))
+            pos += len(part) - len(part.lstrip(b'\xff'))
+        return pos
     if read(start, 2) != b'\xff\xd8':
         raise ValueError('No JPEG start')
     pos, dimensions, scans = start + 2, None, 0
     while pos < cap:
         if read(pos, 1) != b'\xff':
             raise ValueError('Invalid JPEG marker boundary')
-        while read(pos, 1) == b'\xff':
-            pos += 1
+        pos = skip_fill(pos)
         marker = read(pos, 1)[0]; pos += 1
         if marker == 0xD9:
             if not dimensions or not scans:
@@ -69,8 +74,7 @@ def jpeg_extent(fd, start, total):
                 continue
             pos = base + at
             after = pos + 1
-            while read(after, 1) == b'\xff':
-                after += 1
+            after = skip_fill(after)
             code = read(after, 1)[0]
             if code == 0 or 0xD0 <= code <= 0xD7:
                 pos = after + 1
@@ -158,8 +162,8 @@ def recover(image, output):
                 raise ValueError('Source or recovery method changed; choose a fresh output folder.')
         else:
             state = {'version': 1, 'method': 'contiguous_jpeg_carving_v1', 'identity': identity,
-                     'next_offset': 0, 'photos': [], 'rejected_candidates': 0, 'complete': False,
-                     'limitations': 'Contiguous JPEG primary streams only. Original filenames and deleted/live status are unknown. Embedded JPEGs may be previews. Fragmented, overwritten and RAW files are not reconstructed. Decoding does not prove every pixel is authentic. No bytes or pixels are synthesized.'}
+                     'next_offset': 0, 'photos': [], 'rejected_candidates': 0, 'fragment_candidates': [], 'complete': False,
+                     'limitations': 'JPEG primary streams and bounded MPF-guided two-extent reconstruction. Original filenames and deleted/live status are unknown. Embedded JPEGs may be previews. Other fragmentation, overwritten and RAW files may remain unresolved. Decoding does not prove every pixel is authentic. No bytes or pixels are synthesized.'}
         offset = state['next_offset']
         if not isinstance(offset, int) or not 0 <= offset <= stat.st_size:
             raise ValueError('Invalid recovery checkpoint')
@@ -213,6 +217,11 @@ def recover(image, output):
                             raise ValueError('JPEG could not decode') from error
                     except (ValueError, SyntaxError, EOFError, Warning):
                         state['rejected_candidates'] += 1
+                        fragments = importlib.import_module('fragment-carve')
+                        if fragments.header(fd, start, stat.st_size) is not None:
+                            candidates = state.setdefault('fragment_candidates', [])
+                            if start not in candidates:
+                                candidates.append(start)
                         continue
                     verify(fd)
                     target = best / f'Photo-{start:012x}.JPG'
@@ -232,6 +241,8 @@ def recover(image, output):
                 state['next_offset'] = offset
                 if time.monotonic() - last_update >= 1:
                     checkpoint(); last_update = time.monotonic()
+            fragments = importlib.import_module('fragment-carve')
+            fragments.recover(fd, stat.st_size, state, best, lambda: verify(fd), lambda: checkpoint(False))
             checkpoint(complete=True)
             groups = importlib.import_module('assemble-metadata').assemble(report_path)
             for group in groups:

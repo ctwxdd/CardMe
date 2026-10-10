@@ -26,7 +26,7 @@ struct RecoveryOutcome {
                 missing += 1; continue
             }
             switch photo["quality"] as? String {
-            case "full_resolution", "full_resolution_copy": fullSize += 1
+            case "full_resolution", "full_resolution_copy", "full_resolution_reconstructed": fullSize += 1
             case "camera_preview": previews += 1
             case "thumbnail_only": thumbnails += 1
             default: review += 1
@@ -434,6 +434,7 @@ final class RescueSession: ObservableObject {
         switch quality {
         case "full_resolution": detail = "Original photo saved"
         case "full_resolution_copy": detail = "Full-size photo saved"
+        case "full_resolution_reconstructed": detail = "Full-size photo rebuilt · please check"
         case "camera_preview": detail = "Smaller preview saved"
         case "thumbnail_only": detail = "Tiny thumbnail saved"
         case "carved_jpeg": detail = "Found · please review"
@@ -450,7 +451,7 @@ final class RescueSession: ObservableObject {
         let previewPath = object["metadata_output"] as? String ?? object["output"] as? String ?? (path.hasPrefix("/") ? path : nil)
         let row = DamagedFile(id: path, name: URL(fileURLWithPath: path).lastPathComponent, detail: detail,
                               url: previewPath.map { URL(fileURLWithPath: $0) },
-                              fullSizeRecovered: ["full_resolution", "full_resolution_copy"].contains(quality ?? "") && (object["output"] as? String).map { FileManager.default.fileExists(atPath: $0) } == true)
+                              fullSizeRecovered: ["full_resolution", "full_resolution_copy", "full_resolution_reconstructed"].contains(quality ?? "") && (object["output"] as? String).map { FileManager.default.fileExists(atPath: $0) } == true)
         if let index = damaged.firstIndex(where: { $0.id == path }) { damaged[index] = row } else { damaged.append(row) }
     }
     private func addLine(_ line: String) {
@@ -466,6 +467,13 @@ final class RescueSession: ObservableObject {
            let done = progress["done"] as? Double, let total = progress["total"] as? Double, total > 0 {
             fraction = done / total
             status = "Looking for your photos… \(Int(100 * done / total))% checked · \(progress["found"] as? Int ?? 0) found"
+            return
+        }
+        if line.hasPrefix("FRAGMENTS\t"), let data = String(line.dropFirst(10)).data(using: .utf8),
+           let progress = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let done = progress["done"] as? Double, let total = progress["total"] as? Double, total > 0 {
+            fraction = done / total
+            status = "Putting photo pieces together… \(Int(done)) of \(Int(total)) checked · \(progress["found"] as? Int ?? 0) rebuilt"
             return
         }
         if line.hasPrefix("IMAGING\t"), let data = String(line.dropFirst(8)).data(using: .utf8),
@@ -818,7 +826,7 @@ final class RescueSession: ObservableObject {
               let photos = object["photos"] as? [[String: Any]], !photos.isEmpty else {
             needsDeepRescue = true; return
         }
-        needsDeepRescue = photos.contains { !["full_resolution", "full_resolution_copy"].contains($0["quality"] as? String ?? "") }
+        needsDeepRescue = photos.contains { !["full_resolution", "full_resolution_copy", "full_resolution_reconstructed"].contains($0["quality"] as? String ?? "") }
         if let scanReport, let data = try? Data(contentsOf: scanReport),
            let scan = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
            let unreadable = scan["unreadable_folders"] as? [[String: Any]], !unreadable.isEmpty {

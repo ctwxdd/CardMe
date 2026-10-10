@@ -105,6 +105,8 @@ struct NavigationCheck {
         assert(!session.needsDeepRescue) // A fresh healthy scan must keep normal recovery available.
         session.receive(Data("CARVING\t{\"done\":512,\"total\":1024,\"found\":3}\n".utf8))
         assert(session.fraction == 0.5 && session.status.contains("3 found"))
+        session.receive(Data("FRAGMENTS\t{\"done\":2,\"total\":4,\"found\":1}\n".utf8))
+        assert(session.fraction == 0.5 && session.status.contains("1 rebuilt"))
         session.receive(Data("FILE\t{\"path\":\"Photo-000000001000.JPG\",\"quality\":\"carved_jpeg\",\"output\":\"/tmp/found.jpg\"}\n".utf8))
         assert(session.damaged.last?.detail == "Found · please review")
         let cardSession = RescueSession()
@@ -152,6 +154,10 @@ struct NavigationCheck {
         session.receive(Data("FILE\t".utf8) + outputEvent + Data("\n".utf8))
         session.selectedID = "/unavailable-card/damaged.jpg"
         assert(session.damaged.last?.fullSizeRecovered == true)
+        let rebuiltEvent = try! JSONSerialization.data(withJSONObject: ["path": "rebuilt.jpg", "output": original.path, "quality": "full_resolution_reconstructed"])
+        session.receive(Data("FILE\t".utf8) + rebuiltEvent + Data("\n".utf8))
+        assert(session.damaged.last?.detail == "Full-size photo rebuilt · please check")
+        assert(session.damaged.last?.fullSizeRecovered == true)
         assert(session.selectedFileURL == original) // Open the recovered file, rather than the damaged source.
         session.rebindSavedPhotos(from: sourceFolder, to: exported)
         assert(session.selectedFileURL == exported.appendingPathComponent("photo.png"))
@@ -161,6 +167,7 @@ struct NavigationCheck {
         let outcomes: [[String: Any]] = [
             ["quality": "full_resolution", "output": original.path],
             ["quality": "full_resolution_copy", "output": original.path],
+            ["quality": "full_resolution_reconstructed", "output": original.path],
             ["quality": "camera_preview", "output": original.path],
             ["quality": "thumbnail_only", "output": original.path],
             ["quality": "manual_review", "output": original.path],
@@ -168,8 +175,8 @@ struct NavigationCheck {
             ["quality": "full_resolution", "output": "/missing/output.jpg"]
         ]
         let totals = RecoveryOutcome(photos: outcomes, wholeCardSearch: false)
-        assert(totals.fullSize == 2 && totals.previews == 1 && totals.thumbnails == 1)
-        assert(totals.review == 1 && totals.unrecovered == 2 && totals.saved == 5)
+        assert(totals.fullSize == 3 && totals.previews == 1 && totals.thumbnails == 1)
+        assert(totals.review == 1 && totals.unrecovered == 2 && totals.saved == 6)
         assert(RecoveryOutcome(photos: outcomes, wholeCardSearch: true).unrecovered == nil)
         let outcomeReport = folder.appendingPathComponent("outcome-report.json")
         try! JSONSerialization.data(withJSONObject: ["photos": outcomes]).write(to: outcomeReport)

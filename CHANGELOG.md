@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.29 · build 42
+
+- Automatically attempt bounded two-extent JPEG reconstruction after Deep Rescue finds surviving camera headers and previews. Preserve exact original-byte extents and separate review status.
+- Validate joins against camera MPF lengths, strict JPEG decoding, and a larger preview comparison. Keep thumbnail disagreements marked for review.
+- Show reconstruction progress and distinguish rebuilt full-size photos in the results list. Preserve source read-only access, cancellation, resume checkpoints, and existing outputs.
+
 ## 0.3.28 · build 41
 
 - Use camera MPF child offsets and lengths to establish preview relationships across the saved card image, including visually ambiguous bursts.

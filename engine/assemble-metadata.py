@@ -40,9 +40,9 @@ def replace_exif(raw, metadata=b''):
     raise ValueError('Incomplete JPEG')
 
 
-def mpf_base(path):
+def mpf_base(path, data=None):
     # MP entry offsets are relative to the TIFF header in APP2, not the JPEG start.
-    with open(path, 'rb') as source:
+    with (io.BytesIO(data) if data is not None else open(path, 'rb')) as source:
         if source.read(2) != b'\xff\xd8':
             return None
         while source.tell() < 1024*1024:
@@ -128,9 +128,14 @@ def assemble(report_path):
                 base = mpf_base(row['output']) if entries else None
                 if base is not None and entries[0]['DataOffset'] == 0 and entries[0]['Size'] == row['bytes']:
                     for entry in entries[1:]:
-                        child_offset = row['offset'] + base + entry['DataOffset']
+                        logical = base + entry['DataOffset']
+                        child_offset = row['offset'] + logical
+                        if row.get('source_extents'):
+                            last = row['source_extents'][-1]
+                            prefix = row['bytes'] - last['bytes']
+                            child_offset = last['offset'] + logical - prefix
                         child = by_offset.get(child_offset)
-                        if (child and child_offset >= row['offset'] + row['bytes']
+                        if (child and (row.get('source_extents') or child_offset >= row['offset'] + row['bytes'])
                                 and entry['Size'] == child['bytes']
                                 and entry['Attribute']['DependentChildImageFlag']
                                 and 'Thumbnail' in entry['Attribute']['MPType']):

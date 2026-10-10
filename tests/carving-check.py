@@ -48,6 +48,12 @@ with tempfile.TemporaryDirectory(prefix='cardrescue-carving-') as temporary:
         assert Path(row['output']).read_bytes() == originals[row['offset']]
         assert row['byte_exact_source_copy'] and row['sha256'] == sha(originals[row['offset']])
     assert sha(image.read_bytes()) == source_hash
+    # Erased 0xFF runs must not turn the marker walker into a byte-by-byte stall.
+    filled = first[:2] + b'\xff' * (2 * 1024 * 1024) + first[3:]
+    with tempfile.TemporaryFile() as padded:
+        padded.write(filled); padded.flush()
+        length, dimensions = carve.jpeg_extent(padded.fileno(), 0, len(filled))
+        assert length == len(filled) and dimensions == [640, 480]
     # Native volume rejection is enforced by the engine, not just the Swift picker.
     cf = ctypes.CDLL('/System/Library/Frameworks/CoreFoundation.framework/CoreFoundation')
     restricted = SimpleNamespace(_handle=cf._handle,
