@@ -132,6 +132,17 @@ struct NavigationCheck {
         try! Data("safe-original".utf8).write(to: original)
         do { try ResultExport.validate(source: sourceFolder, destination: sourceFolder); assertionFailure("Source output accepted") }
         catch { }
+        // Imaging puts card.img below the selected save folder; carving writes into a fresh sibling.
+        let safetyFolder = destination.appendingPathComponent("Card Safety Copy fixture")
+        try! FileManager.default.createDirectory(at: safetyFolder, withIntermediateDirectories: true)
+        let safetyImage = safetyFolder.appendingPathComponent("card.img")
+        try! Data("saved-image".utf8).write(to: safetyImage)
+        try! ResultExport.validate(source: safetyImage, destination: destination)
+        do { try ResultExport.validate(source: safetyImage, destination: safetyImage); assertionFailure("Image overwrite accepted") }
+        catch { }
+        do { try ResultExport.validate(source: sourceFolder, destination: folder); assertionFailure("Source tree ancestor accepted") }
+        catch { }
+        assert(try! Data(contentsOf: safetyImage) == Data("saved-image".utf8))
         let exported = try! ResultExport.copy(from: sourceFolder, to: destination)
         assert(try! Data(contentsOf: exported.appendingPathComponent("photo.png")) == Data("safe-original".utf8))
         let nextExport = try! ResultExport.copy(from: sourceFolder, to: destination)

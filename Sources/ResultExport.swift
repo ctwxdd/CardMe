@@ -39,7 +39,7 @@ enum ResultExport {
         guard destinationValues.volumeIsReadOnly == false,
               destinationValues.volumeIsRemovable == false,
               output != input, !output.path.hasPrefix(input.path + "/"),
-              !input.path.hasPrefix(output.path + "/"),
+              !(sourceValues.isDirectory == true && input.path.hasPrefix(output.path + "/")),
               !(input.path.hasPrefix("/Volumes/") && sourceVolume == destinationValues.volume &&
                 sourceValues.isDirectory == true) else {
             throw CocoaError(.fileWriteNoPermission)

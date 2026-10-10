@@ -17,7 +17,10 @@ def jpeg(size, color, **options):
     return out.getvalue()
 
 with tempfile.TemporaryDirectory(prefix='cardrescue-carving-') as temporary:
-    root = Path(temporary); image = root / 'formatted.img'; output = root / 'results'
+    root = Path(temporary); output = root / 'results'
+    safety_folder = root / 'Card Safety Copy fixture'
+    safety_folder.mkdir()
+    image = safety_folder / 'card.img'
     # No usable filesystem directory, FAT, filename or matching card profile remains.
     payload = bytearray(128 * 1024)
     preview = jpeg((160, 120), 'red')

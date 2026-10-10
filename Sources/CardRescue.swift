@@ -339,7 +339,9 @@ final class RescueSession: ObservableObject {
         } catch {
             if destinationAccess { destination.stopAccessingSecurityScopedResource() }
             self.destination = nil; destinationAccess = false
-            self.error = "Choose a writable folder on a fixed disk or SSD, away from your card. Nothing was changed."
+            self.error = safetyImage == source
+                ? "Your safety copy is saved, but the photo search hasn’t started. Choose another save folder to continue searching the existing copy."
+                : "Choose a writable folder on a fixed disk or SSD, away from your card. Nothing was changed."
             return false
         }
     }
