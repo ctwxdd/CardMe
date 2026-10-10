@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.24 · build 37
+
+- Start the photo search automatically after creating a whole-card safety copy in the selected save folder.
+- Keep saved-image selection visible in the card chooser and explain when a saved copy is ready but the search has not started.
+
 ## 0.3.23 · build 36
 
 - Report anonymous scan totals, photos needing review and completed, failed or cancelled scan outcomes when usage statistics are enabled.

@@ -1127,6 +1127,7 @@ struct RecoveryCompleteView: View {
 struct CardChooser: View {
     @ObservedObject var session: RescueSession
     @StateObject private var cards = CardDevices()
+    @State private var savedCopyExpanded = true
     @State private var selectedID: String?
     @Environment(\.dismiss) private var dismiss
     private var selected: CardDevice? { cards.devices.first { $0.id == selectedID } }
@@ -1166,7 +1167,7 @@ struct CardChooser: View {
                         Text(RescueSession.directDownload ? "The photos will be checked first. You can then choose where to save recovered copies." : "macOS will ask you to allow access to this card. Then we’ll check the photos.")
                             .font(.callout).foregroundStyle(.secondary)
                     }
-                    DisclosureGroup("Use a folder or saved copy") {
+                    DisclosureGroup("Use a folder or saved copy", isExpanded: $savedCopyExpanded) {
                         VStack(alignment: .leading, spacing: 10) {
                             Text("You can also check photos in a folder or search a previously saved safety copy of a card.")
                                 .font(.callout).foregroundStyle(.secondary)
