@@ -92,3 +92,9 @@ work/usage-check
 The frameless UI mark is generated from shared vector geometry with `swift scripts/brand.swift website/dist/assets`. The Dock icon retains its separate approved artwork.
 
 Localized website copy lives in `website/locales/*.json`. Run `python3 scripts/build-website.py` and `python3 tests/website-check.py` after edits. The app UI remains English.
+
+## EXIF assembly
+
+After a completed general JPEG search, previews without orientation can be paired with camera photos within 32 MiB only when aspect ratios agree and embedded-thumbnail comparison scores are at most 5 with a margin of at least 2 over the next candidate. A bounded 64-thumbnail cache supports this pass. Selected camera/date/orientation tags and an embedded thumbnail are written into separate `best_available/Metadata Copies` JPEGs; image streams, original files, original report hashes and card bytes remain unchanged. GPS, serials and MakerNote are not transplanted. Preview dimensions describe the preview, never the primary photo. Pairings and inferred metadata are recorded in `metadata-assembly.json`. Ambiguous matches stay untouched; no original filename or missing pixels are invented. Quick View uses the metadata copy when available.
+
+Run `tests/metadata-assembly-check.py` with the bundled runtime for visual matching, ambiguity, thumbnail/EXIF assembly, unchanged image streams, idempotence and source safety.

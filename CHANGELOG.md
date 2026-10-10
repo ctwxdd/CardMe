@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.26 · build 39
+
+- Pair nearby saved previews with camera JPEGs only when thumbnail comparisons give an unambiguous match.
+- Save separate metadata copies with inferred orientation, camera, capture time and embedded thumbnail; preserve the original JPEG image stream and all rescued files.
+- Record pairings and leave ambiguous candidates unchanged.
+
 ## 0.3.25 · build 38
 
 - Recognize decoded large camera JPEGs whose camera EXIF dimensions match, so Deep Rescue reports full-size copies rather than counting every found photo as unclassified.

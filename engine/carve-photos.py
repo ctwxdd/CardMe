@@ -233,6 +233,13 @@ def recover(image, output):
                 if time.monotonic() - last_update >= 1:
                     checkpoint(); last_update = time.monotonic()
             checkpoint(complete=True)
+            groups = importlib.import_module('assemble-metadata').assemble(report_path)
+            for group in groups:
+                row = known[group['preview_offset']]
+                row['metadata_output'] = group['metadata_copy']
+                row['paired_primary_offset'] = group['primary_offset']
+                row['quality'] = 'camera_preview'
+            checkpoint(complete=True)
         except KeyboardInterrupt:
             checkpoint()
             raise

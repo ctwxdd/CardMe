@@ -182,6 +182,10 @@ struct NavigationCheck {
             session.receive(Data("FILE\t".utf8) + event + Data("\n".utf8))
             assert(session.damaged.last?.fullSizeRecovered == false)
         }
+        let metadataEvent = try! JSONSerialization.data(withJSONObject: ["path": "paired-preview.jpg", "output": "/missing/original-preview.jpg", "metadata_output": original.path, "quality": "camera_preview"])
+        session.receive(Data("FILE\t".utf8) + metadataEvent + Data("\n".utf8))
+        session.selectedID = "paired-preview.jpg"
+        assert(session.selectedFileURL == original && session.damaged.last?.fullSizeRecovered == false)
         let missingEvent = try! JSONSerialization.data(withJSONObject: ["path": "missing.jpg", "output": "/missing/output.jpg", "quality": "full_resolution"])
         session.receive(Data("FILE\t".utf8) + missingEvent + Data("\n".utf8))
         assert(session.damaged.last?.fullSizeRecovered == false)

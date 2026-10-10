@@ -447,7 +447,7 @@ final class RescueSession: ObservableObject {
             default: detail = "Unable to open"
             }
         }
-        let previewPath = object["output"] as? String ?? (path.hasPrefix("/") ? path : nil)
+        let previewPath = object["metadata_output"] as? String ?? object["output"] as? String ?? (path.hasPrefix("/") ? path : nil)
         let row = DamagedFile(id: path, name: URL(fileURLWithPath: path).lastPathComponent, detail: detail,
                               url: previewPath.map { URL(fileURLWithPath: $0) },
                               fullSizeRecovered: ["full_resolution", "full_resolution_copy"].contains(quality ?? "") && (object["output"] as? String).map { FileManager.default.fileExists(atPath: $0) } == true)
