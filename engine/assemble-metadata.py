@@ -40,6 +40,31 @@ def replace_exif(raw, metadata=b''):
     raise ValueError('Incomplete JPEG')
 
 
+def mpf_base(path):
+    # MP entry offsets are relative to the TIFF header in APP2, not the JPEG start.
+    with open(path, 'rb') as source:
+        if source.read(2) != b'\xff\xd8':
+            return None
+        while source.tell() < 1024*1024:
+            if source.read(1) != b'\xff':
+                return None
+            marker = source.read(1)
+            while marker == b'\xff':
+                marker = source.read(1)
+            if not marker or marker[0] in (0xDA, 0xD9):
+                return None
+            if marker[0] == 1:
+                continue
+            size = int.from_bytes(source.read(2), 'big')
+            if size < 2:
+                return None
+            start = source.tell()
+            if marker[0] == 0xE2 and source.read(min(4, size-2)) == b'MPF\0':
+                return start + 4
+            source.seek(start + size - 2)
+    return None
+
+
 def preview_exif(donor, size, thumb):
     source = donor.getexif(); result = Image.Exif()
     # Only descriptive tags: never transplant GPS, serials, MakerNote or offset-bearing data.
@@ -87,7 +112,7 @@ def assemble(report_path):
             with Image.open(path) as photo:
                 photo.draft('RGB', (512, 512)); photo.load()
                 return photo.resize((256, 171), Image.Resampling.LANCZOS).convert('RGB')
-    donors = []
+    donors = []; mpf_links = {}; by_offset = {row['offset']: row for row in rows}
     for row in rows:
         path = Path(row['output'])
         if path.is_symlink() or path.parent.resolve() != report_path.parent / 'best_available':
@@ -99,6 +124,17 @@ def assemble(report_path):
             if photo.info.get('exif'):
                 frame = exif.get_ifd(34665) if 34665 in exif else {}
                 donors.append((row, photo.size, (exif.get(271), exif.get(272), frame.get(36867))))
+                entries = getattr(photo, 'mpinfo', {}).get(45058, [])
+                base = mpf_base(row['output']) if entries else None
+                if base is not None and entries[0]['DataOffset'] == 0 and entries[0]['Size'] == row['bytes']:
+                    for entry in entries[1:]:
+                        child_offset = row['offset'] + base + entry['DataOffset']
+                        child = by_offset.get(child_offset)
+                        if (child and child_offset >= row['offset'] + row['bytes']
+                                and entry['Size'] == child['bytes']
+                                and entry['Attribute']['DependentChildImageFlag']
+                                and 'Thumbnail' in entry['Attribute']['MPType']):
+                            mpf_links.setdefault(child_offset, []).append((row, (exif.get(271), exif.get(272), frame.get(36867))))
     groups = []; matched = 0
     for row in rows:
         if row['quality'] not in ('carved_jpeg', 'camera_preview') or not 256 < max(row['dimensions']) <= 2048:
@@ -126,10 +162,23 @@ def assemble(report_path):
                 candidates.append((difference, donor, thumb))
         candidates.sort(key=lambda c: c[0])
         comparison = 'embedded_thumbnail'
-        if not candidates or candidates[0][0] > 5 or (len(candidates)>1 and candidates[1][0]-candidates[0][0] < 2):
+        indexed = mpf_links.get(row['offset'], [])
+        index_matches = len(indexed) == 1 and not any(a and b and a != b for a, b in zip(identity, indexed[0][1]))
+        thumbnail_matches = bool(candidates and candidates[0][0] <= 5
+                                 and (len(candidates) == 1 or candidates[1][0]-candidates[0][0] >= 2))
+        if index_matches:
+            donor = indexed[0][0]; difference = None; comparison = 'mpf_index'
+            if thumbnail_matches and candidates[0][1]['offset'] == donor['offset']:
+                thumb = candidates[0][2]
+            else:
+                with Image.open(row['output']) as photo:
+                    photo.draft('RGB', (256, 256)); photo.load()
+                    thumb = photo.convert('RGB'); thumb.thumbnail((160, 120), Image.Resampling.LANCZOS)
+        elif thumbnail_matches:
+            difference, donor, thumb = candidates[0]
+        else:
             # A camera thumbnail may differ in crop/color; compare the primary image before giving up.
-            scores = []
-            reference = visual(row['output'])
+            scores = []; reference = visual(row['output'])
             for donor in eligible:
                 try:
                     difference = sum(ImageStat.Stat(ImageChops.difference(reference, visual(donor['output']))).mean) / 3
@@ -139,14 +188,10 @@ def assemble(report_path):
             scores.sort(key=lambda value: value[0])
             if not scores or scores[0][0] > 3 or (len(scores)>1 and scores[1][0]-scores[0][0] < 1.5):
                 continue
-            difference, donor = scores[0]
-            comparison = 'primary_pixels'
-            # Build this copy's thumbnail from its own image, rather than copying a suspect thumbnail.
+            difference, donor = scores[0]; comparison = 'primary_pixels'
             with Image.open(row['output']) as photo:
                 photo.draft('RGB', (256, 256)); photo.load()
                 thumb = photo.convert('RGB'); thumb.thumbnail((160, 120), Image.Resampling.LANCZOS)
-        else:
-            difference, donor, thumb = candidates[0]
         original = Path(row['output']).read_bytes(); primary = Path(donor['output']).read_bytes()
         if hashlib.sha256(original).hexdigest() != row['sha256'] or hashlib.sha256(primary).hexdigest() != donor['sha256']:
             raise ValueError('Saved photo changed; metadata pairing stopped')
@@ -160,7 +205,12 @@ def assemble(report_path):
             if list(check.size) != row['dimensions']:
                 raise ValueError('Metadata copy dimensions changed')
         output.mkdir(mode=0o700, exist_ok=True)
-        target = output / Path(row['output']).name
+        target = output / (('MPF-' if comparison == 'mpf_index' else '') + Path(row['output']).name)
+        previous = row.get('metadata_output')
+        if previous and row.get('paired_primary_offset') == donor['offset']:
+            existing = Path(previous)
+            if existing.parent.resolve() == output.resolve():
+                target = existing
         digest = carve.save_exact(target, repaired)
         groups.append({'primary': donor['output'], 'preview': row['output'], 'metadata_copy': str(target),
                        'primary_offset': donor['offset'], 'preview_offset': row['offset'], 'difference': difference, 'comparison': comparison,

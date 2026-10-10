@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.28 · build 41
+
+- Use camera MPF child offsets and lengths to establish preview relationships across the saved card image, including visually ambiguous bursts.
+- Prioritize unique validated index relationships, record their provenance, preserve originals and reuse unchanged existing metadata copies.
+
 ## 0.3.27 · build 40
 
 - Compare nearby primary JPEG pixels when embedded thumbnails cannot identify a unique preview match.
