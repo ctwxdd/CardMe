@@ -24,3 +24,28 @@ for i,v in enumerate(extra):
 struct.pack_into('<H',extra,2,checksum)
 assert engine.collect(extra,4096,4096,131072,100)==[]
 print('Orphan entry hints checked: checksum, alignment, source bounds, safe filename and truncation.')
+
+# The regular scan retains an entry crossing its chunk boundary, without a second scan.
+import hashlib,io,json,tempfile
+from unittest.mock import patch
+from PIL import Image
+carve=importlib.import_module('carve-photos')
+volume=importlib.import_module('fragment-rescue')
+with tempfile.TemporaryDirectory() as temporary:
+ root=Path(temporary);image=root/'card.img';output=root/'saved'
+ photo=io.BytesIO();Image.new('RGB',(640,480),'blue').save(photo,format='JPEG')
+ payload=bytearray(65536);payload[32768:32768+len(photo.getvalue())]=photo.getvalue()
+ metadata=entry();struct.pack_into('<Q',metadata,40,len(photo.getvalue()));struct.pack_into('<I',metadata,52,10);struct.pack_into('<Q',metadata,56,len(photo.getvalue()))
+ checksum=0
+ for i,v in enumerate(metadata):
+  if i not in (2,3):checksum=(((checksum&1)<<15)+(checksum>>1)+v)&65535
+ struct.pack_into('<H',metadata,2,checksum)
+ payload[4064:4160]=metadata
+ image.write_bytes(payload);image.chmod(0o444);before=hashlib.sha256(payload).hexdigest()
+ with patch.object(carve,'CHUNK',4096),patch.object(volume,'volume',return_value=(0,512,0,4096,0,16)),patch.object(importlib.import_module('fragment-carve'),'recover'):
+  assert carve.recover(image,output)==0
+ report=json.loads((output/'pipeline-report.json').read_text())
+ assert report['photos'][0]['original_filename_hint']=='IMG_1234.JPG'
+ assert report['photos'][0]['directory_entry_offsets']==[4064]
+ assert hashlib.sha256(image.read_bytes()).hexdigest()==before
+print('Orphan metadata retained by the regular scan across a chunk boundary, source unchanged.')
