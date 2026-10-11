@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.30 · build 43
+
+- Try bounded three-part JPEG reconstruction, preserving source extents and requiring a unique decoded result that matches the camera preview.
+- Rebuild fragmented indexed previews before retrying their full-size photo. Reuse endpoint hints from the existing scan.
+- Keep original filename hints from checksum-valid directory remnants in recovery reports; never treat missing allocation chains as intact.
+- Retry unresolved candidates once when the reconstruction algorithm changes. Keep source images read only and preserve existing results.
+
 ## 0.3.29 · build 42
 
 - Automatically attempt bounded two-extent JPEG reconstruction after Deep Rescue finds surviving camera headers and previews. Preserve exact original-byte extents and separate review status.
