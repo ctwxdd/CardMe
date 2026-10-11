@@ -54,6 +54,7 @@ licenses = resources / 'ThirdPartyLicenses'
 licenses.mkdir(exist_ok=True)
 shutil.copy2(ROOT / 'THIRD_PARTY_NOTICES.md', licenses / 'Notices.md')
 shutil.copy2(ROOT / 'LICENSE', licenses / 'CardMe-GPL-3.0.txt')
+shutil.copy2(ROOT / 'NOTICE', licenses / 'CardMe-Copyright.txt')
 sources = resources / 'ThirdPartySources'
 sources.mkdir(exist_ok=True)
 python_source = ROOT / 'vendor/python/Python-3.12.14.tar.xz'

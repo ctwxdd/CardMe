@@ -12,8 +12,9 @@ project = (root / 'CardRescue.xcodeproj/project.pbxproj').read_text()
 assert set(re.findall(r'MARKETING_VERSION = ([^;]+);', project)) == {release['version']}
 assert set(re.findall(r'CURRENT_PROJECT_VERSION = ([^;]+);', project)) == {str(release['build'])}
 license_text = (root / 'LICENSE').read_text()
-assert 'SPDX-License-Identifier: GPL-3.0-only' in license_text
-assert 'Copyright (c) 2026 CHUN-TING WU' in license_text
+notice = (root / 'NOTICE').read_text()
+assert 'SPDX-License-Identifier: GPL-3.0-only' in notice
+assert 'Copyright (c) 2026 CHUN-TING WU' in notice
 assert '15. Disclaimer of Warranty.' in license_text
 assert '16. Limitation of Liability.' in license_text
 assert 'Permission is hereby granted' in (root / 'docs/licenses/MIT-previous.txt').read_text()
@@ -21,6 +22,8 @@ license_file = 'CardMe-GPL-3.0.txt'
 assert license_file in (root / 'Sources/CardRescue.swift').read_text()
 assert license_file in (root / 'scripts/build.py').read_text()
 assert license_file in (root / 'tests/direct-package-check.py').read_text()
+for filename in ['Sources/CardRescue.swift', 'scripts/build.py', 'tests/direct-package-check.py']:
+    assert 'CardMe-Copyright.txt' in (root / filename).read_text()
 assert not (root / 'engine/card_directory.json').exists()
 assert not (root / 'engine/verified-rescue-profile.json').exists()
 assert not (root / 'investigations').exists()

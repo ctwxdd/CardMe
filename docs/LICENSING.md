@@ -4,7 +4,7 @@
 
 Copyright (c) 2026 CHUN-TING WU.
 
-CardMe's original application, recovery engine, build/test scripts, documentation, and website are licensed under the **GNU General Public License version 3 only** (`GPL-3.0-only`). The complete terms are in [LICENSE](../LICENSE).
+CardMe's original application, recovery engine, build/test scripts, documentation, and website are licensed under the **GNU General Public License version 3 only** (`GPL-3.0-only`). The complete, unmodified license text is in [LICENSE](../LICENSE); the project copyright and GPL-3.0-only grant are in [NOTICE](../NOTICE).
 
 GPL is an open-source license and permits commercial use and paid redistribution. It does not transfer ownership of the original copyright. It requires preservation of the applicable notices and corresponding source when distributing covered software. Modified works must carry notices of changes and relevant dates under the GPL. Using a modified program privately does not by itself require publishing it.
 

@@ -1,0 +1,12 @@
+CardMe — photo recovery for memory cards
+Copyright (c) 2026 CHUN-TING WU
+SPDX-License-Identifier: GPL-3.0-only
+
+CardMe's original application, recovery engine, build/test scripts,
+documentation, and website are licensed under the GNU General Public License,
+version 3 only. See LICENSE for the complete terms, including the warranty
+disclaimer and limitation of liability.
+
+Third-party components retain their own copyrights and licenses, as listed
+in THIRD_PARTY_NOTICES.md. Earlier MIT-licensed distributions retain their
+existing terms. This notice does not impose additional license conditions.

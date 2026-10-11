@@ -81,7 +81,7 @@ Recovery changes must preserve read-only source access, cancellation, output saf
 
 ## License, copyright, and redistribution
 
-Copyright © 2026 **CHUN-TING WU**. CardMe’s original application, engine, and website are licensed under **[GNU GPL version 3 only](LICENSE)** (`GPL-3.0-only`). You keep ownership of your photos; this license covers the software, not recovered photographs.
+Copyright © 2026 **CHUN-TING WU**. CardMe’s original application, engine, and website are licensed under **[GNU GPL version 3 only](LICENSE)** (`GPL-3.0-only`); see the [copyright notice](NOTICE). You keep ownership of your photos; this license covers the software, not recovered photographs.
 
 You may use, study, modify, and redistribute CardMe, including commercially, under the GPL. When distributing the software or a modified version, preserve the copyright and license notices, identify modifications, and provide the corresponding source as required by the GPL. Modified and combined works covered by the GPL must retain its terms. The license does not grant rights to imply that a fork is an official CardMe release or endorsed by its author.
 

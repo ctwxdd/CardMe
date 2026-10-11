@@ -1209,6 +1209,7 @@ struct AboutView: View {
     @Environment(\.dismiss) private var dismiss
     private let resources = Bundle.main.resourceURL
     private let licenses = [
+        ("CardMe · Copyright and license notice", "CardMe-Copyright.txt"),
         ("CardMe · GPL-3.0-only", "CardMe-GPL-3.0.txt"),
         ("GNU ddrescue 1.30 · GPL-2.0-or-later", "ddrescue-GPL-2.0.txt"),
         ("CPython · PSF and historical licenses", "Python-LICENSE.txt"),
