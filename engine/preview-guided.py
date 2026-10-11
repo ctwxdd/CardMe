@@ -13,6 +13,7 @@ MAX_SECONDS = 90
 MAX_JOINS = 16
 LOCAL_CLUSTERS = 256
 LOOKAHEAD = 4096
+EXPANDED_CLUSTERS = 512
 
 
 def geometry(raw):
@@ -238,26 +239,65 @@ def _reconstruct(fd, total, candidate, photos, cluster, heap, verify, adaptive_p
                 anchor = preview_row['offset'] - within
                 auxindex = candidate['preview_logical'] // cluster
                 positions.append(anchor - (auxindex - done // cluster) * cluster)
-                ranked = []
-                for offset in dict.fromkeys(positions):
-                    if offset < heap or offset + size > total or overlaps(offset, size, extents + owned):
-                        continue
-                    probe = decoder.clone()
+                # Long fragment chains need cheaper ranking probes; full-cluster checks remain mandatory.
+                lookahead = 1024 if len(joins) >= 4 else LOOKAHEAD
+                def rank_positions(offsets):
+                    rows = []
+                    for offset in offsets:
+                        if offset < heap or offset + size > total or overlaps(offset, size, extents + owned):
+                            continue
+                        probe = decoder.clone()
+                        try:
+                            raw_probe = read(offset, min(lookahead, size))
+                            first = min(512, len(raw_probe))
+                            probe.feed(raw_probe[:first], check)
+                            if probe.error_count and probe.score() > threshold * 2:
+                                continue
+                            probe.feed(raw_probe[first:], check)
+                        except coding.Invalid:
+                            continue
+                        if probe.error_count:
+                            rows.append((probe.score(), offset))
+                    rows.sort()
+                    if lookahead < LOOKAHEAD and size > lookahead:
+                        refined = []
+                        for _, offset in rows[:8]:
+                            probe = decoder.clone()
+                            try:
+                                probe.feed(read(offset, min(LOOKAHEAD, size)), check)
+                            except coding.Invalid:
+                                continue
+                            if probe.error_count:
+                                refined.append((probe.score(), offset))
+                        rows = sorted(refined)
+                    return rows
+
+                ranked = rank_positions(dict.fromkeys(positions))
+                # shortcut: greedy full-cluster choice; retain paths only after bounded beam qualification.
+                def full_choice(rows):
+                    if not rows:
+                        return None
+                    score, offset = rows[0]
+                    trial = decoder.clone()
                     try:
-                        probe.feed(read(offset, min(LOOKAHEAD, size)), check)
+                        trial.feed(read(offset, size), check)
                     except coding.Invalid:
-                        continue
-                    if probe.error_count:
-                        ranked.append((probe.score(), offset))
-                ranked.sort()
-                if not ranked:
-                    return None, 'no_preview_guided_continuation'
-                # shortcut: ranked greedy continuation; retain branches after bounded beam qualification.
-                score, physical = ranked[0]
-                trial = decoder.clone()
-                trial.feed(read(physical, size), check)
-                if trial.score() > threshold:
-                    return None, 'preview_guided_low_agreement'
+                        return None
+                    return (score, offset, trial) if trial.score() <= threshold else None
+
+                accepted = full_choice(ranked)
+                if accepted is None:
+                    anchor_position = anchor - (auxindex - done // cluster) * cluster
+                    expanded_positions = [base + n * cluster for base in (physical, anchor_position)
+                                          for n in range(-EXPANDED_CLUSTERS, EXPANDED_CLUSTERS + 1)]
+                    previous_positions = set(positions)
+                    expanded = rank_positions(offset for offset in dict.fromkeys(expanded_positions)
+                                              if offset not in previous_positions)
+                    accepted = full_choice(expanded)
+                    if accepted is None:
+                        return None, 'no_preview_guided_continuation'
+                    ranked = expanded
+                score, physical, trial = accepted
                 joins.append({'logical_offset': done, 'source_offset': physical,
                               'preview_luminance_error': score, 'candidates': len(ranked)})
             append(physical, size)

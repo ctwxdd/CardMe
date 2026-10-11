@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.34 · build 47
+
+- When local preview-guided continuation fails, search a bounded wider window around both the next source cluster and the current camera-preview tail anchor. Preserve already validated local choices and the shared 90-second limit.
+- Reject poor short probes before the longer ranking decode, and use short coarse probes followed by longer bounded reranking after four validated joins to keep heavily fragmented photos within the existing deadline. Retain strict full-photo validation, current-source extent provenance, manual-review status and read-only source access. Retry older unresolved checkpoints once without overwriting saved photos.
+
 ## 0.3.33 · build 46
 
 - When a marker-derived JPEG prefix cannot decode or extends past the declared primary length, retry by observing incremental coding state and preview luminance at cluster boundaries. Both attempts share the existing 90-second limit.

@@ -102,6 +102,67 @@ with tempfile.TemporaryDirectory() as directory:
     finally: os.close(fd)
     assert source.read_bytes() == payload
 
+# A distant middle run is near the preview anchor, beyond the header's local window.
+positions = [start, heap + cluster * 1720, heap + cluster * 1800, heap + cluster * 2048]
+child = positions[-1] + fixture['logical'] - cuts[-2]
+payload = bytearray(child + len(preview) + cluster)
+expected = []
+for first, end, at in zip(cuts, cuts[1:], positions):
+    payload[at:at + end - first] = primary[first:end]
+    expected.append({'offset': at, 'bytes': end - first})
+    if end < len(primary):
+        payload[at + end - first:at + end - first + 16] = b'\xff\xd8' + bytes(14)
+payload[child:child + len(preview)] = preview
+with tempfile.TemporaryDirectory() as directory:
+    folder = Path(directory); source = folder / 'card.img'; source.write_bytes(payload); source.chmod(0o444)
+    output = folder / 'preview.JPG'; output.write_bytes(preview)
+    fd = os.open(source, os.O_RDONLY)
+    try:
+        candidate = fragments.header(fd, start, len(payload))
+        candidate['_failure_prefixes'] = [(start, cuts[1] + 2)]
+        row = {'offset': child, 'bytes': len(preview), 'output': str(output)}
+        with patch.object(guided, 'EXPANDED_CLUSTERS', 0):
+            assert guided.reconstruct(fd, len(payload), candidate, [row], cluster, heap, lambda: None)[0] is None
+        result, reason = guided.reconstruct(fd, len(payload), candidate, [row], cluster, heap, lambda: None)
+        assert result and result['data'] == primary, reason
+        assert result['source_extents'] == expected and result['manual_review']
+    finally: os.close(fd)
+    assert source.read_bytes() == payload
+
+# Heavily fragmented photos must finish after the shorter ranking-probe transition.
+clusters = len(primary) // cluster
+cut_clusters = [8] + [8 + (clusters - 8) * n // 14 for n in range(1, 14)]
+cuts = [0] + [n * cluster for n in cut_clusters] + [len(primary)]
+assert len(set(cuts)) == 16
+positions = [start] + [heap + cluster * (90 + n * 8) for n in range(14)]
+child = positions[-1] + fixture['logical'] - cuts[-2]
+payload = bytearray(child + len(preview) + cluster)
+# Other allocation clusters start unrelated files rather than plausible zero entropy.
+for at in range(heap, len(payload) - 2, cluster):
+    payload[at:at + 2] = b'\xff\xd8'
+expected = []
+for first, end, at in zip(cuts, cuts[1:], positions):
+    payload[at:at + end - first] = primary[first:end]
+    expected.append({'offset': at, 'bytes': end - first})
+    if end < len(primary):
+        payload[at + end - first:at + end - first + 16] = b'\xff\xd8' + bytes(14)
+payload[child:child + len(preview)] = preview
+with tempfile.TemporaryDirectory() as directory:
+    folder = Path(directory); source = folder / 'card.img'; source.write_bytes(payload); source.chmod(0o444)
+    output = folder / 'preview.JPG'; output.write_bytes(preview)
+    fd = os.open(source, os.O_RDONLY)
+    try:
+        candidate = fragments.header(fd, start, len(payload))
+        candidate['_failure_prefixes'] = [(start, cuts[1] + 2)]
+        row = {'offset': child, 'bytes': len(preview), 'output': str(output)}
+        result, reason = guided.reconstruct(fd, len(payload), candidate, [row], cluster, heap, lambda: None)
+        assert result and result['data'] == primary, reason
+        assert result['source_extents'] == expected and len(result['continuation_decisions']) == 14
+        assert result['manual_review']
+    finally: os.close(fd)
+    assert source.read_bytes() == payload
+
+
 # State must survive arbitrary byte splits, including pending symbols/stuffing.
 for width in (1, 7, 512):
     whole = coding.Decoder(primary); whole.feed(primary[whole.header_end:])
