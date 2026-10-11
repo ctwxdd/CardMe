@@ -300,7 +300,28 @@ def recover(fd, total, state, best, verify, checkpoint):
             done[str(start)] = {'reason': 'unusable_header'}
         else:
             candidate['_known_photos'] = state['photos']
-            result, reason = reconstruct(fd, total, candidate, sizes[candidate['preview_bytes']], cluster, heap, verify)
+            preview_rows = sizes[candidate['preview_bytes']]
+            within = candidate['preview_logical'] % cluster
+            aligned = [row for row in preview_rows if (row['offset'] - start) % cluster == within]
+            if not aligned and state.get('fragment_preview_candidates'):
+                preview_engine = importlib.import_module('fragment-preview')
+                preview, _ = preview_engine.reconstruct(fd, total, candidate,
+                    state['fragment_preview_candidates'], cluster, heap, verify)
+                if preview is not None:
+                    verify()
+                    target = best / f"Photo-{preview['offset']:012x}.JPG"
+                    digest = carve.save_exact(target, preview.pop('data'))
+                    row = {'path': target.name, 'output': str(target), 'quality': 'camera_preview',
+                           'offset': preview['offset'], 'bytes': preview['bytes'],
+                           'dimensions': preview['dimensions'], 'sha256': digest,
+                           'thumbnail_difference': preview['thumbnail_difference'],
+                           'byte_exact_source_copy': False, 'byte_exact_source_fragments': True,
+                           'review_required': True, 'reconstruction': 'mpf_preview_two_extent',
+                           'paired_primary_offset': start, **preview}
+                    state['photos'].append(row); known.add(row['offset'])
+                    preview_rows.append(row)
+                    print('FILE\t' + json.dumps(row), flush=True)
+            result, reason = reconstruct(fd, total, candidate, preview_rows, cluster, heap, verify)
             done[str(start)] = {'reason': reason}
             if result is not None:
                 verify()
