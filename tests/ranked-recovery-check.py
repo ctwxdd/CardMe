@@ -72,6 +72,22 @@ with tempfile.TemporaryDirectory() as directory:
   fast=d.clone();plain=d.clone();raw_step=os.pread(fd,cluster,positions[1])
   native.feed(fast,raw_step,fd,positions[1],10,lambda:None);plain.feed(raw_step)
   assert fast.signature()==plain.signature() and fast.error_sum==plain.error_sum and fast.error_count==plain.error_count
+  # Sharded ranking preserves exact global order, ties and exclusions.
+  for color in (False,True):
+   d.color_grids={}
+   if color:
+    with Image.open(output) as preview_photo:
+     for component,ch,cv,qt in components[1:]:
+      channel='Cb' if component==2 else 'Cr'
+      grid=preview_photo.convert('YCbCr').getchannel(channel).resize((math.ceil(width*ch/(8*max(x[1] for x in components))),math.ceil(height*cv/(8*max(x[2] for x in components)))),Image.Resampling.BOX)
+      first=next(i for i,b in enumerate(d.blocks) if b[0]==component)
+      d.color_grids[component]=(ch,cv,first,q[qt],grid)
+   answers=[]
+   for workers in ('1','2','4'):
+    with patch.dict(os.environ,{'CARDME_RANKER_WORKERS':workers}):
+     answers.append(native.scan(d,fd,heap,len(payload),cluster,min(cluster,16384),13,10,excluded=[{'offset':heap+cluster*2,'bytes':cluster*4}]))
+   assert answers[0]==answers[1]==answers[2],(color,answers)
+  d.color_grids={}
   for pos in (heap,start,positions[2]):
    raw_step=os.pread(fd,cluster,pos);accepted=[]
    for use_native in (False,True):

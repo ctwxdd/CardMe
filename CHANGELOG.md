@@ -7,6 +7,8 @@
 
 ## 0.3.35 · build 48
 
+- Rank independent fragment candidates on up to four CPU threads for saved-image searches. Merge exact scores and source-offset ties deterministically; preserve serial joins, read-only source access, cancellation and final JPEG validation.
+
 - Restore unambiguous original filenames from current-image directory remnants; fall back to EXIF capture timestamps. Preserve JPEG bytes, handle name collisions without overwrites, and keep list selection and Quick View connected after renaming.
 
 - Bundle native JPEG continuation ranking for harder fragmented photos, after existing fast rescue methods. Search current allocation-cluster boundaries across the saved image, prioritizing the observed photo region before the remainder.
