@@ -163,6 +163,10 @@ def recover(image, output):
         if fcntl.fcntl(fd, fcntl.F_GETFL) & os.O_ACCMODE != os.O_RDONLY:
             raise ValueError('Refusing a writable source descriptor')
         verify(fd)
+        try:
+            geometry = importlib.import_module('fragment-rescue').volume(lambda p,n: os.pread(fd,n,p), stat.st_size)
+        except ValueError:
+            geometry = None
         if report_path.exists():
             state = json.loads(report_path.read_text())
             if state.get('identity') != identity or state.get('method') != 'contiguous_jpeg_carving_v1':
@@ -199,6 +203,15 @@ def recover(image, output):
                 data = os.pread(fd, min(CHUNK, stat.st_size - offset), offset)
                 if len(data) != min(CHUNK, stat.st_size - offset):
                     raise OSError('Short source read')
+                if geometry is not None:
+                    hints = state.setdefault('directory_hints', {})
+                    extra_size = min(608, stat.st_size-offset-len(data))
+                    extra = os.pread(fd, extra_size, offset+len(data))
+                    if len(extra) != extra_size:
+                        raise OSError('Short directory hint read')
+                    if len(hints) < 100000:
+                        for hint in importlib.import_module('orphan-entries').collect(data+extra, offset, geometry[4], geometry[3], geometry[5]):
+                            hints[str(hint['directory_entry_offset'])] = hint
                 # Retain bounded endpoint hints during the existing scan, avoiding random
                 # whole-card endpoint probes when a camera preview is fragmented.
                 ends = state.setdefault('jpeg_end_offsets', [])
@@ -268,6 +281,16 @@ def recover(image, output):
                     checkpoint(); last_update = time.monotonic()
             fragments = importlib.import_module('fragment-carve')
             fragments.recover(fd, stat.st_size, state, best, lambda: verify(fd), lambda: checkpoint(False))
+            # Orphan entries are naming/length hints, never authority for inferred allocation.
+            hints_by_start = collections.defaultdict(list)
+            for hint in state.get('directory_hints', {}).values():
+                hints_by_start[hint['offset']].append(hint)
+            for row in state['photos']:
+                hints = hints_by_start[row['offset']]
+                names = {h['original_filename_hint'] for h in hints}
+                if len(names) == 1:
+                    row['original_filename_hint'] = next(iter(names))
+                    row['directory_entry_offsets'] = [h['directory_entry_offset'] for h in hints]
             checkpoint(complete=True)
             known = {row['offset']: row for row in state['photos']}
             groups = importlib.import_module('assemble-metadata').assemble(report_path)
