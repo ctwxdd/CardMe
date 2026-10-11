@@ -87,3 +87,45 @@ with tempfile.TemporaryDirectory() as temporary:
     except ValueError:pass
     assert Path(row['output']).read_bytes()==b'keep me'
 print('Fragment carving checks passed: exact source extents, automatic handoff, MPF metadata, resume, ambiguity, cancellation, budgets and no overwrite.')
+
+# A synthetic causal three-extent fixture: the first marker failure only suggests
+# the prefix length; an occupied cluster separates that prefix from a free middle gap.
+with tempfile.TemporaryDirectory() as temporary:
+    root = Path(temporary); source = root / 'three.img'
+    boundary = cluster * 10
+    three_suffix = heap + cluster * 100
+    three_child = three_suffix + logical - boundary
+    three_payload = bytearray(three_child + len(preview) + cluster)
+    three_start = heap + cluster * 4
+    three_cut = cluster * 8
+    middle_start = three_start + three_cut + cluster
+    three_payload[three_start:three_start + three_cut] = primary[:three_cut]
+    three_payload[three_start + three_cut:middle_start] = b'X' * cluster
+    three_payload[middle_start:middle_start + boundary - three_cut] = primary[three_cut:boundary]
+    three_payload[three_suffix:three_suffix + len(primary) - boundary] = primary[boundary:]
+    three_payload[three_child:three_child + len(preview)] = preview
+    source.write_bytes(three_payload)
+    fd = os.open(source, os.O_RDONLY)
+    try:
+        three_candidate = fragments.header(fd, three_start, len(three_payload))
+        assert three_candidate
+        preview_path = root / 'preview.jpg'; preview_path.write_bytes(preview)
+        preview_row = {'offset': three_child, 'bytes': len(preview), 'output': str(preview_path)}
+        three_candidate['_known_photos'] = [
+            {'offset': three_start + three_cut, 'bytes': cluster},
+            {'offset': three_suffix - cluster, 'bytes': cluster}]
+        jpeg_extent = carve.jpeg_extent
+        def failed_marker(source_fd, source_start, source_total, pread=None):
+            if source_fd == fd and source_start == three_start:
+                raise carve.JPEGMarkerBoundaryError(three_cut)
+            return jpeg_extent(source_fd, source_start, source_total, pread)
+        with patch.object(carve, 'jpeg_extent', side_effect=failed_marker):
+            rebuilt = fragments.reconstruct_three(fd, len(three_payload), three_candidate,
+                                                  [preview_row], cluster, heap, lambda: None)
+        assert rebuilt and rebuilt['data'] == primary
+        assert rebuilt['source_extents'] == [
+            {'offset': three_start, 'bytes': three_cut},
+            {'offset': middle_start, 'bytes': boundary - three_cut},
+            {'offset': three_suffix, 'bytes': len(primary) - boundary}]
+    finally:
+        os.close(fd)

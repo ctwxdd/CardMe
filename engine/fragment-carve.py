@@ -12,7 +12,8 @@ scan = importlib.import_module('scan-images')
 metadata = importlib.import_module('assemble-metadata')
 MAX_HEADER = 1024 * 1024
 MAX_BOUNDARIES = 1024
-# shortcut: two contiguous extents only; expand after a verified multi-extent recovery.
+MAX_GAPS = 4096
+MAX_THREE_JOIN_ATTEMPTS = 8192
 
 
 def header(fd, start, total):
@@ -119,7 +120,157 @@ def reconstruct(fd, total, candidate, photos, cluster, heap, verify):
                     {'offset': suffix_start, 'bytes': length - cut}],
                     'thumbnail_difference': difference, 'preview_difference': preview_difference,
                     'paired_preview_offset': preview_row['offset']}
-    return accepted, 'reconstructed' if accepted else 'no_valid_two_extent_join'
+    if accepted:
+        return accepted, 'reconstructed'
+    three = reconstruct_three(fd, total, candidate, photos, cluster, heap, verify)
+    if three is not None:
+        return three, 'reconstructed'
+    return None, 'no_valid_two_extent_join'
+
+
+def reconstruct_three(fd, total, candidate, photos, cluster, heap, verify):
+    """Try unique prefix/gap/tail joins; marker failure and free space are hypotheses."""
+    carve = importlib.import_module('carve-photos')
+    start, length = candidate['offset'], candidate['bytes']
+    # Only a failed marker boundary supplies a prefix hypothesis. Re-read it on resume,
+    # since older reports did not retain this diagnostic.
+    try:
+        carve.jpeg_extent(fd, start, total)
+    except carve.JPEGMarkerBoundaryError as error:
+        failure = error.offset
+    except (ValueError, SyntaxError, EOFError, Warning):
+        return None
+    else:
+        return None
+    prefix_clusters = failure // cluster
+    if prefix_clusters <= 0 or prefix_clusters * cluster >= length:
+        return None
+    prefix_bytes = prefix_clusters * cluster
+    auxindex, within = divmod(candidate['preview_logical'], cluster)
+    if auxindex <= prefix_clusters or math.ceil(length / cluster) > MAX_BOUNDARIES:
+        return None
+
+    # Mark only source extents already reported as recovered and the candidate's
+    # observed prefix. The first marker failure never proves the exact fragment cut.
+    count = math.ceil((total - heap) / cluster)
+    if count <= 0 or count > 16_000_000:
+        return None
+    used = bytearray(count)
+    def mark(offset, size):
+        first = max(0, (offset - heap) // cluster)
+        last = min(count, math.ceil((offset + size - heap) / cluster))
+        if last > first:
+            used[first:last] = b'\1' * (last - first)
+    def mark_row(row):
+        extents = row.get('source_extents')
+        if extents:
+            for extent in extents:
+                mark(extent['offset'], extent['bytes'])
+        else:
+            mark(row['offset'], row['bytes'])
+    for row in candidate.get('_known_photos', ()):
+        mark_row(row)
+    for row in photos:
+        mark_row(row)
+    mark(start, prefix_bytes)
+    gaps = []
+    i = 0
+    while i < count:
+        if used[i]:
+            i += 1; continue
+        first = i
+        while i < count and not used[i]:
+            i += 1
+        gaps.append((heap + first * cluster, (i - first) * cluster))
+        if len(gaps) > MAX_GAPS:
+            return None
+
+    matches = []
+    for row in photos:
+        if row['bytes'] != candidate['preview_bytes'] or (row['offset'] - start) % cluster != within:
+            continue
+        verify()
+        with Image.open(row['output']) as preview:
+            if max(preview.size) <= 2048 and preview.width * preview.height <= 64_000_000:
+                preview.load()
+                if scan.thumbnail_difference(preview, candidate['thumbnail']) <= 5:
+                    matches.append(row)
+    if len(matches) != 1:
+        return None
+    preview_row = matches[0]
+    anchor = preview_row['offset'] - within
+    anchor_cluster = (anchor - heap) // cluster
+    # Locate the unowned run immediately before the tail anchor; nearby logical
+    # boundaries account for allocation rounding without trusting the marker offset.
+    tail_cluster = anchor_cluster
+    while tail_cluster > 0 and tail_cluster - 1 < count and not used[tail_cluster - 1]:
+        tail_cluster -= 1
+    if tail_cluster == anchor_cluster:
+        return None
+    first_tail = auxindex - (anchor_cluster - tail_cluster)
+    if first_tail <= prefix_clusters:
+        return None
+
+    prefix = os.pread(fd, prefix_bytes, start)
+    if len(prefix) != prefix_bytes:
+        raise OSError('Short fragment prefix read')
+    with Image.open(preview_row['output']) as preview:
+        preview.load()
+        reference = preview.resize((512, round(512 * candidate['dimensions'][1] / candidate['dimensions'][0])), Image.Resampling.LANCZOS, reducing_gap=3).convert('RGB')
+    accepted = []
+    attempts = 0
+    for boundary in range(first_tail, min(first_tail + 4, math.ceil(length / cluster))):
+        if boundary <= prefix_clusters:
+            continue
+        middle_bytes = (boundary - prefix_clusters) * cluster
+        suffix_start = anchor - (auxindex - boundary) * cluster
+        tail_bytes = length - boundary * cluster
+        if tail_bytes <= 0 or suffix_start < heap or suffix_start + tail_bytes > total:
+            continue
+        tail = os.pread(fd, tail_bytes, suffix_start)
+        if len(tail) != tail_bytes or tail[-2:] != b'\xff\xd9':
+            continue
+        for gap_start, gap_bytes in gaps:
+            if gap_bytes < middle_bytes:
+                continue
+            for middle_start in {gap_start, gap_start + gap_bytes - middle_bytes}:
+                if attempts >= MAX_THREE_JOIN_ATTEMPTS:
+                    return None
+                if middle_start < heap or middle_start + middle_bytes > total:
+                    continue
+                if not (middle_start + middle_bytes <= start or middle_start >= start + prefix_bytes):
+                    continue
+                if not (middle_start + middle_bytes <= suffix_start or middle_start >= suffix_start + tail_bytes):
+                    continue
+                verify(); attempts += 1
+                middle = os.pread(fd, middle_bytes, middle_start)
+                if len(middle) != middle_bytes:
+                    raise OSError('Short fragment middle read')
+                data = prefix + middle + tail
+                try:
+                    n, dimensions = carve.jpeg_extent(None, 0, length, lambda _, size, offset: data[offset:offset + size])
+                    if n != length or dimensions != candidate['dimensions']:
+                        continue
+                    with warnings.catch_warnings():
+                        warnings.simplefilter('error')
+                        with Image.open(io.BytesIO(data)) as photo:
+                            photo.load()
+                            difference = scan.thumbnail_difference(photo, candidate['thumbnail'])
+                            reduced = photo.resize(reference.size, Image.Resampling.LANCZOS, reducing_gap=3).convert('RGB')
+                            score = sum(ImageStat.Stat(ImageChops.difference(reduced, reference)).mean) / 3
+                    if difference > 5 or score > 3:
+                        continue
+                except (ValueError, OSError, SyntaxError, EOFError, Warning):
+                    continue
+                accepted.append({'data': data, 'source_extents': [
+                    {'offset': start, 'bytes': prefix_bytes},
+                    {'offset': middle_start, 'bytes': middle_bytes},
+                    {'offset': suffix_start, 'bytes': tail_bytes}],
+                    'thumbnail_difference': difference, 'preview_difference': score,
+                    'paired_preview_offset': preview_row['offset']})
+                if len(accepted) > 1:
+                    return None
+    return accepted[0] if len(accepted) == 1 else None
 
 
 def recover(fd, total, state, best, verify, checkpoint):
@@ -141,13 +292,14 @@ def recover(fd, total, state, best, verify, checkpoint):
         sizes[row['bytes']].append(row)
     print('FRAGMENTS\t' + json.dumps({'done': 0, 'total': len(offsets), 'found': 0}), flush=True)
     for index, start in enumerate(offsets, 1):
-        if str(start) in done or start in known:
+        if (str(start) in done and done[str(start)].get('reason') != 'no_valid_two_extent_join') or start in known:
             continue
         verify()
         candidate = header(fd, start, total)
         if candidate is None:
             done[str(start)] = {'reason': 'unusable_header'}
         else:
+            candidate['_known_photos'] = state['photos']
             result, reason = reconstruct(fd, total, candidate, sizes[candidate['preview_bytes']], cluster, heap, verify)
             done[str(start)] = {'reason': reason}
             if result is not None:
@@ -157,9 +309,9 @@ def recover(fd, total, state, best, verify, checkpoint):
                 row = {'path': target.name, 'output': str(target), 'quality': 'manual_review' if result['thumbnail_difference'] > 5 else 'full_resolution_reconstructed',
                        'offset': start, 'bytes': candidate['bytes'], 'dimensions': candidate['dimensions'],
                        'sha256': digest, 'byte_exact_source_copy': False, 'byte_exact_source_fragments': True,
-                       'review_required': True, 'reconstruction': 'mpf_two_extent', **result}
+                       'review_required': True, 'reconstruction': 'mpf_three_extent' if len(result['source_extents']) == 3 else 'mpf_two_extent', **result}
                 state['photos'].append(row); known.add(start)
                 print('FILE\t' + json.dumps(row), flush=True)
         checkpoint()
         print('FRAGMENTS\t' + json.dumps({'done': index, 'total': len(offsets),
-              'found': sum(r.get('reconstruction') == 'mpf_two_extent' for r in state['photos'])}), flush=True)
+              'found': sum(str(r.get('reconstruction', '')).startswith('mpf_') for r in state['photos'])}), flush=True)

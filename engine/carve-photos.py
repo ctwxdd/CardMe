@@ -11,6 +11,13 @@ MAX_JPEG = 128 * 1024 * 1024
 MAX_PIXELS = 64_000_000
 
 
+class JPEGMarkerBoundaryError(ValueError):
+    """The byte offset of the first non-marker byte in a JPEG stream."""
+    def __init__(self, offset):
+        super().__init__('Invalid JPEG marker boundary')
+        self.offset = offset
+
+
 def jpeg_extent(fd, start, total, pread=None):
     """Walk marker lengths and entropy stuffing; APP thumbnails/FF D9 are not primary endings."""
     pread = pread or os.pread
@@ -36,7 +43,7 @@ def jpeg_extent(fd, start, total, pread=None):
     pos, dimensions, scans = start + 2, None, 0
     while pos < cap:
         if read(pos, 1) != b'\xff':
-            raise ValueError('Invalid JPEG marker boundary')
+            raise JPEGMarkerBoundaryError(pos - start)
         pos = skip_fill(pos)
         marker = read(pos, 1)[0]; pos += 1
         if marker == 0xD9:
