@@ -17,4 +17,10 @@ bad=raw.copy();bad[66]^=1;assert engine.collect(bad,4096,4096,131072,100)==[]
 assert engine.collect(entry('../bad.JPG'),4096,4096,131072,100)==[]
 assert engine.collect(raw[:90],4096,4096,131072,100)==[]
 assert engine.collect(raw,4096,4096,131072,2)==[]
+extra=raw.copy()+bytes(32);extra[1]=3;extra[96]=0xc1
+checksum=0
+for i,v in enumerate(extra):
+ if i not in (2,3):checksum=(((checksum&1)<<15)+(checksum>>1)+v)&65535
+struct.pack_into('<H',extra,2,checksum)
+assert engine.collect(extra,4096,4096,131072,100)==[]
 print('Orphan entry hints checked: checksum, alignment, source bounds, safe filename and truncation.')

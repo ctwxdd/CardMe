@@ -31,7 +31,7 @@ def collect(data, base, heap, cluster, count):
                 continue
             stream = entries[32:64]
             name_length = stream[3]
-            if not 1 <= name_length <= (secondary-1)*15:
+            if not 1 <= name_length <= 255 or secondary != 1 + (name_length + 14)//15:
                 continue
             names = b''.join(entries[i+2:i+32] for i in range(64,len(entries),32))
             try:
