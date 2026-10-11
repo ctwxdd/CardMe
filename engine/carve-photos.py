@@ -174,7 +174,7 @@ def recover(image, output):
         else:
             state = {'version': 1, 'method': 'contiguous_jpeg_carving_v1', 'identity': identity,
                      'next_offset': 0, 'photos': [], 'rejected_candidates': 0, 'fragment_candidates': [], 'fragment_preview_candidates': [], 'jpeg_end_offsets': [], 'complete': False,
-                     'limitations': 'JPEG primary streams and bounded MPF-guided two-extent reconstruction. Original filenames and deleted/live status are unknown. Embedded JPEGs may be previews. Other fragmentation, overwritten and RAW files may remain unresolved. Decoding does not prove every pixel is authentic. No bytes or pixels are synthesized.'}
+                     'limitations': 'JPEG primary streams and bounded MPF-guided two- and three-extent reconstruction, including indexed preview recovery. Original filenames and deleted/live status are unknown. Other fragmentation, overwritten and RAW files may remain unresolved. Decoding does not prove every pixel is authentic. No bytes or pixels are synthesized.'}
         offset = state['next_offset']
         if not isinstance(offset, int) or not 0 <= offset <= stat.st_size:
             raise ValueError('Invalid recovery checkpoint')

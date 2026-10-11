@@ -127,5 +127,51 @@ with tempfile.TemporaryDirectory() as temporary:
             {'offset': three_start, 'bytes': three_cut},
             {'offset': middle_start, 'bytes': boundary - three_cut},
             {'offset': three_suffix, 'bytes': len(primary) - boundary}]
+        def cancel_three(): raise KeyboardInterrupt
+        with patch.object(carve, 'jpeg_extent', side_effect=failed_marker):
+            try:
+                fragments.reconstruct_three(fd, len(three_payload), three_candidate,
+                                            [preview_row], cluster, heap, cancel_three)
+                raise AssertionError('Three-extent cancellation ignored')
+            except KeyboardInterrupt:
+                pass
+            with patch.object(fragments.os, 'pread', return_value=b''):
+                try:
+                    fragments.reconstruct_three(fd, len(three_payload), three_candidate,
+                                                [preview_row], cluster, heap, lambda: None)
+                    raise AssertionError('Short three-extent source read accepted')
+                except OSError:
+                    pass
     finally:
         os.close(fd)
+
+# The recovery flow must first rebuild a fragmented indexed preview from scan
+# endpoint hints, then use that saved preview to validate the primary join.
+with tempfile.TemporaryDirectory() as temporary:
+    root = Path(temporary); source = root / 'fragmented-preview.img'
+    child = suffix + logical - cut
+    preview_cut = cluster - (child - heap) % cluster
+    preview_within = (child - heap + len(preview)) % cluster
+    preview_end = heap + preview_within + cluster * 1200
+    preview_suffix = preview_end - (len(preview) - preview_cut)
+    payload = bytearray(preview_end + cluster)
+    payload[start:start + cut] = primary[:cut]
+    payload[start + cut:start + cut + 20] = b'\xff\xd8\xff\xe1' + bytes(16)
+    payload[suffix:suffix + len(primary) - cut] = primary[cut:]
+    payload[child:child + preview_cut] = preview[:preview_cut]
+    payload[child + preview_cut:child + preview_cut + 3] = b'\xff\xd8\xff'
+    payload[preview_suffix:preview_end] = preview[preview_cut:]
+    source.write_bytes(payload); source.chmod(0o444)
+    output = root / 'recovery'
+    with patch.object(allocation, 'volume', return_value=geometry):
+        assert carve.recover(source, output) == 0
+    report = json.loads((output / 'pipeline-report.json').read_text())
+    preview_row = next(row for row in report['photos'] if row.get('reconstruction') == 'mpf_preview_two_extent')
+    primary_row = next(row for row in report['photos'] if row.get('reconstruction') == 'mpf_two_extent')
+    assert Path(preview_row['output']).read_bytes() == preview
+    assert preview_row['quality'] == 'camera_preview' and preview_row['review_required']
+    assert preview_row['source_extents'] == [
+        {'offset': child, 'bytes': preview_cut},
+        {'offset': preview_suffix, 'bytes': len(preview) - preview_cut}]
+    assert Path(primary_row['output']).read_bytes() == primary
+    assert primary_row['paired_preview_offset'] == child

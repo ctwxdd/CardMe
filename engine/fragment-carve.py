@@ -14,6 +14,7 @@ MAX_HEADER = 1024 * 1024
 MAX_BOUNDARIES = 1024
 MAX_GAPS = 4096
 MAX_THREE_JOIN_ATTEMPTS = 8192
+ALGORITHM_VERSION = 2
 
 
 def header(fd, start, total):
@@ -200,6 +201,8 @@ def reconstruct_three(fd, total, candidate, photos, cluster, heap, verify):
     preview_row = matches[0]
     anchor = preview_row['offset'] - within
     anchor_cluster = (anchor - heap) // cluster
+    if anchor_cluster < 0 or anchor_cluster >= count:
+        return None
     # Locate the unowned run immediately before the tail anchor; nearby logical
     # boundaries account for allocation rounding without trusting the marker offset.
     tail_cluster = anchor_cluster
@@ -292,12 +295,13 @@ def recover(fd, total, state, best, verify, checkpoint):
         sizes[row['bytes']].append(row)
     print('FRAGMENTS\t' + json.dumps({'done': 0, 'total': len(offsets), 'found': 0}), flush=True)
     for index, start in enumerate(offsets, 1):
-        if (str(start) in done and done[str(start)].get('reason') != 'no_valid_two_extent_join') or start in known:
+        previous = done.get(str(start), {})
+        if previous.get('algorithm_version', 0) >= ALGORITHM_VERSION or start in known:
             continue
         verify()
         candidate = header(fd, start, total)
         if candidate is None:
-            done[str(start)] = {'reason': 'unusable_header'}
+            done[str(start)] = {'reason': 'unusable_header', 'algorithm_version': ALGORITHM_VERSION}
         else:
             candidate['_known_photos'] = state['photos']
             preview_rows = sizes[candidate['preview_bytes']]
@@ -306,7 +310,8 @@ def recover(fd, total, state, best, verify, checkpoint):
             if not aligned and state.get('fragment_preview_candidates'):
                 preview_engine = importlib.import_module('fragment-preview')
                 preview, _ = preview_engine.reconstruct(fd, total, candidate,
-                    state['fragment_preview_candidates'], cluster, heap, verify)
+                    state['fragment_preview_candidates'], cluster, heap, verify,
+                    state.get('jpeg_end_offsets', []))
                 if preview is not None:
                     verify()
                     target = best / f"Photo-{preview['offset']:012x}.JPG"
@@ -322,7 +327,7 @@ def recover(fd, total, state, best, verify, checkpoint):
                     preview_rows.append(row)
                     print('FILE\t' + json.dumps(row), flush=True)
             result, reason = reconstruct(fd, total, candidate, preview_rows, cluster, heap, verify)
-            done[str(start)] = {'reason': reason}
+            done[str(start)] = {'reason': reason, 'algorithm_version': ALGORITHM_VERSION}
             if result is not None:
                 verify()
                 target = best / f'Photo-{start:012x}.JPG'
