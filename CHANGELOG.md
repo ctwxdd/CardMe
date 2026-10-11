@@ -5,6 +5,12 @@
 - License future CardMe source and builds under GPL-3.0-only. Preserve the terms of earlier MIT-licensed distributions and all third-party licenses.
 - Prepare the public README with installation, recovery limits, read-only safety, privacy, contributing and redistribution guidance.
 
+## 0.3.35 · build 48
+
+- Bundle native JPEG continuation ranking for harder fragmented photos, after existing fast rescue methods. Search current allocation-cluster boundaries across the saved image, prioritizing the observed photo region before the remainder.
+- Try luminance ranking with lazy alternative paths, then whole-cluster color ranking. Observe the prefix before excluding saved ranges, reuse exact-byte decode checks, and retain strict full JPEG/thumbnail/preview validation.
+- Keep source access read-only through the existing descriptor, bounded search, cancellation, separate non-overwriting outputs and manual-review classification. No reference image, external compiler or recovery profile is required.
+
 ## 0.3.34 · build 47
 
 - When local preview-guided continuation fails, search a bounded wider window around both the next source cluster and the current camera-preview tail anchor. Preserve already validated local choices and the shared 90-second limit.

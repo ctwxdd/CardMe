@@ -7,3 +7,5 @@ __pycache__/
 *.zip
 /ControlPlane/node_modules/
 /ControlPlane/dist/
+
+/engine/native/jpeg-ranker

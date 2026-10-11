@@ -21,13 +21,15 @@ assert info['CFBundleName'] == info['CFBundleDisplayName'] == 'CardMe'
 assert info['CFBundleIdentifier'] == 'com.nick.cardrescue.direct'
 subprocess.run(['codesign', '--verify', '--deep', '--strict', str(app)], check=True)
 resources = app / 'Contents/Resources'
+assert (resources / 'engine/native/jpeg-ranker.cpp').read_bytes() == (root / 'engine/native/jpeg-ranker.cpp').read_bytes()
+assert (resources / 'engine/native/jpeg-ranker').is_file()
 assert not (resources / 'engine/card_directory.json').exists()
 assert not (resources / 'engine/verified-rescue-profile.json').exists()
 assert (resources / 'ThirdPartyLicenses/CardMe-GPL-3.0.txt').read_bytes() == (root / 'LICENSE').read_bytes()
 assert (resources / 'ThirdPartyLicenses/CardMe-Copyright.txt').read_bytes() == (root / 'NOTICE').read_bytes()
 for source in (root / 'engine').glob('*.py'):
     assert (resources / 'engine' / source.name).read_bytes() == source.read_bytes(), source.name
-for target in [app, resources / 'python/bin/python3', resources / 'tools/ddrescue']:
+for target in [app, resources / 'python/bin/python3', resources / 'tools/ddrescue', resources / 'engine/native/jpeg-ranker']:
     result = subprocess.run(['codesign', '-d', '--entitlements', ':-', str(target)], capture_output=True, check=True)
     data = result.stdout
     entitlements = plistlib.loads(data) if data.strip() else {}

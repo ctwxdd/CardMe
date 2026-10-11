@@ -48,6 +48,10 @@ else:
     resources.mkdir()
     subprocess.run(['xcrun', 'swiftc', '-parse-as-library', '-swift-version', '5', '-O', '-target', 'arm64-apple-macosx14.0', '-module-cache-path', str(build_dir / 'ModuleCache'), str(ROOT / 'Sources/CardRescue.swift'), str(ROOT / 'Sources/ResultExport.swift'), '-o', str(macos / 'CardRescue')], check=True)
 shutil.copytree(ROOT / 'engine', resources / 'engine', ignore=shutil.ignore_patterns('__pycache__', '*.pyc'))
+ranker = resources / 'engine/native/jpeg-ranker'
+subprocess.run(['xcrun', 'clang++', '-O3', '-std=c++17', '-arch', 'arm64', '-mmacosx-version-min=14.0',
+                str(ROOT / 'engine/native/jpeg-ranker.cpp'), '-o', str(ranker)], check=True)
+subprocess.run(['codesign', '--force', *signing, str(ranker)], check=True)
 shutil.copy2(ROOT / 'Config/PrivacyInfo.xcprivacy', resources / 'PrivacyInfo.xcprivacy')
 shutil.copy2(ROOT / 'website/dist/assets/cardme-mark.png', resources / 'cardme-mark.png')
 licenses = resources / 'ThirdPartyLicenses'

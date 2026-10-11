@@ -32,6 +32,7 @@ The current source supports:
 - Searching for intact, contiguous JPEG data after deletion or a quick format.
 - Bounded reconstruction of some fragmented camera JPEGs when enough allocation information or a matching camera preview survives. Uncertain candidates are saved for review.
 - Finding original filename hints in surviving exFAT directory records. Formatting may have erased the filename and allocation records.
+- Ranking harder fragmented JPEG candidates using the current safety copy and a surviving camera preview. Difficult candidates can take additional time; cancellation remains available and uncertain results require inspection.
 - Keeping completed results when recovery is stopped, with checkpoint support for the image-search paths.
 
 **RAW recovery, arbitrary fragmented-photo reconstruction, and overwritten data are currently not supported.** Recovery depends on what remains on the card.

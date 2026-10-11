@@ -18,7 +18,7 @@ MAX_GAPS = 4096
 MAX_THREE_JOIN_ATTEMPTS = 8192
 MAX_FAILURE_PREFIX_PROBES = 256
 MAX_INTERIOR_STARTS = 64
-ALGORITHM_VERSION = 6
+ALGORITHM_VERSION = 7
 
 
 def comparison_size(dimensions):
@@ -410,6 +410,12 @@ def recover(fd, total, state, best, verify, checkpoint):
             if result is None and reason == 'no_valid_two_extent_join':
                 guided = importlib.import_module('preview-guided')
                 result, reason = guided.reconstruct(fd, total, candidate, preview_rows, cluster, heap, verify)
+            if result is None and reason in ('no_preview_guided_continuation', 'preview_guided_time_budget',
+                                            'invalid_preview_guided_frame', 'preview_guided_full_mismatch'):
+                ranked = importlib.import_module('preview-ranked')
+                highwater = max((r['offset'] + r['bytes'] for r in state['photos']), default=heap)
+                candidate['_active_band_end'] = min(total, heap + ((highwater - heap + 256*1024*1024 + cluster-1)//cluster)*cluster)
+                result, reason = ranked.reconstruct(fd, total, candidate, preview_rows, cluster, heap, verify)
             done[str(start)] = {'reason': reason, 'algorithm_version': ALGORITHM_VERSION}
             if result is not None:
                 verify()
