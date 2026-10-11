@@ -12,6 +12,7 @@ scan = importlib.import_module('scan-images')
 metadata = importlib.import_module('assemble-metadata')
 MAX_HEADER = 1024 * 1024
 MAX_BOUNDARIES = 1024
+# shortcut: cap legacy prefix backfills per pass; raise if measured old reports exceed it.
 MAX_GAPS = 4096
 MAX_THREE_JOIN_ATTEMPTS = 8192
 MAX_FAILURE_PREFIX_PROBES = 256
