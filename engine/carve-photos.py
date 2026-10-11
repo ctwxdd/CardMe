@@ -169,7 +169,7 @@ def recover(image, output):
                 raise ValueError('Source or recovery method changed; choose a fresh output folder.')
         else:
             state = {'version': 1, 'method': 'contiguous_jpeg_carving_v1', 'identity': identity,
-                     'next_offset': 0, 'photos': [], 'rejected_candidates': 0, 'fragment_candidates': [], 'complete': False,
+                     'next_offset': 0, 'photos': [], 'rejected_candidates': 0, 'fragment_candidates': [], 'fragment_preview_candidates': [], 'complete': False,
                      'limitations': 'JPEG primary streams and bounded MPF-guided two-extent reconstruction. Original filenames and deleted/live status are unknown. Embedded JPEGs may be previews. Other fragmentation, overwritten and RAW files may remain unresolved. Decoding does not prove every pixel is authentic. No bytes or pixels are synthesized.'}
         offset = state['next_offset']
         if not isinstance(offset, int) or not 0 <= offset <= stat.st_size:
@@ -229,6 +229,12 @@ def recover(image, output):
                             candidates = state.setdefault('fragment_candidates', [])
                             if start not in candidates:
                                 candidates.append(start)
+                        else:
+                            preview = importlib.import_module('fragment-preview').describe(fd, start, stat.st_size)
+                            if preview is not None:
+                                previews = state.setdefault('fragment_preview_candidates', [])
+                                if not any(row['offset'] == start for row in previews):
+                                    previews.append(preview)
                         continue
                     verify(fd)
                     target = best / f'Photo-{start:012x}.JPG'
@@ -251,6 +257,7 @@ def recover(image, output):
             fragments = importlib.import_module('fragment-carve')
             fragments.recover(fd, stat.st_size, state, best, lambda: verify(fd), lambda: checkpoint(False))
             checkpoint(complete=True)
+            known = {row['offset']: row for row in state['photos']}
             groups = importlib.import_module('assemble-metadata').assemble(report_path)
             for group in groups:
                 row = known[group['preview_offset']]
