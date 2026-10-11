@@ -162,6 +162,7 @@ with tempfile.TemporaryDirectory() as temporary:
     payload[child + preview_cut:child + preview_cut + 3] = b'\xff\xd8\xff'
     payload[preview_suffix:preview_end] = preview[preview_cut:]
     source.write_bytes(payload); source.chmod(0o444)
+    source_digest = hashlib.sha256(source.read_bytes()).hexdigest()
     output = root / 'recovery'
     with patch.object(allocation, 'volume', return_value=geometry):
         assert carve.recover(source, output) == 0
@@ -175,3 +176,4 @@ with tempfile.TemporaryDirectory() as temporary:
         {'offset': preview_suffix, 'bytes': len(preview) - preview_cut}]
     assert Path(primary_row['output']).read_bytes() == primary
     assert primary_row['paired_preview_offset'] == child
+    assert hashlib.sha256(source.read_bytes()).hexdigest() == source_digest
