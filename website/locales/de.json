@@ -1,80 +1,81 @@
 {
   "name": "Deutsch",
-  "title": "Kostenlose SD-Karten- und Speicherkarten-Fotowiederherstellung für Mac — CardMe",
-  "description": "Kostenlose Mac-App für beschädigte JPEG-Fotos und die Suche nach gelöschten Fotos oder nach Schnellformatierung. Nur lesender Kartenzugriff, kein Konto nötig.",
-  "heading": "Fotos verschwunden?<br>Schauen wir nach.",
-  "kicker": "Eine kostenlose App für Mac",
-  "lead": "Eine kostenlose Mac-App für beschädigte, gelöschte oder schnell formatierte Speicherkarten. Fotos retten, ohne die Karte zu verändern.",
+  "title": "CardMe — Kostenlose Foto-Wiederherstellung für SD-Karten auf dem Mac",
+  "description": "Fotos lassen sich nicht öffnen, wurden versehentlich gelöscht oder die SD-Karte wurde formatiert? CardMe sucht nach wiederherstellbaren JPEG-Fotos. Kostenlos für Mac, ohne Konto. Kein Schreibzugriff auf die Karte.",
+  "heading": "Fotos von Ihrer<br>Speicherkarte retten.",
+  "kicker": "Kostenlose Foto-Wiederherstellung für Mac",
+  "lead": "Fotos lassen sich nicht öffnen, wurden versehentlich gelöscht oder die Karte wurde formatiert? CardMe sucht nach Fotos, die sich noch retten lassen, ohne auf die Karte zu schreiben.",
   "download": "Für Mac herunterladen",
   "nav": [
-    "So funktioniert es",
-    "Fragen"
+    "So geht’s",
+    "Häufige Fragen"
   ],
-  "stepsTitle": "Drei einfache Schritte.",
+  "stepsTitle": "Karte anschließen und loslegen",
   "steps": [
     [
-      "Karte auswählen",
-      "Mit einem funktionierenden Kartenleser verbinden und Fotos prüfen."
+      "Karte anschließen",
+      "Verbinden Sie die Karte über ein funktionierendes Lesegerät mit dem Mac. Wählen Sie sie in CardMe aus, um den Scan zu starten."
     ],
     [
-      "Speicherort auswählen",
-      "„Rescue to…“ anklicken und einen Ordner auf dem Mac oder einem anderen Laufwerk wählen."
+      "Speicherort wählen",
+      "Klicken Sie auf „Rescue to…“ und wählen Sie einen Ordner auf dem Mac oder einem anderen Laufwerk für die geretteten Fotos."
     ],
     [
-      "Ergebnisse prüfen",
-      "Fotos in voller Größe, kleine Vorschauen und nicht gerettete Fotos werden unterschieden."
+      "Fotos ansehen",
+      "Sehen Sie, welche Fotos in Originalgröße gerettet wurden, wo nur eine Vorschau oder ein Miniaturbild übrig ist und welche Fotos sich nicht retten ließen."
     ]
   ],
-  "warningTitle": "Vor dem Start.",
-  "warning": "Keine neuen Fotos oder Dateien auf die Karte schreiben. Neue Daten können fehlende Fotos überschreiben.",
+  "warningTitle": "Verwenden Sie die Karte vorerst nicht weiter",
+  "warning": "Nehmen Sie keine neuen Fotos auf und speichern Sie keine Dateien darauf. Neue Daten könnten Fotos überschreiben, die sich noch retten lassen.",
   "faq": [
     [
-      "Ist die Wiederherstellung kostenlos?",
-      "Ja. Prüfen, Wiederherstellen und Speichern sind kostenlos und erfordern kein Konto. Spenden sind freiwillig."
+      "Muss ich bezahlen, um gerettete Fotos zu speichern?",
+      "Nein. Scannen, Wiederherstellen und Speichern sind kostenlos. Sie brauchen kein Konto. Eine Spende ist freiwillig."
     ],
     [
-      "Geht das nach Löschen oder Formatieren der SD-Karte?",
-      "Deep Rescue erstellt eine vollständige Sicherheitskopie und sucht nach intakten, zusammenhängenden JPEG-Daten nach Löschen oder Schnellformatierung. Erfolg ist nicht garantiert."
+      "Lassen sich Fotos nach dem Löschen oder Formatieren noch retten?",
+      "Versuchen Sie es mit Deep Rescue. Dabei wird zuerst eine vollständige Kopie der Karte erstellt. Anschließend sucht CardMe nach JPEG-Daten, die nach dem Löschen oder einer Schnellformatierung noch vorhanden sind. Intakte, zusammenhängend gespeicherte Daten lassen sich möglicherweise wiederherstellen. Entscheidend ist, was auf der Karte erhalten geblieben ist."
     ],
     [
-      "Wird meine Karte verändert?",
-      "CardMe liest die Karte nur und speichert Ergebnisse auf einem anderen Laufwerk. Es repariert oder formatiert sie nicht. macOS und andere Apps können weiterhin auf die Karte zugreifen."
+      "Verändert CardMe etwas auf meiner Karte?",
+      "CardMe liest die Karte nur. Es schreibt keine Daten darauf und formatiert oder repariert sie nicht. Die Kartenkopie und gerettete Fotos werden auf einem anderen Laufwerk gespeichert. macOS und andere Apps können die Karte weiterhin lesen oder beschreiben."
     ],
     [
-      "Was benötigt die tiefe Suche?",
-      "Einen funktionierenden Leser, mehr freien Speicher als die gesamte Kartenkapazität und zusätzlichen Platz für Fotos. Große Karten brauchen länger zum Kopieren."
+      "Was brauche ich für Deep Rescue?",
+      "Ein funktionierendes Kartenlesegerät und ausreichend Speicherplatz: Für die vollständige Kopie benötigen Sie mehr freien Platz als die angegebene Kartenkapazität, zusätzlich Platz für die geretteten Fotos. Je größer die Karte, desto länger dauert das Kopieren."
     ],
     [
       "Was wird derzeit nicht unterstützt?",
-      "RAW, die allgemeine Rekonstruktion fragmentierter Fotos und überschriebene Daten. Manchmal bleibt nur eine Vorschau erhalten."
+      "Die Wiederherstellung von RAW-Fotos und überschriebenen Daten wird derzeit nicht unterstützt. Fotos, deren Daten an getrennten Stellen liegen, lassen sich im Allgemeinen nicht wieder zusammensetzen. Manchmal ist nur eine Vorschau oder ein Miniaturbild erhalten."
     ],
     [
-      "Werden Fotos hochgeladen?",
-      "Nein. Die Wiederherstellung läuft auf dem Mac. Nutzungsstatistiken neuerer Versionen lassen sich in den Einstellungen deaktivieren. Fotos, Dateinamen, Pfade und Kartendaten werden nicht hochgeladen. Die Website zählt Besuche sowie Download- und Unterstützungslink-Klicks ohne Cookies oder dauerhafte Kennungen. Do Not Track und Global Privacy Control werden beachtet. Der Hostingdienst erhält Netzwerkadressen."
+      "Werden meine Fotos ins Internet übertragen?",
+      "Nein. Die Wiederherstellung erfolgt auf Ihrem Mac. Neuere Versionen erfassen Nutzungsstatistiken, die Sie in den Einstellungen deaktivieren können. Fotos, Dateinamen, Pfade und Karteninformationen werden nicht übertragen. Die Website zählt Besuche sowie Klicks auf Download- und Spendenlinks, ohne Cookies oder dauerhafte Kennungen. Sie berücksichtigt Do Not Track und Global Privacy Control. Der Hostinganbieter erhält Verbindungsdaten wie IP-Adressen."
     ],
     [
-      "Wonach sucht Deep Rescue?",
-      "Es sucht in der Sicherheitskopie nach JPEG-Signaturen, verfolgt Segment- und Bilddatengrenzen und prüft die Dekodierung vor dem Speichern. Ein lesbares JPEG kann weiterhin beschädigt sein; bitte prüfen Sie die Ergebnisse."
+      "Wie findet Deep Rescue die Fotos?",
+      "CardMe sucht in der vollständigen Kartenkopie nach JPEG-Markierungen, prüft die Dateistruktur und die Grenzen der Bilddaten und testet vor dem Speichern, ob sich das Bild dekodieren lässt. Auch ein Bild, das sich öffnen lässt, kann sichtbare Schäden enthalten. Prüfen Sie deshalb die Ergebnisse."
     ],
     [
-      "Warum sind manche Ergebnisse nur Vorschauen oder Miniaturbilder?",
-      "Kameras speichern oft kleinere JPEG-Kopien neben dem Original, darunter EXIF-Miniaturbilder. Diese können erhalten bleiben, wenn das Original beschädigt ist. CardMe kennzeichnet sie getrennt, vergrößert sie nicht und erzeugt keine fehlenden Pixel."
+      "Warum wurde nur eine Vorschau oder ein Miniaturbild gefunden?",
+      "Kameras speichern neben dem Foto oft kleinere Vorschaubilder, etwa Miniaturbilder in EXIF. Diese können erhalten bleiben, obwohl das Bild in Originalgröße beschädigt ist. CardMe kennzeichnet sie gesondert. Kleine Bilder werden nicht als Originale ausgegeben oder hochskaliert, und fehlende Bildinhalte werden nicht erzeugt."
     ],
     [
-      "Kann EXIF den ursprünglichen Dateinamen retten?",
-      "EXIF enthält meist Aufnahmezeit, Kameradaten und Ausrichtung. Der Name liegt normalerweise im Dateisystem der Karte und kann beim Formatieren verloren gehen. Manche MakerNotes enthalten Dateinummern; ihre Bedeutung hängt vom Modell ab und belegt nicht immer den ursprünglichen Namen."
+      "Kann EXIF den ursprünglichen Dateinamen liefern?",
+      "EXIF enthält meist Aufnahmezeit, Kamerainformationen und Bildausrichtung. Dateinamen stehen normalerweise im Dateisystem der Karte und können beim Formatieren verloren gehen. Manche Kameras speichern Dateinummern in den MakerNote-Daten. Das Format ist modellabhängig; aus der Nummer allein lässt sich der ursprüngliche Name nicht immer bestimmen."
     ]
   ],
   "trust": [
-    "Nur lesender Kartenzugriff.",
-    "Fotos bleiben auf dem Mac.",
-    "Kopien auf anderem Laufwerk."
+    "Kein Schreibzugriff auf die Karte.",
+    "Kein Hochladen Ihrer Fotos.",
+    "Gerettete Fotos auf einem anderen Laufwerk speichern."
   ],
-  "caption": "Von der Kartenprüfung zu den geretteten Fotos.",
-  "appNote": "Die App-Oberfläche ist derzeit auf Englisch.",
+  "caption": "Wählen Sie Ihre Speicherkarte in CardMe aus, um zu starten.",
+  "appNote": "Die App ist derzeit nur auf Englisch verfügbar.",
   "free": "Kostenlos nutzbar.",
-  "support": "Wenn CardMe Ihnen geholfen hat, eine Erinnerung zu retten, freue ich mich über einen Kaffee.",
+  "support": "Wenn CardMe Ihnen geholfen hat, wichtige Fotos zurückzubekommen, freue ich mich über einen Kaffee.",
   "coffee": "Einen Kaffee spendieren ☕️",
-  "licenses": "Lizenzen und Quellcode-Informationen sind in der App enthalten.",
-  "version": "Öffentlicher Download: 0.3.23 · Von Apple notarisiert."
+  "licenses": "Lizenzen und Hinweise zum Quellcode finden Sie in der App.",
+  "version": "Version 0.3.23 · Von Apple notarisiert.",
+  "languageLabel": "Sprache"
 }

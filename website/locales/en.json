@@ -1,68 +1,68 @@
 {
   "name": "English",
-  "title": "Free Memory Card Recovery for Mac — CardMe",
-  "description": "Free SD card and memory card photo recovery for Mac. Recover damaged JPEG photos and search deleted or quickly formatted cards. Read-only card access, no account required.",
-  "heading": "Photos missing?<br>Let’s take a look.",
+  "title": "Free SD Card Photo Recovery for Mac — CardMe",
+  "description": "Photos won’t open, accidentally deleted them, or formatted your SD card? Try CardMe, a free JPEG photo recovery app for Mac. No account needed. Never writes to your card.",
+  "heading": "Recover your<br>memory card photos.",
   "kicker": "A free app for Mac",
-  "lead": "A free Mac app for damaged, deleted or quickly formatted memory cards. Recover your photos without changing the card.",
+  "lead": "Photos won’t open, accidentally deleted them, or formatted your card? CardMe helps you find what can still be recovered, without writing to the card.",
   "download": "Download for Mac",
   "nav": [
     "How it works",
-    "Questions"
+    "FAQ"
   ],
-  "stepsTitle": "Three simple steps.",
+  "stepsTitle": "Start with your card",
   "steps": [
     [
-      "Choose your card",
-      "Connect it with a working reader. CardMe checks for damaged or missing photos."
+      "Connect your card",
+      "Use a working card reader, then select your card in CardMe to start scanning."
     ],
     [
       "Choose where to save",
-      "Click “Rescue to…” and choose a folder on your Mac or another drive."
+      "Click “Rescue to…” and choose a folder on your Mac or another drive for the recovered photos."
     ],
     [
-      "Review your photos",
-      "Full-size photos, smaller previews and unsuccessful recovery are clearly distinguished."
+      "Check the results",
+      "See which photos were recovered at full size, which have only a preview or thumbnail, and which could not be recovered."
     ]
   ],
-  "warningTitle": "Before you begin.",
-  "warning": "Stop taking photos on the card. New files can overwrite missing data.",
+  "warningTitle": "Stop using the card for now",
+  "warning": "Don’t take more photos or save new files to it. They could overwrite photos you might still be able to recover.",
   "faq": [
     [
-      "Is memory card recovery free?",
-      "Yes. CardMe is free to use, including rescuing and saving photos. No account or payment is required. Donations are optional."
+      "Do I have to pay to save recovered photos?",
+      "No. Scanning, recovery and saving are all free, with no account required. Donations are optional."
     ],
     [
-      "Can it recover deleted or formatted SD cards?",
-      "Deep Rescue can search for intact, contiguous JPEG data after deletion or a quick format. It first creates a safety copy of the whole card. Recovery is not guaranteed."
+      "Can I recover photos after deleting them or formatting the card?",
+      "Try Deep Rescue. It makes a complete copy of the card, then looks for JPEG data left after deletion or a quick format. Intact data stored in one continuous piece may be recoverable. The result depends on what remains on the card."
     ],
     [
-      "Will it write to my memory card?",
-      "CardMe’s card operations are read only. Recovered photos and safety copies are saved to another drive. It does not format or repair the card. Other apps and macOS can still access the card."
+      "Will CardMe change anything on my card?",
+      "CardMe only reads the card. It does not write to it, format it or repair it. Copies and recovered photos are saved to another drive. macOS and other apps may still read or write to the card."
     ],
     [
       "What do I need for Deep Rescue?",
-      "A working card reader and more free storage than the card’s total capacity, plus space for rescued photos. Larger cards take longer to copy."
+      "A working card reader and enough storage: more free space than the card’s stated capacity for the complete copy, plus room for recovered photos. Bigger cards take longer to copy."
     ],
     [
       "What is currently not supported?",
-      "RAW recovery, general reconstruction of fragmented photos and overwritten data are currently not supported. Sometimes only a preview or thumbnail survives."
+      "RAW photo recovery and overwritten data are currently not supported. Photos split across separate parts of the card cannot generally be reassembled. Sometimes only a preview or thumbnail remains."
     ],
     [
       "Are my photos uploaded?",
-      "No. Recovery runs locally on your Mac. Newer builds include usage statistics that can be turned off in Settings; photos, file names, paths and card details are never uploaded. The website counts visits, download clicks and coffee-link clicks without cookies or persistent identifiers. Do Not Track and Global Privacy Control are respected. Hosting necessarily receives network addresses."
+      "No. Photo recovery takes place on your Mac. Newer versions collect usage statistics, which you can turn off in Settings. Photos, filenames, paths and card details are never uploaded. The website counts visits and clicks on download and support links without cookies or persistent identifiers. It respects Do Not Track and Global Privacy Control. The hosting service still receives connection information such as IP addresses."
     ],
     [
-      "What does Deep Rescue search for?",
-      "It searches the safety copy for JPEG signatures, follows segment and scan boundaries, and checks that candidate images decode before saving them. A readable JPEG can still contain damage; please review the results."
+      "How does Deep Rescue find photos?",
+      "It looks for JPEG markers in the complete card copy, checks the file structure and image data boundaries, then checks whether each photo can be decoded before saving it. A photo that opens may still have visible damage, so please check the results."
     ],
     [
-      "Why are some results previews or thumbnails?",
-      "Cameras often store smaller JPEG copies alongside the full-size photo, including thumbnails inside EXIF. These may survive when the full-size data does not. CardMe labels smaller copies separately; it does not enlarge them or invent missing pixels."
+      "Why did it only find a preview or thumbnail?",
+      "Cameras may save smaller previews alongside the full-size photo, including thumbnails in EXIF. These can remain even when the full-size image is damaged. CardMe labels them separately. It does not enlarge small images to pass them off as originals or generate missing image content."
     ],
     [
-      "Can EXIF bring back the original filename?",
-      "EXIF usually contains the capture time, camera details and orientation. The original filename normally belongs to the card’s file system, which a format can erase. Some camera MakerNotes contain file numbers, but their meaning depends on the model and does not always establish the original name."
+      "Can EXIF recover the original filename?",
+      "EXIF usually records when a photo was taken, the camera details and its orientation. Filenames are usually stored in the card’s file system and may be lost during formatting. Some cameras record file numbers in MakerNote metadata, but the format varies by model. A number alone does not always identify the original filename."
     ]
   ],
   "trust": [
@@ -70,11 +70,12 @@
     "Photos stay on your Mac.",
     "Save recovered copies elsewhere."
   ],
-  "caption": "From checking your card to reviewing saved photos.",
+  "caption": "Choose your memory card in CardMe to begin.",
   "appNote": "The app interface is currently in English.",
   "free": "Free to use.",
   "support": "If CardMe helped you save a memory, you’re welcome to buy me a coffee.",
   "coffee": "Buy me a coffee ☕️",
   "licenses": "Licenses and source information are included in the app.",
-  "version": "Public download: 0.3.23 · Apple notarized."
+  "version": "Version 0.3.23 · Notarized by Apple.",
+  "languageLabel": "Language"
 }

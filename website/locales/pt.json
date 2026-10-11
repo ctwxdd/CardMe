@@ -1,80 +1,81 @@
 {
   "name": "Português",
-  "title": "Recuperação gratuita de fotos de cartão SD e de memória para Mac — CardMe",
-  "description": "App gratuito para Mac que recupera JPEGs danificados e busca fotos excluídas ou após formatação rápida. Acesso somente de leitura, sem conta.",
-  "heading": "As fotos sumiram?<br>Vamos procurar.",
-  "kicker": "Um app gratuito para Mac",
-  "lead": "Um app gratuito para Mac que recupera fotos de cartões danificados, apagados ou com formatação rápida, sem alterar o cartão.",
+  "title": "CardMe — Recupere fotos de cartões SD gratuitamente no Mac",
+  "description": "As fotos não abrem, foram apagadas por engano ou você formatou o cartão SD? O CardMe procura fotos JPEG que ainda podem ser recuperadas. Grátis para Mac, sem cadastro e sem gravar dados no cartão.",
+  "heading": "Recupere as fotos<br>do seu cartão de memória.",
+  "kicker": "Recuperação gratuita de fotos para Mac",
+  "lead": "As fotos não abrem, foram apagadas por engano ou você formatou o cartão? O CardMe ajuda a encontrar o que ainda pode ser recuperado, sem gravar dados no cartão.",
   "download": "Baixar para Mac",
   "nav": [
     "Como funciona",
-    "Perguntas"
+    "Perguntas frequentes"
   ],
-  "stepsTitle": "Três passos simples.",
+  "stepsTitle": "Conecte o cartão para começar",
   "steps": [
     [
-      "Escolha o cartão",
-      "Conecte com um leitor funcionando e verifique as fotos."
+      "Conecte o cartão",
+      "Use um leitor que funcione corretamente e selecione o cartão no CardMe para iniciar a verificação."
     ],
     [
-      "Escolha onde salvar",
+      "Escolha onde salvar as fotos",
       "Clique em “Rescue to…” e escolha uma pasta no Mac ou em outra unidade."
     ],
     [
-      "Confira os resultados",
-      "Fotos completas, prévias menores e fotos não recuperadas são diferenciadas."
+      "Confira as fotos recuperadas",
+      "Veja quais fotos foram recuperadas no tamanho original, quais têm apenas uma prévia ou miniatura e quais não puderam ser recuperadas."
     ]
   ],
-  "warningTitle": "Antes de começar.",
-  "warning": "Pare de salvar fotos e arquivos no cartão. Novos dados podem sobrescrever fotos perdidas.",
+  "warningTitle": "Pare de usar o cartão por enquanto",
+  "warning": "Não tire mais fotos nem salve arquivos nele. Novos dados podem sobrescrever fotos que ainda poderiam ser recuperadas.",
   "faq": [
     [
-      "A recuperação é gratuita?",
-      "Sim. Verificar, recuperar e salvar fotos é gratuito e não exige conta. Doações são opcionais."
+      "Preciso pagar para salvar as fotos recuperadas?",
+      "Não. A verificação, a recuperação e o salvamento são gratuitos, sem necessidade de cadastro. As contribuições são opcionais."
     ],
     [
-      "Recupera cartão SD apagado ou formatado?",
-      "Deep Rescue cria uma cópia segura do cartão inteiro e busca JPEGs intactos e contíguos após exclusão ou formatação rápida. Não há garantia de recuperação."
+      "Dá para recuperar fotos depois de apagar ou formatar o cartão?",
+      "Experimente a recuperação profunda, Deep Rescue. Primeiro, ela faz uma cópia completa do cartão. Depois, procura dados JPEG que ficaram após a exclusão ou formatação rápida. Dados intactos e armazenados de forma contínua podem permitir a recuperação. O resultado depende do que ainda existe no cartão."
     ],
     [
-      "O cartão será modificado?",
-      "CardMe apenas lê o cartão e salva os resultados em outra unidade. Não repara nem formata o cartão. macOS e outros apps ainda podem acessar o cartão."
+      "O CardMe altera alguma coisa no cartão?",
+      "O CardMe apenas lê o cartão. Não grava dados nele, não o formata nem o repara. A cópia do cartão e as fotos recuperadas são salvas em outra unidade. Porém, o macOS e outros apps ainda podem ler ou gravar dados no cartão."
     ],
     [
-      "O que preciso para a busca profunda?",
-      "Um leitor funcionando, mais espaço livre que a capacidade total do cartão e espaço extra para as fotos. Cartões grandes demoram mais para copiar."
+      "O que preciso para usar o Deep Rescue?",
+      "Um leitor de cartões funcionando e espaço livre suficiente: mais que a capacidade indicada do cartão para fazer a cópia completa, além de espaço para as fotos recuperadas. Quanto maior o cartão, mais tempo a cópia leva."
     ],
     [
-      "Quais são as limitações atuais?",
-      "RAW, reconstrução geral de fotos fragmentadas e dados sobrescritos não são suportados. Às vezes só resta uma prévia ou miniatura."
+      "O que ainda não é compatível?",
+      "Atualmente, não é possível recuperar fotos RAW ou dados sobrescritos. Fotos com dados espalhados por diferentes partes do cartão geralmente não podem ser reconstruídas. Às vezes, só resta uma prévia ou miniatura."
     ],
     [
-      "Minhas fotos são enviadas?",
-      "Não. A recuperação ocorre no Mac. Estatísticas de versões mais novas podem ser desligadas nos ajustes. Fotos, nomes, caminhos e detalhes do cartão nunca são enviados. O site conta visitas e cliques de download e apoio sem cookies ou identificadores persistentes. Respeita Do Not Track e Global Privacy Control. O serviço de hospedagem recebe endereços de rede."
+      "Minhas fotos são enviadas para a internet?",
+      "Não. A recuperação é feita no seu Mac. Versões recentes coletam estatísticas de uso que podem ser desativadas nos Ajustes. Fotos, nomes de arquivos, caminhos e informações do cartão nunca são enviados. O site conta visitas e cliques nos links de download e apoio, sem cookies ou identificadores persistentes. Ele respeita Do Not Track e Global Privacy Control. O serviço de hospedagem recebe informações de conexão, como endereços IP."
     ],
     [
-      "O que o Deep Rescue procura?",
-      "Ele procura assinaturas JPEG na cópia de segurança, segue os limites dos segmentos e dos dados da imagem e verifica a decodificação antes de salvar os candidatos. Um JPEG legível ainda pode estar danificado; confira os resultados."
+      "Como o Deep Rescue encontra as fotos?",
+      "Ele procura marcadores JPEG na cópia completa do cartão, verifica a estrutura do arquivo e os limites dos dados da imagem, e testa se a foto pode ser decodificada antes de salvá-la. Uma foto que abre ainda pode ter danos visíveis. Por isso, confira os resultados."
     ],
     [
-      "Por que alguns resultados são prévias ou miniaturas?",
-      "As câmeras costumam salvar cópias JPEG menores junto com a foto original, incluindo miniaturas no EXIF. Elas podem sobreviver quando os dados em tamanho completo não sobrevivem. O CardMe as identifica separadamente, sem ampliá-las ou inventar pixels ausentes."
+      "Por que só foi encontrada uma prévia ou miniatura?",
+      "As câmeras podem salvar pequenas prévias além da foto original, incluindo miniaturas dentro do EXIF. Elas podem continuar intactas mesmo quando a foto original está danificada. O CardMe identifica essas imagens separadamente: não as amplia para apresentá-las como originais nem gera as partes que faltam."
     ],
     [
-      "O EXIF pode recuperar o nome original?",
-      "O EXIF costuma preservar data, informações da câmera e orientação. O nome normalmente pertence ao sistema de arquivos do cartão e pode ser apagado na formatação. Algumas MakerNotes contêm números de arquivo, mas seu significado depende do modelo e nem sempre confirma o nome original."
+      "O EXIF pode recuperar o nome original do arquivo?",
+      "O EXIF costuma registrar a data da foto, informações da câmera e a orientação. O nome do arquivo normalmente fica no sistema de arquivos do cartão e pode se perder na formatação. Algumas câmeras registram números de arquivo no MakerNote, mas o formato varia conforme o modelo. O número sozinho nem sempre permite identificar o nome original."
     ]
   ],
   "trust": [
-    "Cartão somente de leitura.",
-    "Fotos ficam no seu Mac.",
-    "Cópias em outra unidade."
+    "Sem gravar dados no cartão.",
+    "Suas fotos não são enviadas para a internet.",
+    "As fotos recuperadas são salvas em outra unidade."
   ],
-  "caption": "Da verificação do cartão às fotos salvas.",
-  "appNote": "A interface do app está atualmente em inglês.",
+  "caption": "Selecione seu cartão no CardMe para começar.",
+  "appNote": "O app está disponível atualmente apenas em inglês.",
   "free": "Uso gratuito.",
-  "support": "Se o CardMe ajudou você a recuperar uma lembrança, fique à vontade para me oferecer um café.",
-  "coffee": "Oferecer um café ☕️",
-  "licenses": "Licenças e informações do código-fonte incluídas no app.",
-  "version": "Download público: 0.3.23 · Autenticado pela Apple."
+  "support": "Se o CardMe ajudou você a recuperar fotos importantes, fique à vontade para me pagar um café.",
+  "coffee": "Me pague um café ☕️",
+  "licenses": "As licenças e informações sobre o código-fonte estão disponíveis no app.",
+  "version": "Versão 0.3.23 · Notarizado pela Apple.",
+  "languageLabel": "Idioma"
 }

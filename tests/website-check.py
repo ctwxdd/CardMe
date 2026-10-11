@@ -27,6 +27,11 @@ assert tuple(map(int, version.split('.'))) <= tuple(map(int, json.loads((root/'V
 expected = {'https://getpickology.com/cardme' if lang == 'en' else 'https://getpickology.com/cardme/'+lang.lower() for lang in locales}
 css_version = hashlib.sha256((root/'website/dist/style.css').read_bytes()).hexdigest()[:12]
 for lang in locales:
+    copy = locales[lang]
+    assert set(copy) == set(locales['en']), f'Incomplete copy: {lang}'
+    assert len(copy['steps']) == 3 and len(copy['trust']) == 3
+    assert len(copy['faq']) == len(locales['en']['faq'])
+    assert copy['languageLabel'] and 'Rescue to…' in copy['steps'][1][1]
     path = root/'website/dist'/('index.html' if lang == 'en' else lang.lower()+'/index.html')
     body = path.read_text(); p = Page(); p.feed(body)
     assert p.lang == lang and p.headings == 1 and '�' not in body
@@ -44,6 +49,7 @@ for lang in locales:
     assert len(locales[lang]['faq']) >= 9
     assert 'class="wrap support"' not in body
     assert body.count('href="https://ko-fi.com/alittleseal"') == 2
+    assert 'class="wrap trust"' in body
     assert 'ko-fi.com' not in body.split('<footer')[1]
 ns = {'s': 'http://www.sitemaps.org/schemas/sitemap/0.9'}
 assert {n.text for n in ET.parse(root/'website/dist/sitemap.xml').findall('.//s:loc', ns)} == expected
