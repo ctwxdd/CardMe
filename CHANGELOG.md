@@ -3,6 +3,8 @@
 ## 0.3.30 · build 43
 
 - Try bounded three-part JPEG reconstruction, preserving source extents and requiring a unique decoded result that matches the camera preview.
+- Search a bounded set of nearby positions inside unowned cluster runs, and allow a preview to share the primary tail allocation cluster.
+- Reject clear mismatches with a reduced JPEG decode before full validation; bound comparison buffers for extreme aspect ratios.
 - Rebuild fragmented indexed previews before retrying their full-size photo. Reuse endpoint hints from the existing scan.
 - Keep original filename hints from checksum-valid directory remnants in recovery reports; never treat missing allocation chains as intact.
 - Retry unresolved candidates once when the reconstruction algorithm changes. Keep source images read only and preserve existing results.
