@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.33 · build 46
+
+- When a marker-derived JPEG prefix cannot decode or extends past the declared primary length, retry by observing incremental coding state and preview luminance at cluster boundaries. Both attempts share the existing 90-second limit.
+- Preserve original diagnostics, strict full-image/preview checks, source extent hashes, manual-review status and existing ambiguity refusals. Retry unresolved older checkpoints once without overwriting saved photos.
+
 ## 0.3.32 · build 45
 
 - Add bounded camera-preview-guided multi-part JPEG reconstruction after existing two/three-part methods find no valid join. Preserve ambiguity refusals and source-byte provenance.

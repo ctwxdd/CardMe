@@ -21,7 +21,7 @@ for first, end, at in zip(cuts, cuts[1:], positions):
     payload[at:at + end - first] = primary[first:end]
     expected.append({'offset': at, 'bytes': end - first})
     if end < len(primary):
-        payload[at + end - first:at + end - first + 16] = b'SQLite format 3\0'
+        payload[at + end - first:at + end - first + 16] = b'\xff\xd8' + bytes(14)
 payload[child:child + len(preview)] = preview
 with tempfile.TemporaryDirectory() as directory:
     folder = Path(directory); source = folder / 'card.img'; source.write_bytes(payload); source.chmod(0o444)
@@ -36,6 +36,20 @@ with tempfile.TemporaryDirectory() as directory:
         assert result, reason
         assert result['data'] == primary and result['source_extents'] == expected, result['source_extents']
         assert result['manual_review'] and result['reconstruction'] == 'mpf_preview_guided'
+        # An overshot marker cut must roll back without changing the supplied diagnostic.
+        candidate['_failure_prefixes'] = [(start, cuts[1] + cluster + 2)]
+        with patch.object(guided, 'LOCAL_CLUSTERS', 80):
+            rolled, reason = guided.reconstruct(fd, len(payload), candidate, [row], cluster, heap, lambda: None)
+        assert rolled and rolled['data'] == primary, reason
+        assert rolled['source_extents'] == expected and rolled['prefix_rollback_clusters'] == 1
+        assert candidate['_failure_prefixes'] == [(start, cuts[1] + cluster + 2)]
+        # A delayed marker may lie past the MPF primary length; observe only that primary.
+        candidate['_failure_prefixes'] = [(start, len(primary) + cluster * 2)]
+        with patch.object(guided, 'LOCAL_CLUSTERS', 80):
+            bounded, reason = guided.reconstruct(fd, len(payload), candidate, [row], cluster, heap, lambda: None)
+        assert bounded and bounded['data'] == primary, reason
+        assert bounded['prefix_hypothesis_bytes'] == cuts[1]
+        candidate['_failure_prefixes'] = [(start, cuts[1] + 2)]
         assert guided.reconstruct(fd, len(payload), candidate, [row, row], cluster, heap, lambda: None)[0] is None
         with patch.object(guided, 'MAX_SECONDS', 0):
             assert guided.reconstruct(fd, len(payload), candidate, [row], cluster, heap, lambda: None)[1] == 'preview_guided_time_budget'
@@ -99,4 +113,20 @@ for width in (1, 7, 512):
     assert cloned.predictors != chunked.predictors
 assert guided.overlaps(9, 2, [{'offset': 10, 'bytes': 2}])
 assert not guided.overlaps(8, 2, [{'offset': 10, 'bytes': 2}])
+
+# All rollback attempts share the original budget; each retry cannot reset it.
+clock, attempts = [0], []
+def budget_trial(fd, total, candidate, photos, cluster, heap, verify, adaptive_prefix=False):
+    verify()
+    attempts.append(adaptive_prefix)
+    clock[0] += 60
+    return None, 'invalid_preview_guided_prefix'
+budget_candidate = {'offset': 0, 'bytes': 100, '_failure_prefixes': [(0, 40)]}
+with patch.object(guided.time, 'monotonic', side_effect=lambda: clock[0]), patch.object(guided, '_reconstruct', side_effect=budget_trial):
+    assert guided.reconstruct(None, 100, budget_candidate, [], 10, 0, lambda: None)[1] == 'preview_guided_time_budget'
+assert attempts == [False, True], attempts
+for refusal in ('missing_or_ambiguous_preview', 'invalid_preview_guided_coding', 'preview_guided_join_budget'):
+    with patch.object(guided, '_reconstruct', return_value=(None, refusal)) as search:
+        assert guided.reconstruct(None, 100, budget_candidate, [], 10, 0, lambda: None)[1] == refusal
+        assert search.call_count == 1
 print('Preview-guided checks passed: exact four-part bytes, review status, ambiguous preview, budgets, cancellation, short reads, ownership, source unchanged and decoder checkpoints.')

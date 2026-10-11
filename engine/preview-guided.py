@@ -89,13 +89,27 @@ class SearchBudget(Exception):
 
 
 def reconstruct(fd, total, candidate, photos, cluster, heap, verify):
+    deadline = time.monotonic() + MAX_SECONDS
+
+    def check():
+        verify()
+        if time.monotonic() >= deadline:
+            raise SearchBudget()
+
     try:
-        return _reconstruct(fd, total, candidate, photos, cluster, heap, verify)
+        result, reason = _reconstruct(fd, total, candidate, photos, cluster, heap, check)
+        if result is not None or reason not in ('invalid_preview_guided_prefix', 'invalid_prefix_hypothesis'):
+            return result, reason
+        check()
+        result, reason = _reconstruct(fd, total, candidate, photos, cluster, heap, check,
+                                      adaptive_prefix=True)
+        check()
+        return result, reason
     except SearchBudget:
         return None, 'preview_guided_time_budget'
 
 
-def _reconstruct(fd, total, candidate, photos, cluster, heap, verify):
+def _reconstruct(fd, total, candidate, photos, cluster, heap, verify, adaptive_prefix=False):
     fragments = importlib.import_module('fragment-carve')
     carve = importlib.import_module('carve-photos')
     deadline = time.monotonic() + MAX_SECONDS
@@ -116,7 +130,9 @@ def _reconstruct(fd, total, candidate, photos, cluster, heap, verify):
     failure = next((offset for at, offset in candidate.get('_failure_prefixes', []) if at == start), None)
     if failure is None:
         return None, 'missing_prefix_hypothesis'
-    cut = failure // cluster * cluster
+    original_cut = cut = failure // cluster * cluster
+    if adaptive_prefix:
+        cut = min(cut, (length - 1) // cluster * cluster)
     if not 0 < cut < length or length > 128 * 1024 * 1024:
         return None, 'invalid_prefix_hypothesis'
     within = candidate['preview_logical'] % cluster
@@ -175,8 +191,33 @@ def _reconstruct(fd, total, candidate, photos, cluster, heap, verify):
         decoder.y_quantization = quantization[q]
         decoder.mcu_columns = math.ceil(width / (mh * 8))
         decoder.error_sum = decoder.error_count = 0
-        decoder.feed(raw[decoder.header_end:], check)
-        threshold = max(12, decoder.score() * 6)
+        if adaptive_prefix:
+            position = decoder.header_end
+            error_sum = error_count = 0
+            threshold = 12
+            while position < cut:
+                end = min(cut, (position // cluster + 1) * cluster)
+                trial = decoder.clone()
+                try:
+                    trial.feed(raw[position:end], check)
+                    valid = trial.score() <= threshold
+                except coding.Invalid:
+                    valid = False
+                if not valid:
+                    cut = position // cluster * cluster
+                    if cut <= 0:
+                        return None, 'no_valid_initial_cluster'
+                    break
+                error_sum += trial.error_sum
+                error_count += trial.error_count
+                decoder, position = trial, end
+                threshold = max(12, error_sum / max(1, error_count) * 6)
+        else:
+            try:
+                decoder.feed(raw[decoder.header_end:], check)
+            except coding.Invalid:
+                return None, 'invalid_preview_guided_prefix'
+            threshold = max(12, decoder.score() * 6)
         append(start, cut)
         done, physical = cut, start + cut
         while done < length:
@@ -244,7 +285,8 @@ def _reconstruct(fd, total, candidate, photos, cluster, heap, verify):
         return {'data': data, 'source_extents': extents, 'thumbnail_difference': difference,
                 'preview_difference': score, 'paired_preview_offset': preview_row['offset'],
                 'reconstruction': 'mpf_preview_guided', 'manual_review': True,
-                'continuation_decisions': joins}, 'reconstructed_review_candidate'
+                'continuation_decisions': joins, 'prefix_hypothesis_bytes': cut,
+                'prefix_rollback_clusters': (original_cut - cut) // cluster}, 'reconstructed_review_candidate'
     except SearchBudget:
         return None, 'preview_guided_time_budget'
     except (coding.Invalid, SyntaxError, EOFError, Warning):
