@@ -53,7 +53,7 @@ shutil.copy2(ROOT / 'website/dist/assets/cardme-mark.png', resources / 'cardme-m
 licenses = resources / 'ThirdPartyLicenses'
 licenses.mkdir(exist_ok=True)
 shutil.copy2(ROOT / 'THIRD_PARTY_NOTICES.md', licenses / 'Notices.md')
-shutil.copy2(ROOT / 'LICENSE', licenses / 'CardMe-MIT.txt')
+shutil.copy2(ROOT / 'LICENSE', licenses / 'CardMe-GPL-3.0.txt')
 sources = resources / 'ThirdPartySources'
 sources.mkdir(exist_ok=True)
 python_source = ROOT / 'vendor/python/Python-3.12.14.tar.xz'

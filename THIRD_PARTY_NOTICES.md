@@ -1,6 +1,6 @@
 # CardMe third-party software
 
-CardMe’s original application, engine, and website code are MIT licensed; see LICENSE and ThirdPartyLicenses/CardMe-MIT.txt. Third-party components retain their own licenses.
+CardMe’s original application, engine, and website code are licensed under GPL-3.0-only; see LICENSE and ThirdPartyLicenses/CardMe-GPL-3.0.txt. Copyright (c) 2026 CHUN-TING WU. Third-party components retain their own licenses. Earlier MIT-licensed releases retain their existing terms; the historical license is in docs/licenses/MIT-previous.txt.
 
 Free distribution does not remove license obligations. The app includes the following notices and source materials in Contents/Resources. No additional installation is necessary.
 

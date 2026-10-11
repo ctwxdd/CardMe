@@ -20,4 +20,14 @@ Only an Accepted notarization result permits publication. Verify the signed app 
 
 Tag the checked source commit `vX.Y.Z`. Publish a GitHub prerelease (private while the repository is private) while the app is 0.x beta, attaching the signed, notarized, stapled `CardMe-X.Y.Z.dmg` and its SHA-256 file. Release notes include requirements, installation, usage, limitations, license/source information, and actual validation. Download the published file and compare its digest; check Gatekeeper again. Keep credentials and DMGs out of the source repository.
 
+For future GPL-3.0-only builds, publish the matching complete corresponding source alongside the DMG. The release checkout must be clean, including submodules if introduced, so the tagged source represents every packaged code and build input. Create and checksum the archive from that exact tag:
+
+```sh
+git archive --format=tar.gz --prefix=CardMe-X.Y.Z/ \
+  --output=/path/to/release/CardMe-X.Y.Z-source.tar.gz vX.Y.Z
+shasum -a 256 /path/to/release/CardMe-X.Y.Z-source.tar.gz
+```
+
+Attach this source archive and checksum to the release. Check that it includes the matching application, engine, build/install scripts, notices, disclosed patches, and pinned dependency inputs. A private release or a moving branch is not a public source offer. Before publishing a GPL binary on the website, put a clear link to the corresponding freely accessible source archive beside its download and verify both downloads without authentication. Preserve third-party notices and source materials inside the app. Do not replace or relabel an existing MIT-licensed binary as GPL. See [licensing details](LICENSING.md).
+
 Private GitHub release links must not be used as public download links. The product website is https://getpickology.com/cardme. Its Azure deployment belongs to the Pickology website repository; preserve both products’ downloads. A CardMe release does not authorize replacing the Pickology DMG. Update the website version and CardMe download separately when publishing a website deployment.

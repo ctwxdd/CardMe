@@ -23,7 +23,7 @@ subprocess.run(['codesign', '--verify', '--deep', '--strict', str(app)], check=T
 resources = app / 'Contents/Resources'
 assert not (resources / 'engine/card_directory.json').exists()
 assert not (resources / 'engine/verified-rescue-profile.json').exists()
-assert (resources / 'ThirdPartyLicenses/CardMe-MIT.txt').read_bytes() == (root / 'LICENSE').read_bytes()
+assert (resources / 'ThirdPartyLicenses/CardMe-GPL-3.0.txt').read_bytes() == (root / 'LICENSE').read_bytes()
 for source in (root / 'engine').glob('*.py'):
     assert (resources / 'engine' / source.name).read_bytes() == source.read_bytes(), source.name
 for target in [app, resources / 'python/bin/python3', resources / 'tools/ddrescue']:
@@ -32,7 +32,7 @@ for target in [app, resources / 'python/bin/python3', resources / 'tools/ddrescu
     entitlements = plistlib.loads(data) if data.strip() else {}
     assert not entitlements.get('com.apple.security.app-sandbox'), target
     assert not entitlements.get('com.apple.security.inherit'), target
-for filename in ['CardMe-MIT.txt', 'Notices.md', 'ddrescue-GPL-2.0.txt', 'ddrescue-AUTHORS.txt', 'Python-LICENSE.txt', 'Pillow-and-codecs-LICENSE.txt']:
+for filename in ['CardMe-GPL-3.0.txt', 'Notices.md', 'ddrescue-GPL-2.0.txt', 'ddrescue-AUTHORS.txt', 'Python-LICENSE.txt', 'Pillow-and-codecs-LICENSE.txt']:
     assert (resources / 'ThirdPartyLicenses' / filename).stat().st_size > 0
 for filename in ['ddrescue-1.30.tar.lz', 'ddrescue-BUILD.md', 'input-fd.patch', 'Python-3.12.14.tar.xz', 'Python-BUILD.md', 'build-runtime.py']:
     source = resources / 'ThirdPartySources' / filename

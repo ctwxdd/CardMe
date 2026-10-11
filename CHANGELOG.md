@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- License future CardMe source and builds under GPL-3.0-only. Preserve the terms of earlier MIT-licensed distributions and all third-party licenses.
+- Prepare the public README with installation, recovery limits, read-only safety, privacy, contributing and redistribution guidance.
+
 ## 0.3.34 · build 47
 
 - When local preview-guided continuation fails, search a bounded wider window around both the next source cluster and the current camera-preview tail anchor. Preserve already validated local choices and the shared 90-second limit.

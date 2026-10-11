@@ -6,6 +6,6 @@ Keep changes small and explain the problem they solve. For recovery changes, inc
 
 Preserve these rules: open sources read only; never format, repair, mount, delete, or overwrite source media; validate output destinations and device identity; preserve cancellation and completed results; distinguish original bytes, decoded photos, and preview fallbacks. Do not generate missing photo details and describe them as recovery.
 
-Run the relevant checks in [development documentation](docs/DEVELOPMENT.md). License notices and complete corresponding source must stay with bundled third-party software. Contributions to CardMe’s original code are under MIT; changes to the ddrescue patch remain GPL-2.0-or-later.
+Run the relevant checks in [development documentation](docs/DEVELOPMENT.md). License notices and complete corresponding source must stay with bundled third-party software. Unless explicitly agreed otherwise, contributions to CardMe’s original code are licensed under GPL-3.0-only, the same license as the project. Contributors keep their copyright and must have the right to submit their work. Preserve existing copyright notices and clearly identify your changes. Changes to the ddrescue patch remain GPL-2.0-or-later.
 
 Use synthetic photos in issues and pull requests. Keep personal photos, card dumps, device identifiers, credentials, and recovery logs private.

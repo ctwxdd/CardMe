@@ -1,56 +1,102 @@
 # CardMe
 
-<img src="website/dist/assets/cardme-icon.png" width="112" height="112" alt="CardMe: photo recovery from memory cards">
+<img src="website/dist/assets/cardme-mark.svg" width="88" height="74" alt="CardMe">
 
-**A free Mac app to help rescue photos from memory cards.**
+**Free photo recovery for memory cards, on your Mac.**
 
-I know how it feels to lose photos you can’t take again. A faulty card adapter damaged my own memory card, and trying to recover those photographs became the beginning of CardMe.
+A faulty card adapter damaged my memory card and left me with photos I couldn’t open. Some of them were moments I could never photograph again. CardMe grew out of trying to get those photos back.
 
-I made this tool to help others save their priceless memories. It offers a clear next step, keeps recovery on your Mac, and shows honestly what it could save. Sometimes that is a full-size photo; sometimes only a smaller preview survives. No tool can promise to recover everything, but you shouldn’t have to face the process alone.
+I’m sharing it so that others have a free option when the same thing happens. CardMe reads the card, saves recovered copies somewhere else, and tells you whether it found a full-size photo, a preview, or only a thumbnail. It won’t promise more than it recovered.
 
-[Website](https://getpickology.com/cardme) · [繁體中文](https://getpickology.com/cardme/zh-hant) · [Download for Mac](https://getpickology.com/cardme) · [Buy me a coffee ☕️](https://ko-fi.com/alittleseal)
+[Website](https://getpickology.com/cardme) · [繁體中文](https://getpickology.com/cardme/zh-hant) · [Download for Mac](https://getpickology.com/cardme) · [Releases](https://github.com/ctwxdd/CardMe/releases)
 
-## Getting started
+## Get started
 
-Requires **macOS 14 or later and an Apple silicon Mac**. You don’t need an account, Python, or separately installed recovery tools.
+Requires **macOS 14 or later and an Apple silicon Mac**. No account, subscription, or separately installed Python or recovery tools.
 
-1. Download the signed, Apple-notarized DMG from the [website](https://getpickology.com/cardme). Open it and drag **CardMe** into Applications.
-2. Stop using the affected card for new photos. Connect it with a working reader, open CardMe, and choose your card.
-3. Let CardMe check the photos. Select **Rescue to…**, then choose a folder on your Mac or another fixed drive to save recovered copies.
-4. Review the results. Use **↑ / ↓** to move through the list and **Space** for Quick Look. Full-size photos, previews, tiny thumbnails, and unsuccessful recovery are distinguished.
-5. If photos are still missing, try **Deep Rescue**. It first saves a whole-card safety copy, then searches that copy. You need more free space than the card’s full capacity, plus room for rescued photos. Larger cards take longer.
+1. **Stop using the affected card.** Don’t take more photos or save files to it; new data can overwrite photos that are still recoverable.
+2. Download the signed, Apple-notarized DMG from the [website](https://getpickology.com/cardme). Open it and drag **CardMe** into Applications.
+3. Connect your card with a working reader. Open CardMe, choose the card, and scan it.
+4. Click **Rescue to…** and choose a folder on your Mac or another fixed drive. Never save recovered photos back to the affected card.
+5. Check the results. Use **↑ / ↓** to move through the list and **Space** for Quick Look. Full-size photos, previews, tiny thumbnails, and unsuccessful recovery are shown separately.
 
-The main photo list can reveal available files in Finder. Saved photos remain yours, whether or not you choose to support the project.
+For deleted photos, a quick format, or photos that normal recovery cannot restore, try **Deep Rescue**. It makes a complete copy of the card before searching that copy. Prepare more free space than the card’s full capacity, plus room for recovered photos. Larger cards take longer to copy. An existing `card.img` can also be used.
 
-## Your card and your privacy
+The signed download may be older than the source on `main`. Check the [changelog](CHANGELOG.md) and release notes for the capabilities of a particular version. Development builds are not qualified public releases.
 
-CardMe’s source-card operations are **read only**. It does not format, repair, delete, or write recovered files back to your card. Results are saved separately, and existing results are not overwritten.
+## What CardMe can do
 
-For whole-card access, macOS opens a read-only file descriptor through `authopen`; the bundled imaging tool receives that descriptor. CardMe checks device identity and rejects unsafe output destinations. Neither CardMe nor the recovery tool runs as root. Photos are processed locally and are not uploaded. Usage statistics are enabled by default and can be turned off in **CardMe → Settings → Privacy**. We receive app opens, app version, scan totals, photos flagged for review, scan completion/failure/cancellation, rescue mode and result counts (full-size, preview, thumbnail, review and unrecovered), and coffee-link clicks. There is no installation identifier, photo metadata, name, path or card identifier. App opens measure launches, not unique people; result counts may include the same photo rescued again. Reports are scheduled for deletion after 90 days; cleanup backlogs may take longer. Uploads are best-effort, with no offline backlog, and never block recovery. Turning the setting off cancels outstanding uploads; requests already transmitted may still arrive and earlier records remain. Our Azure hosting service necessarily receives network addresses and may retain request metadata. Coffee clicks do not indicate a donation.
+The current source supports:
 
-This describes CardMe’s own operations, not a hardware write blocker: macOS, another application, or a failing reader can still affect a connected card. If the card disconnects repeatedly or has physical damage, stop and consider a professional recovery service. Read-only access cannot prevent failing hardware from deteriorating during reads.
+- Checking damaged JPEG files and recovering decoded photos or embedded previews and thumbnails.
+- Searching for intact, contiguous JPEG data after deletion or a quick format.
+- Bounded reconstruction of some fragmented camera JPEGs when enough allocation information or a matching camera preview survives. Uncertain candidates are saved for review.
+- Finding original filename hints in surviving exFAT directory records. Formatting may have erased the filename and allocation records.
+- Keeping completed results when recovery is stopped, with checkpoint support for the image-search paths.
 
-## What it can recover
+**RAW recovery, arbitrary fragmented-photo reconstruction, and overwritten data are currently not supported.** Recovery depends on what remains on the card.
 
-- Damaged JPEG files that can still be decoded, or their embedded previews and thumbnails.
-- Intact, contiguous JPEG data after deletion or a quick format, using Deep Rescue.
-- Some fragmented camera JPEGs with a surviving MPF index and camera preview on an exFAT safety copy. After two/three-part recovery fails, a bounded preview-guided search can try more parts. These candidates are saved for review rather than counted as confirmed full-size rescues. CardMe can first rebuild a fragmented indexed preview when enough source bytes survive.
-- Original filename hints from checksum-valid exFAT directory remnants. These hints do not restore missing allocation chains.
+Normal recovery may save a decoded full-size photo as PNG. That preserves the decoded image, but is not necessarily the original JPEG file. Deep Rescue copies recovered JPEG image data from the source; it does not generate missing image content. A photo that opens may still contain visible damage. Please inspect it before relying on it.
 
-Normal rescue may save a decoded full-size photo as PNG. That preserves the decoded image, but is not necessarily the original JPEG file. Deep Rescue copies verified JPEG streams without generating replacement pixels. A successfully decoded photo can still contain visible damage; please inspect your results.
+A quick scan checks thumbnails, metadata, and image headers. It does not certify every pixel; full pixel checks are available in Details. More technical information is in [development documentation](docs/DEVELOPMENT.md).
 
-**RAW recovery, other fragmented-photo reconstruction, and overwritten data are currently not supported.** A quick scan checks thumbnails, metadata, and image headers; it does not certify every pixel. Full pixel checks are available in Details. Recovery is never guaranteed.
+## Your card stays read only
 
-## License and support
+CardMe does not write to the source card, format it, repair it, delete its files, or save recovered photos back onto it. It also treats saved card images as read only. Output destinations are checked separately, and existing results are not overwritten.
 
-CardMe is free to use. This repository is currently private; its original code and website are licensed under the [MIT License](LICENSE). Bundled tools and libraries keep their own licenses, including GNU ddrescue under GPL-2.0-or-later. The app includes notices, complete ddrescue corresponding source, its patch, and build instructions. See [third-party notices](THIRD_PARTY_NOTICES.md).
+For whole-card access, macOS supplies a read-only file descriptor through `authopen`. The bundled imaging tool receives that descriptor; neither CardMe nor the tool runs as root. CardMe checks device identity and refuses unsafe output destinations.
 
-If CardMe helped you, you’re welcome to [buy me a coffee](https://ko-fi.com/alittleseal). Thank you for your support. There is no payment required to rescue or save photos.
+This is a software safety boundary, **not a hardware write blocker**. macOS, other apps, or a faulty reader can still affect the card. Read-only access also cannot stop failing hardware from deteriorating during reads. If the card has physical damage or repeatedly disconnects, stop and consider a professional recovery service.
 
-Bug reports and small improvements are welcome. Please **don’t upload personal photographs, card images, or private recovery logs** to public issues. Start with your Mac model, macOS version, CardMe version, and a description of what happened.
+## Privacy
 
-## Development
+Photo recovery runs on your Mac. Photos, filenames, paths, photo metadata, and card identifiers are not uploaded.
 
-CardMe is currently a **0.x public beta**. Releases use semantic version tags and an increasing build number; the [changelog](CHANGELOG.md) records actual changes. GitHub Releases in this private repository are available to collaborators only. The public download is hosted separately on Azure. The first versioned repository release is `v0.3.16` (build 29), following the earlier development builds.
+Anonymous usage statistics are **on by default** and can be disabled in **CardMe → Settings → Privacy**. They include app launches, app version, scan and recovery counts, outcomes, and clicks on the optional support link. There is no installation identifier. Launches are not unique users, and a support-link click does not mean someone donated.
 
-See [development and safety details](docs/DEVELOPMENT.md), [contributing](CONTRIBUTING.md), and [release instructions](docs/RELEASING.md). The website source is in [`website/dist`](website/dist). The internal Xcode project and executable retain the name `CardRescue` for compatibility.
+See [privacy details](docs/PRIVACY.md) for the complete event list, retention, cancellation, and hosting information.
+
+## Build from source
+
+Requires Apple silicon, macOS 14+, Xcode Command Line Tools, and a build-host Python 3. Users of the packaged app do not need these tools.
+
+```sh
+git clone https://github.com/ctwxdd/CardMe.git
+cd CardMe
+python3 scripts/build-runtime.py
+python3 scripts/build.py --direct-download --dmg
+```
+
+Outputs are `build/CardMe.app` and `build/CardMe.dmg`. Local builds are ad-hoc signed and not notarized. See [development and testing](docs/DEVELOPMENT.md) and [release instructions](docs/RELEASING.md) for focused checks, signing, notarization, and corresponding source.
+
+The internal Xcode project and executable retain the name `CardRescue` for compatibility.
+
+## Contributing and reporting issues
+
+Bug reports and small, focused improvements are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+Please **don’t upload personal photos, card images, private recovery logs, credentials, or device identifiers** to public issues. Start with the CardMe version, macOS version, Mac model, and a description of what happened. Use synthetic photos for reproducible examples.
+
+Recovery changes must preserve read-only source access, cancellation, output safety, and clear recovery classifications. Tests use disposable fixtures; never test source writes on a real memory card.
+
+## License, copyright, and redistribution
+
+Copyright © 2026 **CHUN-TING WU**. CardMe’s original application, engine, and website are licensed under **[GNU GPL version 3 only](LICENSE)** (`GPL-3.0-only`). You keep ownership of your photos; this license covers the software, not recovered photographs.
+
+You may use, study, modify, and redistribute CardMe, including commercially, under the GPL. When distributing the software or a modified version, preserve the copyright and license notices, identify modifications, and provide the corresponding source as required by the GPL. Modified and combined works covered by the GPL must retain its terms. The license does not grant rights to imply that a fork is an official CardMe release or endorsed by its author.
+
+Third-party components keep their own licenses: GNU ddrescue is GPL-2.0-or-later; CPython, Pillow, and the bundled codecs have their upstream terms. Their notices and required source materials must remain with redistributed builds. See [third-party notices](THIRD_PARTY_NOTICES.md) and [licensing details](docs/LICENSING.md).
+
+Earlier releases distributed under MIT retain those terms. This license change applies to the current source and future builds; it does not revoke previously granted licenses.
+
+## Warranty and recovery disclaimer
+
+CardMe is provided **“as is,” without warranty**, to the extent permitted by applicable law. Recovery may fail or produce incomplete or incorrect results. Signing and Apple notarization do not guarantee recovery, image integrity, or hardware safety.
+
+The warranty disclaimer and limitation of liability are set out in sections 15–17 of the [GPL](LICENSE). This README summarizes them; it does not add restrictions or override the license or applicable law.
+
+## Support
+
+CardMe is free to use. No payment is required to recover or save photos.
+
+If it helped you get important photos back, you’re welcome to [buy me a coffee ☕️](https://ko-fi.com/alittleseal). Thank you for your support.
