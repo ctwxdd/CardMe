@@ -46,9 +46,67 @@ with tempfile.TemporaryDirectory() as directory:
   published=state['photos'][-1];assert published['quality']=='manual_review' and published['review_required'];assert Path(published['output']).read_bytes()==primary
   with patch.object(allocation,'volume',return_value=(0,None,512,cluster,heap,len(payload)//cluster,2,b'')), patch.object(g,'reconstruct',side_effect=AssertionError('Reprocessed saved output')):
    fragments.recover(fd,len(payload),state,saved,lambda:None,lambda:None)
+  # Hard searches start only after all quick joins; interrupted pending work resumes.
+  staged=folder/'staged';staged.mkdir();later=start+cluster;events=[]
+  state={'photos':[dict(row)],'fragment_candidates':[start,later]}
+  def describe(_fd,at,_total):
+   return {**c,'offset':at,'_known_photos':[]}
+  def join(_fd,_total,candidate,_rows,_cluster,_heap,_verify,allow_three=True):
+   at=candidate['offset'];events.append((at,allow_three))
+   if at==start and not allow_three:return None,'no_valid_two_extent_join'
+   if at==start:assert later in {r['offset'] for r in candidate['_known_photos']}
+   return {'data':primary,'source_extents':[{'offset':at,'bytes':len(primary)}],
+           'thumbnail_difference':2,'preview_difference':1},'reconstructed'
+  def paused():raise InterruptedError('pause after pending quick join')
+  with patch.object(allocation,'volume',return_value=(0,None,512,cluster,heap,len(payload)//cluster,2,b'')), patch.object(fragments,'header',side_effect=describe), patch.object(fragments,'reconstruct',side_effect=join):
+   try:fragments.recover(fd,len(payload),state,staged,lambda:None,paused);raise AssertionError('Pause swallowed')
+   except InterruptedError:pass
+   assert state['fragment_analysis']['candidates'][str(start)]['algorithm_version']<fragments.ALGORITHM_VERSION
+   events.clear();fragments.recover(fd,len(payload),state,staged,lambda:None,lambda:None)
+  assert events==[(start,False),(later,False),(start,True)],events
+  assert len([r for r in state['photos'] if r.get('reconstruction')])==2
   # Native cancellation closes and reaps a running subprocess.
   guide=Image.open(output);raw=os.pread(fd,cuts[1],start);d=g.PreviewDecoder(raw);width,height,components=g.geometry(raw)[0];q=g.geometry(raw)[1];import math
   comp,h,v,qt=components[0];d.limits={c:math.ceil(1024/q[t])+1 for c,_,_,t in components};d.y_component=comp;d.y_h=h;d.y_v=v;d.y_first=next(i for i,b in enumerate(d.blocks) if b[0]==comp);d.y_quantization=q[qt];d.mcu_columns=math.ceil(width/(max(x[1] for x in components)*8));d.grid=guide.convert('YCbCr').getchannel('Y').resize((math.ceil(width/8),math.ceil(height/8)),Image.Resampling.BOX);d.error_sum=d.error_count=0;d.feed(raw[d.header_end:]);guide.close()
+  # Advancing a real coding checkpoint must match every Python state field and score.
+  fast=d.clone();plain=d.clone();raw_step=os.pread(fd,cluster,positions[1])
+  native.feed(fast,raw_step,fd,positions[1],10,lambda:None);plain.feed(raw_step)
+  assert fast.signature()==plain.signature() and fast.error_sum==plain.error_sum and fast.error_count==plain.error_count
+  for pos in (heap,start,positions[2]):
+   raw_step=os.pread(fd,cluster,pos);accepted=[]
+   for use_native in (False,True):
+    trial=d.clone()
+    try:
+     if use_native:native.feed(trial,raw_step,fd,pos,10,lambda:None)
+     else:trial.feed(raw_step)
+     accepted.append(True)
+    except g.coding.Invalid:accepted.append(False)
+   assert accepted[0]==accepted[1],(pos,accepted)
+  # Batch filtering must preserve Python decisions, duplicate positions and shortlist order.
+  import time
+  ranked=[(i/10,pos) for i,pos in enumerate([positions[1],start,heap,positions[2],positions[1],len(payload)-1])]
+  threshold=12;expected_rows=[];python_started=time.monotonic()
+  for score,pos in ranked:
+   if pos+cluster>len(payload):continue
+   trial=d.clone()
+   try:trial.feed(os.pread(fd,cluster,pos))
+   except g.coding.Invalid:continue
+   if trial.score()<=threshold:expected_rows.append((score,pos))
+  python_seconds=time.monotonic()-python_started;native_started=time.monotonic()
+  assert native.screen(d,fd,ranked,cluster,len(payload),threshold,10,lambda:None)==expected_rows
+  print('Batch parity timing:',{'python_seconds':python_seconds,'native_seconds':time.monotonic()-native_started},flush=True)
+  for probe in (1,512):
+   expected_rows=[]
+   for score,pos in ranked:
+    if pos+probe>len(payload):continue
+    trial=d.clone()
+    try:trial.feed(os.pread(fd,probe,pos))
+    except g.coding.Invalid:continue
+    if not trial.error_count or trial.score()<=threshold*2:expected_rows.append((score,pos))
+   assert native.screen(d,fd,ranked,probe,len(payload),threshold*2,10,lambda:None,allow_empty=True)==expected_rows
+  with patch.object(native,'scan',side_effect=subprocess.TimeoutExpired('ranker',0)):
+   try:native.screen(d,fd,ranked,cluster,len(payload),threshold,0,lambda:None);raise AssertionError('Timeout swallowed')
+   except subprocess.TimeoutExpired:pass
   calls=[0]
   def running_cancel():
    calls[0]+=1

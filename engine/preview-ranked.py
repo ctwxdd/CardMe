@@ -68,7 +68,7 @@ def replay(fd, total, candidate, photos, cluster, heap, verify):
             if reason == 'preview_guided_time_budget':
                 return None, reason
             queue.extend(child for child in replay_children(path, trace) if child not in seen)
-        except SearchBudget:
+        except (SearchBudget, subprocess.TimeoutExpired):
             candidate['_replay_report'] = attempts
             return None, 'preview_guided_time_budget'
     candidate['_replay_report'] = attempts
@@ -177,7 +177,8 @@ def _reconstruct(fd, total, candidate, photos, cluster, heap, verify, adaptive_p
                 end = min(cut, (position // cluster + 1) * cluster)
                 trial = decoder.clone()
                 try:
-                    trial.feed(raw[position:end], check)
+                    native.feed(trial, raw[position:end], fd, start+position,
+                                max(.1,deadline-time.monotonic()), check)
                     valid = trial.score() <= threshold
                 except coding.Invalid:
                     valid = False
@@ -192,7 +193,8 @@ def _reconstruct(fd, total, candidate, photos, cluster, heap, verify, adaptive_p
                 threshold = max(12, error_sum / max(1, error_count) * 6)
         else:
             try:
-                decoder.feed(raw[decoder.header_end:], check)
+                native.feed(decoder, raw[decoder.header_end:], fd, start+decoder.header_end,
+                            max(.1,deadline-time.monotonic()), check)
             except coding.Invalid:
                 return None, 'invalid_preview_guided_prefix'
             threshold = max(12, decoder.score() * 6)
@@ -206,7 +208,8 @@ def _reconstruct(fd, total, candidate, photos, cluster, heap, verify, adaptive_p
             valid = not overlaps(physical, size, extents + owned)
             if valid:
                 try:
-                    trial.feed(read(physical, size), check)
+                    native.feed(trial, read(physical, size), fd, physical,
+                                max(.1,deadline-time.monotonic()), check)
                     valid = trial.score() <= threshold
                 except coding.Invalid:
                     valid = False
@@ -227,10 +230,15 @@ def _reconstruct(fd, total, candidate, photos, cluster, heap, verify, adaptive_p
                 selected = path[len(joins)] if len(joins) < len(path) else 0
                 choices = []
                 step_cache = {}
-                for score, offset in (ranked[:8] if candidate.get('_color_ranking') else ranked):
+                shortlist = ranked[:8] if candidate.get('_color_ranking') else ranked
+                if shortlist:
+                    shortlist = native.screen(decoder, fd, shortlist, size, total, threshold, max(.1,deadline-time.monotonic()), check)
+                for score, offset in shortlist:
                     if offset + size > total or overlaps(offset, size, extents + owned):
                         continue
-                    trial = full_cache.step(decoder, read(offset,size), step_cache, check)
+                    raw_trial = read(offset,size)
+                    trial = full_cache.step(decoder, raw_trial, step_cache, check,
+                        lambda trial: native.feed(trial,raw_trial,fd,offset,max(.1,deadline-time.monotonic()),check))
                     if trial is None:
                         continue
                     if trial.score() <= threshold:
@@ -240,9 +248,14 @@ def _reconstruct(fd, total, candidate, photos, cluster, heap, verify, adaptive_p
                 if not choices and candidate['_active_band_end'] < total:
                     check()
                     remaining, scan_log = native.scan(decoder, fd, candidate['_active_band_end'], total, cluster, size if candidate.get('_color_ranking') else min(size,16384), 512, max(.1,deadline-time.monotonic()), excluded=owned+extents, verify=check)
-                    for score,offset in (remaining[:8] if candidate.get('_color_ranking') else remaining):
+                    shortlist = remaining[:8] if candidate.get('_color_ranking') else remaining
+                    if shortlist:
+                        shortlist = native.screen(decoder, fd, shortlist, size, total, threshold, max(.1,deadline-time.monotonic()), check)
+                    for score,offset in shortlist:
                         if offset+size>total or overlaps(offset,size,owned+extents):continue
-                        trial=full_cache.step(decoder,read(offset,size),step_cache,check)
+                        raw_trial=read(offset,size)
+                        trial=full_cache.step(decoder,raw_trial,step_cache,check,
+                            lambda trial: native.feed(trial,raw_trial,fd,offset,max(.1,deadline-time.monotonic()),check))
                         if trial is None:continue
                         if trial.score()<=threshold:choices.append((score,offset,trial))
                         if len(choices)>=selected+1:break
@@ -285,7 +298,7 @@ def _reconstruct(fd, total, candidate, photos, cluster, heap, verify, adaptive_p
                 'reconstruction': 'mpf_preview_guided', 'manual_review': True,
                 'continuation_decisions': joins, 'prefix_hypothesis_bytes': cut,
                 'prefix_rollback_clusters': (original_cut - cut) // cluster}, 'reconstructed_review_candidate'
-    except SearchBudget:
+    except (SearchBudget, subprocess.TimeoutExpired):
         return None, 'preview_guided_time_budget'
     except (coding.Invalid, SyntaxError, EOFError, Warning):
         return None, 'invalid_preview_guided_coding'

@@ -36,7 +36,7 @@ bool feed(State&s,const Model&m,const unsigned char*raw,size_t n){for(size_t i=0
  for(int shift=7;shift>=0;--shift){int b=(value>>shift)&1;if(s.mcus==s.expected){if(b!=1)return false;}else if(!bit(s,m,b))return false;}}
  return true;
 }
-int main(int argc,char**argv){std::cout.precision(17);if(argc!=9){std::cerr<<"state source first end stride probe top mode\n";return 2;}State initial;Model m;std::ifstream in(argv[1]);
+int main(int argc,char**argv){std::cout.precision(17);if(argc!=9&&argc!=10){std::cerr<<"state source first end stride probe top mode\n";return 2;}State initial;Model m;std::ifstream in(argv[1]);
  in>>initial.expected>>initial.mcus>>initial.block>>initial.coef>>initial.phase>>initial.code>>initial.bits>>initial.amp>>initial.need>>initial.cat>>initial.pending>>initial.eoi;
  in>>m.yc>>m.yh>>m.yv>>m.yfirst>>m.q>>m.cols>>m.w>>m.h;int n,key,value,bits,code;in>>n;m.blocks.resize(n);for(auto&b:m.blocks)in>>b[0]>>b[1]>>b[2];
  in>>n;while(n--){in>>key>>value;m.limits.at(key)=value;}in>>n;while(n--){in>>key>>value;initial.pred.at(key)=value;}
@@ -47,8 +47,11 @@ int main(int argc,char**argv){std::cout.precision(17);if(argc!=9){std::cerr<<"st
  int64_t first=std::stoll(argv[3]),end=std::stoll(argv[4]),stride=std::stoll(argv[5]);int probe=std::stoi(argv[6]),top=std::stoi(argv[7]);
  if(first<0||end>before.st_size||stride<=0||probe<=0||probe>131072||top<1||top>4096)return 7;
  std::vector<unsigned char>raw(probe);using Row=std::tuple<int,double,int64_t>;std::priority_queue<Row>heap;int64_t scanned=0,legal=0;std::vector<unsigned char> previous(probe);bool cached=false,last_ok=false;double last_sum=0;int last_count=0;std::array<double,16> last_color_sum{};std::array<int,16> last_color_count{};
- for(int64_t pos=first;pos+probe<=end;pos+=stride){while(ex<excluded.size()&&excluded[ex].second<=pos)++ex;if(ex<excluded.size()&&excluded[ex].first<pos+probe)continue;ssize_t got=pread(fd,raw.data(),probe,pos);if(got!=probe){close(fd);return 8;}State s=initial;++scanned;
+ std::vector<int64_t> positions;if(argc==10){std::ifstream list(argv[9]);int64_t p;while(list>>p){if(p<first||p+probe>end||positions.size()>=4096)return 7;positions.push_back(p);}if(!list.eof())return 7;}
+ size_t index=0;
+ for(int64_t pos=first;argc==10?index<positions.size():pos+probe<=end;argc==10?++index:pos+=stride){if(argc==10){pos=positions[index];ex=0;}while(ex<excluded.size()&&excluded[ex].second<=pos)++ex;if(ex<excluded.size()&&excluded[ex].first<pos+probe)continue;ssize_t got=pread(fd,raw.data(),probe,pos);if(got!=probe){close(fd);return 8;}State s=initial;++scanned;
   bool ok; if(cached&&std::memcmp(raw.data(),previous.data(),probe)==0&&std::string(argv[8])!="single"){ok=last_ok;s.sum=last_sum;s.count=last_count;s.color_sum=last_color_sum;s.color_count=last_color_count;}else{ok=feed(s,m,raw.data(),probe);previous=raw;cached=true;last_ok=ok;last_sum=s.sum;last_count=s.count;last_color_sum=s.color_sum;last_color_count=s.color_count;}if(std::string(argv[8])=="single"){std::cout<<ok<<" "<<s.count<<" "<<s.sum<<" "<<s.mcus<<" "<<s.block<<" "<<s.coef<<" "<<s.phase<<" "<<s.code<<" "<<s.bits<<" "<<s.amp<<" "<<s.need<<" "<<s.cat<<" "<<s.pending<<" "<<s.eoi;for(int v:s.pred)std::cout<<" "<<v;std::cout<<"\n";break;}
+  if(std::string(argv[8])=="shortlist"||std::string(argv[8])=="prefix"){if(ok&&(s.count||std::string(argv[8])=="prefix")){++legal;std::cout<<(s.count?s.sum/s.count:0)<<" "<<pos<<"\n";}continue;}
   if(ok&&s.count){++legal;bool constant=std::all_of(raw.begin()+1,raw.end(),[&](unsigned char v){return v==raw[0];});double score=s.sum/s.count;int terms=1;for(int c=0;c<16;++c)if(s.color_count[c]){score+=s.color_sum[c]/s.color_count[c];++terms;}Row r{constant?1:0,score/terms,pos};if(heap.size()<top)heap.push(r);else if(r<heap.top()){heap.pop();heap.push(r);}}}
  if(fstat(fd,&after)||before.st_dev!=after.st_dev||before.st_ino!=after.st_ino||before.st_size!=after.st_size||before.st_mtimespec.tv_sec!=after.st_mtimespec.tv_sec||before.st_mtimespec.tv_nsec!=after.st_mtimespec.tv_nsec){close(fd);return 9;}
  close(fd);std::vector<Row>rows;while(!heap.empty()){rows.push_back(heap.top());heap.pop();}std::sort(rows.begin(),rows.end());std::cout.precision(17);for(auto r:rows)std::cout<<std::get<1>(r)<<" "<<std::get<2>(r)<<"\n";std::cerr<<"scanned="<<scanned<<" legal="<<legal<<"\n";

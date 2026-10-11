@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Preview-guided four-fragment recovery and fail-closed source safety."""
-import hashlib, importlib, io, json, os, runpy, tempfile
+import hashlib, importlib, io, json, os, runpy, tempfile, time
 from pathlib import Path
 from unittest.mock import patch
 from PIL import Image
@@ -9,6 +9,7 @@ root = Path(__file__).resolve().parents[1]
 # Reuse the real MPF/EXIF camera fixture and run its existing causal regressions.
 fixture = runpy.run_path(str(root / 'tests/fragment-carving-check.py'))
 guided = importlib.import_module('preview-guided')
+guided.native.ROOT = Path(os.environ.get('CARDME_NATIVE_ENGINE', root / 'engine'))
 fragments = fixture['fragments']; coding = guided.coding
 primary, preview = fixture['primary'], fixture['preview']
 cluster, heap, start = fixture['cluster'], fixture['heap'], fixture['start']
@@ -32,10 +33,18 @@ with tempfile.TemporaryDirectory() as directory:
         candidate['_failure_prefixes'] = [(start, cuts[1] + 2)]
         candidate['_known_photos'] = []
         row = {'offset': child, 'bytes': len(preview), 'output': str(output)}
+        native_started = time.monotonic()
         result, reason = guided.reconstruct(fd, len(payload), candidate, [row], cluster, heap, lambda: None)
+        native_seconds = time.monotonic() - native_started
         assert result, reason
         assert result['data'] == primary and result['source_extents'] == expected, result['source_extents']
         assert result['manual_review'] and result['reconstruction'] == 'mpf_preview_guided'
+        python_started = time.monotonic()
+        with patch.object(guided.native, 'ROOT', folder / 'missing-native'):
+            plain, reason = guided.reconstruct(fd, len(payload), candidate, [row], cluster, heap, lambda: None)
+        assert plain and plain['data'] == result['data'] and plain['continuation_decisions'] == result['continuation_decisions'], reason
+        print('Local ranking parity timing:', {'python_seconds': time.monotonic()-python_started,
+                                               'native_seconds': native_seconds}, flush=True)
         # An overshot marker cut must roll back without changing the supplied diagnostic.
         candidate['_failure_prefixes'] = [(start, cuts[1] + cluster + 2)]
         with patch.object(guided, 'LOCAL_CLUSTERS', 80):

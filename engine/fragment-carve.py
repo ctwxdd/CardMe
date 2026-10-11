@@ -18,7 +18,7 @@ MAX_GAPS = 4096
 MAX_THREE_JOIN_ATTEMPTS = 8192
 MAX_FAILURE_PREFIX_PROBES = 256
 MAX_INTERIOR_STARTS = 64
-ALGORITHM_VERSION = 7
+ALGORITHM_VERSION = 8
 
 
 def comparison_size(dimensions):
@@ -57,7 +57,7 @@ def header(fd, start, total):
         return None
 
 
-def reconstruct(fd, total, candidate, photos, cluster, heap, verify):
+def reconstruct(fd, total, candidate, photos, cluster, heap, verify, allow_three=True):
     """Return exactly one validated join; ambiguity leaves the candidate unresolved."""
     carve = importlib.import_module('carve-photos')
     start, length = candidate['offset'], candidate['bytes']
@@ -132,6 +132,8 @@ def reconstruct(fd, total, candidate, photos, cluster, heap, verify):
                     'paired_preview_offset': preview_row['offset']}
     if accepted:
         return accepted, 'reconstructed'
+    if not allow_three:
+        return None, 'no_valid_two_extent_join'
     three = reconstruct_three(fd, total, candidate, photos, cluster, heap, verify)
     if three is not None:
         return three, 'reconstructed'
@@ -368,65 +370,70 @@ def recover(fd, total, state, best, verify, checkpoint):
     sizes = collections.defaultdict(list)
     for row in state['photos']:
         sizes[row['bytes']].append(row)
-    print('FRAGMENTS\t' + json.dumps({'done': 0, 'total': len(offsets), 'found': 0}), flush=True)
-    for index, start in enumerate(offsets, 1):
-        previous = done.get(str(start), {})
-        if previous.get('algorithm_version', 0) >= ALGORITHM_VERSION or start in known:
-            continue
-        verify()
-        candidate = header(fd, start, total)
-        if candidate is None:
-            done[str(start)] = {'reason': 'unusable_header', 'algorithm_version': ALGORITHM_VERSION}
-        else:
-            candidate['_known_photos'] = state['photos']
-            candidate['_failure_prefixes'] = []
-            for failed_start, diagnostic in failure_offsets.items():
-                failure = diagnostic.get('offset') if isinstance(diagnostic, dict) else diagnostic
-                if failure is not None:
-                    candidate['_failure_prefixes'].append((int(failed_start), failure))
-            preview_rows = sizes[candidate['preview_bytes']]
-            within = candidate['preview_logical'] % cluster
-            aligned = [row for row in preview_rows if (row['offset'] - start) % cluster == within]
-            if not aligned and state.get('fragment_preview_candidates'):
-                preview_engine = importlib.import_module('fragment-preview')
-                preview, _ = preview_engine.reconstruct(fd, total, candidate,
-                    state['fragment_preview_candidates'], cluster, heap, verify,
-                    state.get('jpeg_end_offsets', []))
-                if preview is not None:
+    print('FRAGMENTS\t' + json.dumps({'done': 0, 'total': len(offsets)*2, 'found': 0}), flush=True)
+    # Establish quick recovered ranges before harder searches use their ownership.
+    for allow_three in (False, True):
+        for index, start in enumerate(offsets, 1):
+            previous = done.get(str(start), {})
+            if previous.get('algorithm_version', 0) >= ALGORITHM_VERSION or start in known:
+                continue
+            verify()
+            candidate = header(fd, start, total)
+            if candidate is None:
+                done[str(start)] = {'reason': 'unusable_header', 'algorithm_version': ALGORITHM_VERSION}
+            else:
+                candidate['_known_photos'] = state['photos']
+                candidate['_failure_prefixes'] = []
+                for failed_start, diagnostic in failure_offsets.items():
+                    failure = diagnostic.get('offset') if isinstance(diagnostic, dict) else diagnostic
+                    if failure is not None:
+                        candidate['_failure_prefixes'].append((int(failed_start), failure))
+                preview_rows = sizes[candidate['preview_bytes']]
+                within = candidate['preview_logical'] % cluster
+                aligned = [row for row in preview_rows if (row['offset'] - start) % cluster == within]
+                if not aligned and state.get('fragment_preview_candidates'):
+                    preview_engine = importlib.import_module('fragment-preview')
+                    preview, _ = preview_engine.reconstruct(fd, total, candidate,
+                        state['fragment_preview_candidates'], cluster, heap, verify,
+                        state.get('jpeg_end_offsets', []))
+                    if preview is not None:
+                        verify()
+                        target = best / f"Photo-{preview['offset']:012x}.JPG"
+                        digest = carve.save_exact(target, preview.pop('data'))
+                        row = {'path': target.name, 'output': str(target), 'quality': 'camera_preview',
+                               'offset': preview['offset'], 'bytes': preview['bytes'],
+                               'dimensions': preview['dimensions'], 'sha256': digest,
+                               'thumbnail_difference': preview['thumbnail_difference'],
+                               'byte_exact_source_copy': False, 'byte_exact_source_fragments': True,
+                               'review_required': True, 'reconstruction': 'mpf_preview_two_extent',
+                               'paired_primary_offset': start, **preview}
+                        state['photos'].append(row); known.add(row['offset'])
+                        preview_rows.append(row)
+                        print('FILE\t' + json.dumps(row), flush=True)
+                result, reason = reconstruct(fd, total, candidate, preview_rows, cluster, heap, verify, allow_three=allow_three)
+                if allow_three and result is None and reason == 'no_valid_two_extent_join':
+                    guided = importlib.import_module('preview-guided')
+                    result, reason = guided.reconstruct(fd, total, candidate, preview_rows, cluster, heap, verify)
+                if allow_three and result is None and reason in ('no_preview_guided_continuation', 'preview_guided_time_budget',
+                                                'invalid_preview_guided_frame', 'preview_guided_full_mismatch'):
+                    ranked = importlib.import_module('preview-ranked')
+                    highwater = max((r['offset'] + r['bytes'] for r in state['photos']), default=heap)
+                    candidate['_active_band_end'] = min(total, heap + ((highwater - heap + 256*1024*1024 + cluster-1)//cluster)*cluster)
+                    result, reason = ranked.reconstruct(fd, total, candidate, preview_rows, cluster, heap, verify)
+                done[str(start)] = {'reason': reason, 'algorithm_version': ALGORITHM_VERSION - 1
+                    if not allow_three and reason == 'no_valid_two_extent_join' else ALGORITHM_VERSION}
+                if result is not None:
                     verify()
-                    target = best / f"Photo-{preview['offset']:012x}.JPG"
-                    digest = carve.save_exact(target, preview.pop('data'))
-                    row = {'path': target.name, 'output': str(target), 'quality': 'camera_preview',
-                           'offset': preview['offset'], 'bytes': preview['bytes'],
-                           'dimensions': preview['dimensions'], 'sha256': digest,
-                           'thumbnail_difference': preview['thumbnail_difference'],
-                           'byte_exact_source_copy': False, 'byte_exact_source_fragments': True,
-                           'review_required': True, 'reconstruction': 'mpf_preview_two_extent',
-                           'paired_primary_offset': start, **preview}
-                    state['photos'].append(row); known.add(row['offset'])
-                    preview_rows.append(row)
+                    target = best / f'Photo-{start:012x}.JPG'
+                    digest = carve.save_exact(target, result.pop('data'))
+                    row = {'path': target.name, 'output': str(target), 'quality': 'manual_review' if result.pop('manual_review', False) or result['thumbnail_difference'] > 5 else 'full_resolution_reconstructed',
+                           'offset': start, 'bytes': candidate['bytes'], 'dimensions': candidate['dimensions'],
+                           'sha256': digest, 'byte_exact_source_copy': False, 'byte_exact_source_fragments': True,
+                           'review_required': True, 'reconstruction': result.get('reconstruction', 'mpf_three_extent' if len(result['source_extents']) == 3 else 'mpf_two_extent'), **result}
+                    state['photos'].append(row); known.add(start)
                     print('FILE\t' + json.dumps(row), flush=True)
-            result, reason = reconstruct(fd, total, candidate, preview_rows, cluster, heap, verify)
-            if result is None and reason == 'no_valid_two_extent_join':
-                guided = importlib.import_module('preview-guided')
-                result, reason = guided.reconstruct(fd, total, candidate, preview_rows, cluster, heap, verify)
-            if result is None and reason in ('no_preview_guided_continuation', 'preview_guided_time_budget',
-                                            'invalid_preview_guided_frame', 'preview_guided_full_mismatch'):
-                ranked = importlib.import_module('preview-ranked')
-                highwater = max((r['offset'] + r['bytes'] for r in state['photos']), default=heap)
-                candidate['_active_band_end'] = min(total, heap + ((highwater - heap + 256*1024*1024 + cluster-1)//cluster)*cluster)
-                result, reason = ranked.reconstruct(fd, total, candidate, preview_rows, cluster, heap, verify)
-            done[str(start)] = {'reason': reason, 'algorithm_version': ALGORITHM_VERSION}
-            if result is not None:
-                verify()
-                target = best / f'Photo-{start:012x}.JPG'
-                digest = carve.save_exact(target, result.pop('data'))
-                row = {'path': target.name, 'output': str(target), 'quality': 'manual_review' if result.pop('manual_review', False) or result['thumbnail_difference'] > 5 else 'full_resolution_reconstructed',
-                       'offset': start, 'bytes': candidate['bytes'], 'dimensions': candidate['dimensions'],
-                       'sha256': digest, 'byte_exact_source_copy': False, 'byte_exact_source_fragments': True,
-                       'review_required': True, 'reconstruction': result.get('reconstruction', 'mpf_three_extent' if len(result['source_extents']) == 3 else 'mpf_two_extent'), **result}
-                state['photos'].append(row); known.add(start)
-                print('FILE\t' + json.dumps(row), flush=True)
-        checkpoint()
-        print('FRAGMENTS\t' + json.dumps({'done': index, 'total': len(offsets),
-              'found': sum(str(r.get('reconstruction', '')).startswith('mpf_') for r in state['photos'])}), flush=True)
+            checkpoint()
+            print('FRAGMENTS\t' + json.dumps({'done': index + (len(offsets) if allow_three else 0), 'total': len(offsets)*2,
+                  'found': sum(str(r.get('reconstruction', '')).startswith('mpf_') for r in state['photos'])}), flush=True)
+    print('FRAGMENTS\t' + json.dumps({'done': len(offsets)*2, 'total': len(offsets)*2,
+          'found': sum(str(r.get('reconstruction', '')).startswith('mpf_') for r in state['photos'])}), flush=True)

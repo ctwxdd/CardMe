@@ -9,6 +9,9 @@
 
 - Bundle native JPEG continuation ranking for harder fragmented photos, after existing fast rescue methods. Search current allocation-cluster boundaries across the saved image, prioritizing the observed photo region before the remainder.
 - Try luminance ranking with lazy alternative paths, then whole-cluster color ranking. Observe the prefix before excluding saved ranges, reuse exact-byte decode checks, and retain strict full JPEG/thumbnail/preview validation.
+- Batch full-cluster candidate filtering in the native checker while preserving shortlist order and final Python validation. Add a fresh-run benchmark that compares saved photo hashes only after rescue finishes.
+- Complete quick two-part joins before harder reconstruction, and prefilter local probes in native batches without changing the Python ranking decisions. Interrupted pending candidates remain eligible on resume.
+- Advance JPEG coding checkpoints and rank local probes natively, with state/score equivalence checks against Python. Keep complete-image decoding and thumbnail/preview checks before publication.
 - Keep source access read-only through the existing descriptor, bounded search, cancellation, separate non-overwriting outputs and manual-review classification. No reference image, external compiler or recovery profile is required.
 
 ## 0.3.34 · build 47

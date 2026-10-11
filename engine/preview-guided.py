@@ -6,9 +6,11 @@ import math
 import os
 import time
 import warnings
+import subprocess
 from PIL import Image, ImageChops, ImageStat
 
 coding = importlib.import_module('jpeg-checkpoint')
+native = importlib.import_module('native-ranker')
 MAX_SECONDS = 90
 MAX_JOINS = 16
 LOCAL_CLUSTERS = 256
@@ -106,7 +108,7 @@ def reconstruct(fd, total, candidate, photos, cluster, heap, verify):
                                       adaptive_prefix=True)
         check()
         return result, reason
-    except SearchBudget:
+    except (SearchBudget, subprocess.TimeoutExpired):
         return None, 'preview_guided_time_budget'
 
 
@@ -200,7 +202,8 @@ def _reconstruct(fd, total, candidate, photos, cluster, heap, verify, adaptive_p
                 end = min(cut, (position // cluster + 1) * cluster)
                 trial = decoder.clone()
                 try:
-                    trial.feed(raw[position:end], check)
+                    native.feed(trial, raw[position:end], fd, start+position,
+                                max(.1,deadline-time.monotonic()), check)
                     valid = trial.score() <= threshold
                 except coding.Invalid:
                     valid = False
@@ -215,7 +218,8 @@ def _reconstruct(fd, total, candidate, photos, cluster, heap, verify, adaptive_p
                 threshold = max(12, error_sum / max(1, error_count) * 6)
         else:
             try:
-                decoder.feed(raw[decoder.header_end:], check)
+                native.feed(decoder, raw[decoder.header_end:], fd, start+decoder.header_end,
+                            max(.1,deadline-time.monotonic()), check)
             except coding.Invalid:
                 return None, 'invalid_preview_guided_prefix'
             threshold = max(12, decoder.score() * 6)
@@ -227,7 +231,8 @@ def _reconstruct(fd, total, candidate, photos, cluster, heap, verify, adaptive_p
             valid = not overlaps(physical, size, extents + owned)
             if valid:
                 try:
-                    trial.feed(read(physical, size), check)
+                    native.feed(trial, read(physical, size), fd, physical,
+                                max(.1,deadline-time.monotonic()), check)
                     valid = trial.score() <= threshold
                 except coding.Invalid:
                     valid = False
@@ -243,9 +248,28 @@ def _reconstruct(fd, total, candidate, photos, cluster, heap, verify, adaptive_p
                 lookahead = 1024 if len(joins) >= 4 else LOOKAHEAD
                 def rank_positions(offsets):
                     rows = []
-                    for offset in offsets:
-                        if offset < heap or offset + size > total or overlaps(offset, size, extents + owned):
-                            continue
+                    eligible = [offset for offset in offsets
+                                if offset >= heap and offset + size <= total
+                                and not overlaps(offset, size, extents + owned)]
+                    if native.available(decoder) and eligible:
+                        try:
+                            eligible = [offset for _,offset in native.screen(decoder, fd,
+                                [(0,offset) for offset in eligible], min(512,lookahead,size), total,
+                                threshold*2, max(.1,deadline-time.monotonic()), check, allow_empty=True)]
+                        except subprocess.TimeoutExpired:
+                            raise SearchBudget()
+                        if not eligible:
+                            return []
+                        rows, _ = native.scan(decoder,fd,heap,total,1,min(lookahead,size),
+                            len(eligible),max(.1,deadline-time.monotonic()),mode='shortlist',
+                            positions=eligible,verify=check)
+                        rows.sort()
+                        if lookahead < LOOKAHEAD and size > lookahead and rows:
+                            rows, _ = native.scan(decoder,fd,heap,total,1,min(LOOKAHEAD,size),
+                                min(8,len(rows)),max(.1,deadline-time.monotonic()),mode='shortlist',
+                                positions=[offset for _,offset in rows[:8]],verify=check)
+                        return sorted(rows)
+                    for offset in eligible:
                         probe = decoder.clone()
                         try:
                             raw_probe = read(offset, min(lookahead, size))
@@ -280,7 +304,8 @@ def _reconstruct(fd, total, candidate, photos, cluster, heap, verify, adaptive_p
                     score, offset = rows[0]
                     trial = decoder.clone()
                     try:
-                        trial.feed(read(offset, size), check)
+                        native.feed(trial, read(offset, size), fd, offset,
+                                    max(.1,deadline-time.monotonic()), check)
                     except coding.Invalid:
                         return None
                     return (score, offset, trial) if trial.score() <= threshold else None
@@ -327,7 +352,7 @@ def _reconstruct(fd, total, candidate, photos, cluster, heap, verify, adaptive_p
                 'reconstruction': 'mpf_preview_guided', 'manual_review': True,
                 'continuation_decisions': joins, 'prefix_hypothesis_bytes': cut,
                 'prefix_rollback_clusters': (original_cut - cut) // cluster}, 'reconstructed_review_candidate'
-    except SearchBudget:
+    except (SearchBudget, subprocess.TimeoutExpired):
         return None, 'preview_guided_time_budget'
     except (coding.Invalid, SyntaxError, EOFError, Warning):
         return None, 'invalid_preview_guided_coding'

@@ -473,7 +473,7 @@ final class RescueSession: ObservableObject {
            let progress = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
            let done = progress["done"] as? Double, let total = progress["total"] as? Double, total > 0 {
             fraction = done / total
-            status = "Putting photo pieces together… \(Int(done)) of \(Int(total)) checked · \(progress["found"] as? Int ?? 0) rebuilt"
+            status = "Putting photo pieces together… \(Int(100 * done / total))% checked · \(progress["found"] as? Int ?? 0) rebuilt"
             return
         }
         if line.hasPrefix("IMAGING\t"), let data = String(line.dropFirst(8)).data(using: .utf8),
