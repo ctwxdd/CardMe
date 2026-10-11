@@ -2,15 +2,15 @@
   "name": "English",
   "title": "Free Memory Card Recovery for Mac — CardMe",
   "description": "Free SD card and memory card photo recovery for Mac. Recover damaged JPEG photos and search deleted or quickly formatted cards. Read-only card access, no account required.",
-  "heading": "Free photo recovery<br>for memory cards.",
+  "heading": "Photos missing?<br>Let’s take a look.",
   "kicker": "A free app for Mac",
-  "lead": "Photos missing or won’t open? Save what can be recovered, safely on your Mac.",
+  "lead": "A free Mac app for damaged, deleted or quickly formatted memory cards. Recover your photos without changing the card.",
   "download": "Download for Mac",
   "nav": [
     "How it works",
     "Questions"
   ],
-  "stepsTitle": "A clear next step.",
+  "stepsTitle": "Three simple steps.",
   "steps": [
     [
       "Choose your card",
@@ -51,6 +51,18 @@
     [
       "Are my photos uploaded?",
       "No. Recovery runs locally on your Mac. Newer builds include usage statistics that can be turned off in Settings; photos, file names, paths and card details are never uploaded. The website counts visits, download clicks and coffee-link clicks without cookies or persistent identifiers. Do Not Track and Global Privacy Control are respected. Hosting necessarily receives network addresses."
+    ],
+    [
+      "What does Deep Rescue search for?",
+      "It searches the safety copy for JPEG signatures, follows segment and scan boundaries, and checks that candidate images decode before saving them. A readable JPEG can still contain damage; please review the results."
+    ],
+    [
+      "Why are some results previews or thumbnails?",
+      "Cameras often store smaller JPEG copies alongside the full-size photo, including thumbnails inside EXIF. These may survive when the full-size data does not. CardMe labels smaller copies separately; it does not enlarge them or invent missing pixels."
+    ],
+    [
+      "Can EXIF bring back the original filename?",
+      "EXIF usually contains the capture time, camera details and orientation. The original filename normally belongs to the card’s file system, which a format can erase. Some camera MakerNotes contain file numbers, but their meaning depends on the model and does not always establish the original name."
     ]
   ],
   "trust": [
@@ -61,7 +73,7 @@
   "caption": "From checking your card to reviewing saved photos.",
   "appNote": "The app interface is currently in English.",
   "free": "Free to use.",
-  "support": "If this helped you, you’re welcome to buy me a coffee.",
+  "support": "If CardMe helped you save a memory, you’re welcome to buy me a coffee.",
   "coffee": "Buy me a coffee ☕️",
   "licenses": "Licenses and source information are included in the app.",
   "version": "Public download: 0.3.23 · Apple notarized."

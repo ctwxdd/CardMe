@@ -2,15 +2,15 @@
   "name": "Español",
   "title": "Recuperación gratis de tarjetas SD y de memoria para Mac — CardMe",
   "description": "Recupera fotos JPEG dañadas y busca fotos borradas o tras un formateo rápido. App gratuita para Mac, acceso de solo lectura y sin cuenta.",
-  "heading": "Recupera fotos de tarjetas<br>de memoria gratis.",
+  "heading": "¿Faltan tus fotos?<br>Vamos a buscarlas.",
   "kicker": "Una app gratuita para Mac",
-  "lead": "¿Tus fotos no aparecen o no se abren? Recupera lo que aún se pueda salvar.",
+  "lead": "Una app gratuita para Mac que recupera fotos de tarjetas dañadas, borradas o con formato rápido, sin modificar la tarjeta.",
   "download": "Descargar para Mac",
   "nav": [
     "Cómo funciona",
     "Preguntas"
   ],
-  "stepsTitle": "Un siguiente paso claro.",
+  "stepsTitle": "Tres pasos sencillos.",
   "steps": [
     [
       "Elige tu tarjeta",
@@ -51,6 +51,18 @@
     [
       "¿Se suben mis fotos?",
       "No. La recuperación se hace en tu Mac. Las estadísticas de uso de las versiones nuevas pueden desactivarse en Ajustes. No se suben fotos, nombres, rutas ni datos de la tarjeta. El sitio cuenta visitas y clics de descarga y apoyo sin cookies ni identificadores persistentes. Respeta Do Not Track y Global Privacy Control. El alojamiento recibe direcciones de red."
+    ],
+    [
+      "¿Qué busca Deep Rescue?",
+      "Busca firmas JPEG en la copia de seguridad, sigue los límites de los segmentos y los datos de imagen, y comprueba que cada candidato se pueda decodificar antes de guardarlo. Un JPEG legible aún puede tener daños; revisa los resultados."
+    ],
+    [
+      "¿Por qué algunos resultados son vistas previas o miniaturas?",
+      "Las cámaras suelen guardar copias JPEG más pequeñas junto a la foto original, incluidas miniaturas en EXIF. Pueden sobrevivir cuando los datos de tamaño completo no. CardMe las distingue y no las amplía ni inventa píxeles ausentes."
+    ],
+    [
+      "¿Puede EXIF recuperar el nombre original?",
+      "EXIF suele conservar la fecha, la cámara y la orientación. El nombre pertenece normalmente al sistema de archivos de la tarjeta, que un formato puede borrar. Algunas MakerNotes contienen números de archivo, pero su significado depende del modelo y no siempre permite conocer el nombre original."
     ]
   ],
   "trust": [
@@ -61,7 +73,7 @@
   "caption": "De comprobar la tarjeta a revisar tus fotos.",
   "appNote": "La interfaz de la app está actualmente en inglés.",
   "free": "Gratis para usar.",
-  "support": "Si te ayudó, puedes invitarme a un café.",
+  "support": "Si CardMe te ayudó a recuperar un recuerdo, puedes invitarme a un café.",
   "coffee": "Invítame a un café ☕️",
   "licenses": "La app incluye licencias e información del código fuente.",
   "version": "Descarga pública: 0.3.23 · Notarizada por Apple."

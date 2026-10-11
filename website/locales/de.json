@@ -2,15 +2,15 @@
   "name": "Deutsch",
   "title": "Kostenlose SD-Karten- und Speicherkarten-Fotowiederherstellung für Mac — CardMe",
   "description": "Kostenlose Mac-App für beschädigte JPEG-Fotos und die Suche nach gelöschten Fotos oder nach Schnellformatierung. Nur lesender Kartenzugriff, kein Konto nötig.",
-  "heading": "Fotos von Speicherkarten<br>kostenlos wiederherstellen.",
+  "heading": "Fotos verschwunden?<br>Schauen wir nach.",
   "kicker": "Eine kostenlose App für Mac",
-  "lead": "Fotos verschwunden oder nicht lesbar? Retten Sie, was noch wiederherstellbar ist.",
+  "lead": "Eine kostenlose Mac-App für beschädigte, gelöschte oder schnell formatierte Speicherkarten. Fotos retten, ohne die Karte zu verändern.",
   "download": "Für Mac herunterladen",
   "nav": [
     "So funktioniert es",
     "Fragen"
   ],
-  "stepsTitle": "Ein klarer nächster Schritt.",
+  "stepsTitle": "Drei einfache Schritte.",
   "steps": [
     [
       "Karte auswählen",
@@ -51,6 +51,18 @@
     [
       "Werden Fotos hochgeladen?",
       "Nein. Die Wiederherstellung läuft auf dem Mac. Nutzungsstatistiken neuerer Versionen lassen sich in den Einstellungen deaktivieren. Fotos, Dateinamen, Pfade und Kartendaten werden nicht hochgeladen. Die Website zählt Besuche sowie Download- und Unterstützungslink-Klicks ohne Cookies oder dauerhafte Kennungen. Do Not Track und Global Privacy Control werden beachtet. Der Hostingdienst erhält Netzwerkadressen."
+    ],
+    [
+      "Wonach sucht Deep Rescue?",
+      "Es sucht in der Sicherheitskopie nach JPEG-Signaturen, verfolgt Segment- und Bilddatengrenzen und prüft die Dekodierung vor dem Speichern. Ein lesbares JPEG kann weiterhin beschädigt sein; bitte prüfen Sie die Ergebnisse."
+    ],
+    [
+      "Warum sind manche Ergebnisse nur Vorschauen oder Miniaturbilder?",
+      "Kameras speichern oft kleinere JPEG-Kopien neben dem Original, darunter EXIF-Miniaturbilder. Diese können erhalten bleiben, wenn das Original beschädigt ist. CardMe kennzeichnet sie getrennt, vergrößert sie nicht und erzeugt keine fehlenden Pixel."
+    ],
+    [
+      "Kann EXIF den ursprünglichen Dateinamen retten?",
+      "EXIF enthält meist Aufnahmezeit, Kameradaten und Ausrichtung. Der Name liegt normalerweise im Dateisystem der Karte und kann beim Formatieren verloren gehen. Manche MakerNotes enthalten Dateinummern; ihre Bedeutung hängt vom Modell ab und belegt nicht immer den ursprünglichen Namen."
     ]
   ],
   "trust": [
@@ -61,7 +73,7 @@
   "caption": "Von der Kartenprüfung zu den geretteten Fotos.",
   "appNote": "Die App-Oberfläche ist derzeit auf Englisch.",
   "free": "Kostenlos nutzbar.",
-  "support": "Wenn es geholfen hat, kannst du mir einen Kaffee spendieren.",
+  "support": "Wenn CardMe Ihnen geholfen hat, eine Erinnerung zu retten, freue ich mich über einen Kaffee.",
   "coffee": "Einen Kaffee spendieren ☕️",
   "licenses": "Lizenzen und Quellcode-Informationen sind in der App enthalten.",
   "version": "Öffentlicher Download: 0.3.23 · Von Apple notarisiert."
