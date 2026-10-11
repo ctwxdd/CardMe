@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.31 · build 44
+
+- Expand three-part JPEG tail-boundary search when nearby joins fail. Keep previously qualified nearby matches and the existing candidate budget, strict validation, cancellation and original-byte provenance.
+- Allow a unique MPF indexed preview to validate a three-part photo when its embedded thumbnail disagrees. Require full preview matching and keep the result marked for review.
+- Retry unresolved candidates once for the updated algorithm without overwriting recovered outputs. Source cards and images remain read only.
+
 ## 0.3.30 · build 43
 
 - Try bounded three-part JPEG reconstruction, preserving source extents and requiring a unique decoded result that matches the camera preview.

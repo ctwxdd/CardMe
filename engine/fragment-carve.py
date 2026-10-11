@@ -18,7 +18,7 @@ MAX_GAPS = 4096
 MAX_THREE_JOIN_ATTEMPTS = 8192
 MAX_FAILURE_PREFIX_PROBES = 256
 MAX_INTERIOR_STARTS = 64
-ALGORITHM_VERSION = 2
+ALGORITHM_VERSION = 3
 
 
 def comparison_size(dimensions):
@@ -203,7 +203,7 @@ def reconstruct_three(fd, total, candidate, photos, cluster, heap, verify):
         if len(gaps) > MAX_GAPS:
             return None
 
-    matches = []
+    matches, structural = [], []
     for row in photos:
         if row['bytes'] != candidate['preview_bytes'] or (row['offset'] - start) % cluster != within:
             continue
@@ -211,8 +211,12 @@ def reconstruct_three(fd, total, candidate, photos, cluster, heap, verify):
         with Image.open(row['output']) as preview:
             if max(preview.size) <= 2048 and preview.width * preview.height <= 64_000_000:
                 preview.load()
+                structural.append(row)
                 if scan.thumbnail_difference(preview, candidate['thumbnail']) <= 5:
                     matches.append(row)
+    allow_thumbnail_mismatch = not matches and len(structural) == 1
+    if allow_thumbnail_mismatch:
+        matches = structural
     if len(matches) != 1:
         return None
     preview_row = matches[0]
@@ -240,7 +244,10 @@ def reconstruct_three(fd, total, candidate, photos, cluster, heap, verify):
         reference = preview.resize(comparison_size(candidate['dimensions']), Image.Resampling.LANCZOS, reducing_gap=3).convert('RGB')
     accepted = []
     attempts = 0
-    for boundary in range(first_tail, min(first_tail + 4, math.ceil(length / cluster))):
+    # Preserve qualified nearby joins; broaden only when that window has no match.
+    for boundary in range(first_tail, min(auxindex + 1, math.ceil(length / cluster))):
+        if boundary == first_tail + 4 and accepted:
+            return accepted[0]
         if boundary <= prefix_clusters:
             continue
         middle_bytes = (boundary - prefix_clusters) * cluster
@@ -306,7 +313,7 @@ def reconstruct_three(fd, total, candidate, photos, cluster, heap, verify):
                         difference = scan.thumbnail_difference(photo, candidate['thumbnail'])
                         reduced = photo.resize(reference.size, Image.Resampling.LANCZOS, reducing_gap=3).convert('RGB')
                         score = sum(ImageStat.Stat(ImageChops.difference(reduced, reference)).mean) / 3
-                if difference > 5 or score > 3:
+                if (difference > 5 and not allow_thumbnail_mismatch) or score > 3:
                     continue
             except (ValueError, OSError, SyntaxError, EOFError, Warning):
                 continue

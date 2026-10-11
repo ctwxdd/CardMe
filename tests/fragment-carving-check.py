@@ -97,10 +97,11 @@ with tempfile.TemporaryDirectory() as temporary:
 print('Fragment carving checks passed: exact source extents, automatic handoff, MPF metadata, resume, ambiguity, cancellation, budgets and no overwrite.')
 
 # A synthetic causal three-extent fixture: the first marker failure only suggests
-# the prefix length; an occupied cluster separates that prefix from a free middle gap.
+# the prefix length. Six unowned clusters before the tail push the inferred
+# boundary beyond the old four-boundary window; widening must recover exact bytes.
 with tempfile.TemporaryDirectory() as temporary:
     root = Path(temporary); source = root / 'three.img'
-    boundary = cluster * 10
+    boundary = cluster * 18
     three_suffix = heap + cluster * 100
     three_child = three_suffix + logical - boundary
     three_payload = bytearray(three_child + len(preview) + cluster)
@@ -121,7 +122,7 @@ with tempfile.TemporaryDirectory() as temporary:
         preview_row = {'offset': three_child, 'bytes': len(preview), 'output': str(preview_path)}
         three_candidate['_known_photos'] = [
             {'offset': three_start + three_cut, 'bytes': cluster * 4},
-            {'offset': three_suffix - cluster, 'bytes': cluster}]
+            {'offset': three_suffix - cluster * 7, 'bytes': cluster}]
         jpeg_extent = carve.jpeg_extent
         def failed_marker(source_fd, source_start, source_total, pread=None):
             if source_fd == fd and source_start == three_start:
@@ -131,13 +132,32 @@ with tempfile.TemporaryDirectory() as temporary:
             rebuilt = fragments.reconstruct_three(fd, len(three_payload), three_candidate,
                                                   [preview_row], cluster, heap, lambda: None)
         assert rebuilt and rebuilt['data'] == primary
+        disagreeing_thumbnail = dict(three_candidate, thumbnail=Image.new('RGB', (160, 107), 'green'))
+        with patch.object(carve, 'jpeg_extent', side_effect=failed_marker):
+            reviewed = fragments.reconstruct_three(fd, len(three_payload), disagreeing_thumbnail,
+                                                   [preview_row], cluster, heap, lambda: None)
+            assert reviewed and reviewed['data'] == primary and reviewed['thumbnail_difference'] > 5
+            review_state = {'fragment_candidates': [three_start], 'photos': [preview_row]}
+            with patch.object(allocation, 'volume', return_value=geometry), \
+                 patch.object(fragments, 'header', return_value=dict(disagreeing_thumbnail)), \
+                 patch.object(fragments, 'reconstruct', return_value=(dict(reviewed), 'reconstructed')):
+                fragments.recover(fd, len(three_payload), review_state, root, lambda: None, lambda: None)
+            review_photo = next(row for row in review_state['photos'] if row['offset'] == three_start)
+            assert review_photo['quality'] == 'manual_review' and review_photo['review_required']
+            assert Path(review_photo['output']).read_bytes() == primary
+            assert fragments.reconstruct_three(fd, len(three_payload), disagreeing_thumbnail,
+                                               [preview_row, preview_row], cluster, heap, lambda: None) is None
+        with patch.object(carve, 'jpeg_extent', side_effect=failed_marker), \
+             patch.object(fragments, 'MAX_THREE_JOIN_ATTEMPTS', 1):
+            assert fragments.reconstruct_three(fd, len(three_payload), three_candidate,
+                                               [preview_row], cluster, heap, lambda: None) is None
         assert rebuilt['source_extents'] == [
             {'offset': three_start, 'bytes': three_cut},
             {'offset': middle_start, 'bytes': boundary - three_cut},
             {'offset': three_suffix, 'bytes': len(primary) - boundary}]
         retry_state = {'fragment_candidates': [three_start], 'photos': [],
                        'fragment_analysis': {'candidates': {str(three_start): {
-                           'reason': 'no_valid_two_extent_join', 'algorithm_version': 1}}}}
+                           'reason': 'no_valid_two_extent_join', 'algorithm_version': 2}}}}
         header_row = {'offset': three_start, 'bytes': len(primary), 'thumbnail': None,
                       'preview_logical': logical, 'preview_bytes': len(preview)}
         with patch.object(allocation, 'volume', return_value=geometry), \
@@ -145,7 +165,7 @@ with tempfile.TemporaryDirectory() as temporary:
              patch.object(fragments, 'header', return_value=header_row), \
              patch.object(fragments, 'reconstruct', return_value=(None, 'no_valid_two_extent_join')):
             fragments.recover(fd, len(three_payload), retry_state, root, lambda: None, lambda: None)
-            assert retry_state['fragment_analysis']['candidates'][str(three_start)]['algorithm_version'] == 2
+            assert retry_state['fragment_analysis']['candidates'][str(three_start)]['algorithm_version'] == fragments.ALGORITHM_VERSION
             assert probe.call_count == 1
         with patch.object(allocation, 'volume', return_value=geometry), \
              patch.object(carve, 'jpeg_extent', side_effect=AssertionError('Completed candidate was reprobed')) as probe, \
