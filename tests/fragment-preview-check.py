@@ -22,6 +22,8 @@ with tempfile.TemporaryDirectory() as tmp:
   assert reason=='reconstructed_preview' and result['data']==raw,(reason,result)
   assert result['source_extents']==[{'offset':start,'bytes':cut},{'offset':suffix,'bytes':len(raw)-cut}]
   assert path.read_bytes()==payload
+  indexed, reason = engine.reconstruct(fd,len(payload),candidate,[described],cluster,heap,lambda:None,[suffix+len(raw)-cut])
+  assert reason == 'reconstructed_preview' and indexed['data'] == raw
   def cancel():raise KeyboardInterrupt
   try:engine.reconstruct(fd,len(payload),candidate,[described],cluster,heap,cancel);raise AssertionError('cancel ignored')
   except KeyboardInterrupt:pass

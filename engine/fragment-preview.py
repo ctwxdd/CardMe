@@ -28,7 +28,7 @@ def describe(fd, start, total):
     return None
 
 
-def reconstruct(fd, total, candidate, starts, cluster, heap, verify):
+def reconstruct(fd, total, candidate, starts, cluster, heap, verify, endpoints=None):
     carve = importlib.import_module('carve-photos')
     scan = importlib.import_module('scan-images')
     length = candidate['preview_bytes']
@@ -41,22 +41,28 @@ def reconstruct(fd, total, candidate, starts, cluster, heap, verify):
         return None, 'missing_preview_header_or_search_budget'
     # Search the current allocation heap, including regions with no intact photos.
     within = (aligned[0]['offset'] - heap + length) % cluster
-    end_count = max(0, (total - heap - within) // cluster + 1)
-    if end_count > MAX_END_CHECKS:
-        return None, 'preview_endpoint_search_budget'
-    ends = []
-    for index, end in enumerate(range(heap + within, total + 1, cluster)):
-        if index % 256 == 0:
-            verify()
-        if end < heap + 2:
-            continue
-        marker = os.pread(fd, 2, end - 2)
-        if len(marker) != 2:
-            raise OSError('Short preview endpoint read')
-        if marker == b'\xff\xd9':
-            ends.append(end)
-            if len(ends) > MAX_JOINS:
-                return None, 'preview_endpoint_search_budget'
+    if endpoints is not None:
+        ends = sorted({end for end in endpoints if heap + 2 <= end <= total
+                       and (end - heap) % cluster == within})
+        if len(ends) > MAX_JOINS:
+            return None, 'preview_endpoint_search_budget'
+    else:
+        end_count = max(0, (total - heap - within) // cluster + 1)
+        if end_count > MAX_END_CHECKS:
+            return None, 'preview_endpoint_search_budget'
+        ends = []
+        for index, end in enumerate(range(heap + within, total + 1, cluster)):
+            if index % 256 == 0:
+                verify()
+            if end < heap + 2:
+                continue
+            marker = os.pread(fd, 2, end - 2)
+            if len(marker) != 2:
+                raise OSError('Short preview endpoint read')
+            if marker == b'\xff\xd9':
+                ends.append(end)
+                if len(ends) > MAX_JOINS:
+                    return None, 'preview_endpoint_search_budget'
     accepted = None
     attempts = 0
     for row in aligned:

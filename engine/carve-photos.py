@@ -169,7 +169,7 @@ def recover(image, output):
                 raise ValueError('Source or recovery method changed; choose a fresh output folder.')
         else:
             state = {'version': 1, 'method': 'contiguous_jpeg_carving_v1', 'identity': identity,
-                     'next_offset': 0, 'photos': [], 'rejected_candidates': 0, 'fragment_candidates': [], 'fragment_preview_candidates': [], 'complete': False,
+                     'next_offset': 0, 'photos': [], 'rejected_candidates': 0, 'fragment_candidates': [], 'fragment_preview_candidates': [], 'jpeg_end_offsets': [], 'complete': False,
                      'limitations': 'JPEG primary streams and bounded MPF-guided two-extent reconstruction. Original filenames and deleted/live status are unknown. Embedded JPEGs may be previews. Other fragmentation, overwritten and RAW files may remain unresolved. Decoding does not prove every pixel is authentic. No bytes or pixels are synthesized.'}
         offset = state['next_offset']
         if not isinstance(offset, int) or not 0 <= offset <= stat.st_size:
@@ -199,6 +199,18 @@ def recover(image, output):
                 data = os.pread(fd, min(CHUNK, stat.st_size - offset), offset)
                 if len(data) != min(CHUNK, stat.st_size - offset):
                     raise OSError('Short source read')
+                # Retain bounded endpoint hints during the existing scan, avoiding random
+                # whole-card endpoint probes when a camera preview is fragmented.
+                ends = state.setdefault('jpeg_end_offsets', [])
+                end_at = 0
+                while len(ends) < 100000:
+                    end_at = data.find(b'\xff\xd9', end_at)
+                    if end_at < 0:
+                        break
+                    endpoint = offset + end_at + 2
+                    if not ends or endpoint > ends[-1]:
+                        ends.append(endpoint)
+                    end_at += 2
                 cursor = 0
                 while True:
                     at = data.find(b'\xff\xd8\xff', cursor)
