@@ -449,10 +449,11 @@ final class RescueSession: ObservableObject {
             }
         }
         let previewPath = object["metadata_output"] as? String ?? object["output"] as? String ?? (path.hasPrefix("/") ? path : nil)
-        let row = DamagedFile(id: path, name: URL(fileURLWithPath: path).lastPathComponent, detail: detail,
+        let identity = (object["offset"] as? NSNumber).map { "recovered-\($0.stringValue)" } ?? path
+        let row = DamagedFile(id: identity, name: URL(fileURLWithPath: path).lastPathComponent, detail: detail,
                               url: previewPath.map { URL(fileURLWithPath: $0) },
                               fullSizeRecovered: ["full_resolution", "full_resolution_copy", "full_resolution_reconstructed"].contains(quality ?? "") && (object["output"] as? String).map { FileManager.default.fileExists(atPath: $0) } == true)
-        if let index = damaged.firstIndex(where: { $0.id == path }) { damaged[index] = row } else { damaged.append(row) }
+        if let index = damaged.firstIndex(where: { $0.id == identity }) { damaged[index] = row } else { damaged.append(row) }
     }
     private func addLine(_ line: String) {
         if line.hasPrefix("SCANNING\t"), let data = String(line.dropFirst(9)).data(using: .utf8),

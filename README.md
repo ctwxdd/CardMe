@@ -31,7 +31,7 @@ The current source supports:
 - Checking damaged JPEG files and recovering decoded photos or embedded previews and thumbnails.
 - Searching for intact, contiguous JPEG data after deletion or a quick format.
 - Bounded reconstruction of some fragmented camera JPEGs when enough allocation information or a matching camera preview survives. Uncertain candidates are saved for review.
-- Finding original filename hints in surviving exFAT directory records. Formatting may have erased the filename and allocation records.
+- Restoring original filenames when surviving exFAT directory records provide an unambiguous name. Otherwise, using EXIF capture timestamps when available. Name collisions receive a suffix; existing files are never overwritten.
 - Ranking harder fragmented JPEG candidates using the current safety copy and a surviving camera preview. Difficult candidates can take additional time; cancellation remains available and uncertain results require inspection.
 - Keeping completed results when recovery is stopped, with checkpoint support for the image-search paths.
 

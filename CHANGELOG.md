@@ -7,6 +7,8 @@
 
 ## 0.3.35 · build 48
 
+- Restore unambiguous original filenames from current-image directory remnants; fall back to EXIF capture timestamps. Preserve JPEG bytes, handle name collisions without overwrites, and keep list selection and Quick View connected after renaming.
+
 - Bundle native JPEG continuation ranking for harder fragmented photos, after existing fast rescue methods. Search current allocation-cluster boundaries across the saved image, prioritizing the observed photo region before the remainder.
 - Try luminance ranking with lazy alternative paths, then whole-cluster color ranking. Observe the prefix before excluding saved ranges, reuse exact-byte decode checks, and retain strict full JPEG/thumbnail/preview validation.
 - Batch full-cluster candidate filtering in the native checker while preserving shortlist order and final Python validation. Add a fresh-run benchmark that compares saved photo hashes only after rescue finishes.

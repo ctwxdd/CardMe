@@ -18,6 +18,13 @@ struct StreamingCheck {
         assert(session.damaged.count == 100)
         assert(session.damaged.map(\.id) == (0..<100).map { "photo-\($0).jpg" })
         assert(session.selectedID == "photo-0.jpg")
+        session.receive(Data("FILE\t{\"path\":\"Photo-000000000200.JPG\",\"offset\":512,\"quality\":\"carved_jpeg\"}\n".utf8))
+        session.selectedID = "recovered-512"
+        session.receive(Data("FILE\t{\"path\":\"IMG_1234.JPG\",\"offset\":512,\"quality\":\"carved_jpeg\",\"output\":\"/tmp/IMG_1234.JPG\"}\n".utf8))
+        assert(session.damaged.count == 101)
+        assert(session.damaged.last?.name == "IMG_1234.JPG")
+        assert(session.damaged.last?.url?.path == "/tmp/IMG_1234.JPG")
+        assert(session.selectedID == "recovered-512")
         print("100 buffered photo events displayed incrementally, in order, without loss.")
     }
 }

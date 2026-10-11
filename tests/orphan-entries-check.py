@@ -47,5 +47,10 @@ with tempfile.TemporaryDirectory() as temporary:
  report=json.loads((output/'pipeline-report.json').read_text())
  assert report['photos'][0]['original_filename_hint']=='IMG_1234.JPG'
  assert report['photos'][0]['directory_entry_offsets']==[4064]
+ assert report['photos'][0]['path']=='IMG_1234.JPG'
+ assert Path(report['photos'][0]['output']).read_bytes()==photo.getvalue()
+ with patch.object(volume,'volume',return_value=(0,512,0,4096,0,16)),patch.object(importlib.import_module('fragment-carve'),'recover'):
+  assert carve.recover(image,output)==0
+ assert len(list((output/'best_available').glob('*.JPG')))==1
  assert hashlib.sha256(image.read_bytes()).hexdigest()==before
 print('Orphan metadata retained by the regular scan across a chunk boundary, source unchanged.')

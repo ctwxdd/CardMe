@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Read-only, filesystem-independent JPEG recovery from a saved card image."""
-import argparse, collections, fcntl, hashlib, importlib, io, json, os, signal, sys, tempfile, time, warnings
+import argparse, collections, datetime, fcntl, hashlib, importlib, io, json, os, signal, sys, tempfile, time, warnings
 from pathlib import Path
 from PIL import Image
 from safety import validate_image_output
@@ -144,6 +144,49 @@ def save_exact(target, data):
     return digest
 
 
+def restore_names(state, best, checkpoint):
+    for row in sorted(state['photos'], key=lambda row: row['offset']):
+        source = Path(row['output'])
+        if source.parent != best or source.is_symlink() or not source.is_file():
+            raise ValueError('Unexpected saved-photo path')
+        name = row.get('original_filename_hint')
+        origin = 'directory_entry'
+        if not isinstance(name, str) or '/' in name or '\\' in name or any(ord(c) < 32 for c in name) or not name.lower().endswith(('.jpg', '.jpeg')):
+            name = None
+        if name is None:
+            with Image.open(source) as photo:
+                exif = photo.getexif()
+                frame = exif.get_ifd(34665) if 34665 in exif else {}
+                date = frame.get(36867) or frame.get(36868) or exif.get(306)
+            try:
+                name = datetime.datetime.strptime(date, '%Y:%m:%d %H:%M:%S').strftime('%Y%m%d_%H%M%S.JPG')
+            except (TypeError, ValueError):
+                continue
+            origin = 'exif_datetime'
+        target = best / name
+        suffix = 0
+        while True:
+            # Compare case-insensitively even on a case-sensitive output volume.
+            existing = next((p for p in best.iterdir() if p.name.casefold() == target.name.casefold()), None)
+            if existing is not None:
+                if not existing.is_symlink() and existing.samefile(source):
+                    target = existing
+                    break
+                suffix += 1
+                target = best / f'{Path(name).stem}-{row["offset"]:012x}{"-" + str(suffix) if suffix > 1 else ""}{Path(name).suffix}'
+                continue
+            try:
+                os.link(source, target, follow_symlinks=False)
+                break
+            except FileExistsError:
+                continue
+        row.update(path=target.name, output=str(target), filename_origin=origin)
+        # Commit the new path before removing the old link, so interruption is resumable.
+        checkpoint()
+        if source != target:
+            source.unlink()
+
+
 def recover(image, output):
     image = Path(image).resolve(); output = validate_image_output(image, output)
     stat = image.stat()
@@ -179,15 +222,15 @@ def recover(image, output):
         else:
             state = {'version': 1, 'method': 'contiguous_jpeg_carving_v1', 'identity': identity,
                      'next_offset': 0, 'photos': [], 'rejected_candidates': 0, 'fragment_candidates': [], 'fragment_preview_candidates': [], 'jpeg_end_offsets': [], 'complete': False,
-                     'limitations': 'JPEG primary streams and bounded MPF-guided two- and three-extent reconstruction plus bounded preview-guided multi-extent candidates for review, including indexed preview recovery. Original filenames and deleted/live status are unknown. Other fragmentation, overwritten and RAW files may remain unresolved. Decoding does not prove every pixel is authentic. No bytes or pixels are synthesized.'}
+                     'limitations': 'JPEG primary streams and bounded MPF-guided two- and three-extent reconstruction plus bounded preview-guided multi-extent candidates for review, including indexed preview recovery. Original filenames are restored only from unambiguous directory remnants; otherwise EXIF dates or recovery names are used. Deleted/live status is unknown. Other fragmentation, overwritten and RAW files may remain unresolved. Decoding does not prove every pixel is authentic. No bytes or pixels are synthesized.'}
         offset = state['next_offset']
         if not isinstance(offset, int) or not 0 <= offset <= stat.st_size:
             raise ValueError('Invalid recovery checkpoint')
         known = {row['offset']: row for row in state['photos']}
         # Recheck retained outputs before resuming; never silently reuse a changed photo.
         for row in state['photos']:
-            target = best / f"Photo-{row['offset']:012x}.JPG"
-            if target.is_symlink() or not target.is_file() or hashlib.sha256(target.read_bytes()).hexdigest() != row['sha256']:
+            target = Path(row['output'])
+            if target.parent != best or target.is_symlink() or not target.is_file() or hashlib.sha256(target.read_bytes()).hexdigest() != row['sha256']:
                 raise ValueError('A saved photo changed or is missing; choose a fresh output folder.')
             # Upgrade old completed reports without rescanning the card image or rewriting photos.
             if row['quality'] == 'carved_jpeg':
@@ -300,6 +343,7 @@ def recover(image, output):
                 if len(names) == 1:
                     row['original_filename_hint'] = next(iter(names))
                     row['directory_entry_offsets'] = [h['directory_entry_offset'] for h in hints]
+            restore_names(state, best, lambda: checkpoint(False))
             checkpoint(complete=True)
             known = {row['offset']: row for row in state['photos']}
             groups = importlib.import_module('assemble-metadata').assemble(report_path)

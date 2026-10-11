@@ -76,6 +76,7 @@ PYTHONHOME="$PWD/build/CardMe.app/Contents/Resources/python" \
 python3 tests/direct-package-check.py
 # With the bundled Python/Pillow runtime:
 python3 tests/carving-check.py
+python3 tests/filename-check.py
 ```
 
 Imaging checks use the real bundled ddrescue on disposable regular-file fixtures, including modeled bad sectors, cancellation and conflicting outputs. They never read a card. Package checks verify signatures, source/license contents, non-sandboxed direct-download executables and DMG integrity.
