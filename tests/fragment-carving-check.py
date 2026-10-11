@@ -202,3 +202,8 @@ with tempfile.TemporaryDirectory() as temporary:
     assert Path(primary_row['output']).read_bytes() == primary
     assert primary_row['paired_preview_offset'] == child
     assert hashlib.sha256(source.read_bytes()).hexdigest() == source_digest
+
+# Extreme but volume-bounded frame dimensions must not allocate an oversized comparison.
+assert fragments.comparison_size([1, 64_000_000]) == (1, 512)
+assert fragments.comparison_size([64_000_000, 1]) == (512, 1)
+assert fragments.comparison_size([6240, 4160]) == (512, 341)

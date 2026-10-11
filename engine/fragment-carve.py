@@ -21,6 +21,11 @@ MAX_INTERIOR_STARTS = 64
 ALGORITHM_VERSION = 2
 
 
+def comparison_size(dimensions):
+    scale = 512 / max(dimensions)
+    return tuple(max(1, round(value * scale)) for value in dimensions)
+
+
 def header(fd, start, total):
     length = min(MAX_HEADER, total - start)
     raw = os.pread(fd, length, start)
@@ -93,7 +98,7 @@ def reconstruct(fd, total, candidate, photos, cluster, heap, verify):
         raise OSError('Short fragment source read')
     with Image.open(preview_row['output']) as preview:
         preview.load()
-        reference = preview.resize((512, round(512 * candidate['dimensions'][1] / candidate['dimensions'][0])), Image.Resampling.LANCZOS, reducing_gap=3).convert('RGB')
+        reference = preview.resize(comparison_size(candidate['dimensions']), Image.Resampling.LANCZOS, reducing_gap=3).convert('RGB')
     accepted = None
     for boundary in range(1, boundaries):
         verify()
@@ -232,7 +237,7 @@ def reconstruct_three(fd, total, candidate, photos, cluster, heap, verify):
         raise OSError('Short fragment prefix read')
     with Image.open(preview_row['output']) as preview:
         preview.load()
-        reference = preview.resize((512, round(512 * candidate['dimensions'][1] / candidate['dimensions'][0])), Image.Resampling.LANCZOS, reducing_gap=3).convert('RGB')
+        reference = preview.resize(comparison_size(candidate['dimensions']), Image.Resampling.LANCZOS, reducing_gap=3).convert('RGB')
     accepted = []
     attempts = 0
     for boundary in range(first_tail, min(first_tail + 4, math.ceil(length / cluster))):
