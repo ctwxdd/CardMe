@@ -106,9 +106,9 @@ with tempfile.TemporaryDirectory() as temporary:
     three_payload = bytearray(three_child + len(preview) + cluster)
     three_start = heap + cluster * 4
     three_cut = cluster * 8
-    middle_start = three_start + three_cut + cluster
+    middle_start = three_start + three_cut + cluster * 8
     three_payload[three_start:three_start + three_cut] = primary[:three_cut]
-    three_payload[three_start + three_cut:middle_start] = b'X' * cluster
+    three_payload[three_start + three_cut:three_start + three_cut + cluster * 4] = b'X' * (cluster * 4)
     three_payload[middle_start:middle_start + boundary - three_cut] = primary[three_cut:boundary]
     three_payload[three_suffix:three_suffix + len(primary) - boundary] = primary[boundary:]
     three_payload[three_child:three_child + len(preview)] = preview
@@ -120,7 +120,7 @@ with tempfile.TemporaryDirectory() as temporary:
         preview_path = root / 'preview.jpg'; preview_path.write_bytes(preview)
         preview_row = {'offset': three_child, 'bytes': len(preview), 'output': str(preview_path)}
         three_candidate['_known_photos'] = [
-            {'offset': three_start + three_cut, 'bytes': cluster},
+            {'offset': three_start + three_cut, 'bytes': cluster * 4},
             {'offset': three_suffix - cluster, 'bytes': cluster}]
         jpeg_extent = carve.jpeg_extent
         def failed_marker(source_fd, source_start, source_total, pread=None):

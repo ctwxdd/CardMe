@@ -1,5 +1,6 @@
 """Bounded original-byte JPEG reconstruction using a camera MPF preview as a tail anchor."""
 import collections
+import heapq
 import importlib
 import io
 import json
@@ -16,6 +17,7 @@ MAX_BOUNDARIES = 1024
 MAX_GAPS = 4096
 MAX_THREE_JOIN_ATTEMPTS = 8192
 MAX_FAILURE_PREFIX_PROBES = 256
+MAX_INTERIOR_STARTS = 64
 ALGORITHM_VERSION = 2
 
 
@@ -183,10 +185,14 @@ def reconstruct_three(fd, total, candidate, photos, cluster, heap, verify):
     gaps = []
     i = 0
     while i < count:
+        if i % 4096 == 0:
+            verify()
         if used[i]:
             i += 1; continue
         first = i
         while i < count and not used[i]:
+            if i % 4096 == 0:
+                verify()
             i += 1
         gaps.append((heap + first * cluster, (i - first) * cluster))
         if len(gaps) > MAX_GAPS:
@@ -214,8 +220,9 @@ def reconstruct_three(fd, total, candidate, photos, cluster, heap, verify):
     tail_cluster = anchor_cluster
     while tail_cluster > 0 and tail_cluster - 1 < count and not used[tail_cluster - 1]:
         tail_cluster -= 1
-    if tail_cluster == anchor_cluster:
-        return None
+    # The preview can share the anchor's allocation cluster while its bytes
+    # begin after the primary JPEG tail. In that case only the exact anchor
+    # remains a valid tail boundary; full JPEG validation below checks it.
     first_tail = auxindex - (anchor_cluster - tail_cluster)
     if first_tail <= prefix_clusters:
         return None
@@ -237,48 +244,75 @@ def reconstruct_three(fd, total, candidate, photos, cluster, heap, verify):
         if tail_bytes <= 0 or suffix_start < heap or suffix_start + tail_bytes > total:
             continue
         tail = os.pread(fd, tail_bytes, suffix_start)
-        if len(tail) != tail_bytes or tail[-2:] != b'\xff\xd9':
+        if len(tail) != tail_bytes:
+            raise OSError('Short fragment tail read')
+        if tail[-2:] != b'\xff\xd9':
             continue
+        interior_starts = set()
+        edge_starts = set()
         for gap_start, gap_bytes in gaps:
             if gap_bytes < middle_bytes:
                 continue
-            for middle_start in {gap_start, gap_start + gap_bytes - middle_bytes}:
-                if attempts >= MAX_THREE_JOIN_ATTEMPTS:
-                    return None
-                if middle_start < heap or middle_start + middle_bytes > total:
+            latest = gap_start + gap_bytes - middle_bytes
+            last_index = (latest - gap_start) // cluster
+            center = max(0, min(last_index, (start - gap_start + cluster // 2) // cluster))
+            edge_starts.update((gap_start, latest))
+            gap_interior_starts = set()
+            for distance in range(MAX_INTERIOR_STARTS):
+                for index in (center - distance, center + distance):
+                    if 0 < index < last_index:
+                        gap_interior_starts.add(gap_start + index * cluster)
+                # At most 64 ranked interiors per gap can enter the global top 64.
+                if len(gap_interior_starts) >= MAX_INTERIOR_STARTS:
+                    break
+            interior_starts.update(gap_interior_starts)
+        middle_starts = heapq.nsmallest(MAX_INTERIOR_STARTS, interior_starts,
+                                        key=lambda value: abs(value - start))
+        middle_starts = set(middle_starts) | edge_starts
+        for middle_start in sorted(middle_starts, key=lambda value: abs(value - start)):
+            if attempts >= MAX_THREE_JOIN_ATTEMPTS:
+                return None
+            if middle_start < heap or middle_start + middle_bytes > total:
+                continue
+            if not (middle_start + middle_bytes <= start or middle_start >= start + prefix_bytes):
+                continue
+            if not (middle_start + middle_bytes <= suffix_start or middle_start >= suffix_start + tail_bytes):
+                continue
+            verify(); attempts += 1
+            middle = os.pread(fd, middle_bytes, middle_start)
+            if len(middle) != middle_bytes:
+                raise OSError('Short fragment middle read')
+            data = prefix + middle + tail
+            try:
+                n, dimensions = carve.jpeg_extent(None, 0, length, lambda _, size, offset: data[offset:offset + size])
+                if n != length or dimensions != candidate['dimensions']:
                     continue
-                if not (middle_start + middle_bytes <= start or middle_start >= start + prefix_bytes):
+                with warnings.catch_warnings():
+                    warnings.simplefilter('error')
+                    with Image.open(io.BytesIO(data)) as rough:
+                        rough.draft('RGB', reference.size)
+                        rough.load()
+                        rough_reduced = rough.resize(reference.size, Image.Resampling.LANCZOS, reducing_gap=3).convert('RGB')
+                        rough_score = sum(ImageStat.Stat(ImageChops.difference(rough_reduced, reference)).mean) / 3
+                        if rough_score > 12:
+                            continue
+                    with Image.open(io.BytesIO(data)) as photo:
+                        photo.load()
+                        difference = scan.thumbnail_difference(photo, candidate['thumbnail'])
+                        reduced = photo.resize(reference.size, Image.Resampling.LANCZOS, reducing_gap=3).convert('RGB')
+                        score = sum(ImageStat.Stat(ImageChops.difference(reduced, reference)).mean) / 3
+                if difference > 5 or score > 3:
                     continue
-                if not (middle_start + middle_bytes <= suffix_start or middle_start >= suffix_start + tail_bytes):
-                    continue
-                verify(); attempts += 1
-                middle = os.pread(fd, middle_bytes, middle_start)
-                if len(middle) != middle_bytes:
-                    raise OSError('Short fragment middle read')
-                data = prefix + middle + tail
-                try:
-                    n, dimensions = carve.jpeg_extent(None, 0, length, lambda _, size, offset: data[offset:offset + size])
-                    if n != length or dimensions != candidate['dimensions']:
-                        continue
-                    with warnings.catch_warnings():
-                        warnings.simplefilter('error')
-                        with Image.open(io.BytesIO(data)) as photo:
-                            photo.load()
-                            difference = scan.thumbnail_difference(photo, candidate['thumbnail'])
-                            reduced = photo.resize(reference.size, Image.Resampling.LANCZOS, reducing_gap=3).convert('RGB')
-                            score = sum(ImageStat.Stat(ImageChops.difference(reduced, reference)).mean) / 3
-                    if difference > 5 or score > 3:
-                        continue
-                except (ValueError, OSError, SyntaxError, EOFError, Warning):
-                    continue
-                accepted.append({'data': data, 'source_extents': [
-                    {'offset': start, 'bytes': prefix_bytes},
-                    {'offset': middle_start, 'bytes': middle_bytes},
-                    {'offset': suffix_start, 'bytes': tail_bytes}],
-                    'thumbnail_difference': difference, 'preview_difference': score,
-                    'paired_preview_offset': preview_row['offset']})
-                if len(accepted) > 1:
-                    return None
+            except (ValueError, OSError, SyntaxError, EOFError, Warning):
+                continue
+            accepted.append({'data': data, 'source_extents': [
+                {'offset': start, 'bytes': prefix_bytes},
+                {'offset': middle_start, 'bytes': middle_bytes},
+                {'offset': suffix_start, 'bytes': tail_bytes}],
+                'thumbnail_difference': difference, 'preview_difference': score,
+                'paired_preview_offset': preview_row['offset']})
+            if len(accepted) > 1:
+                return None
     return accepted[0] if len(accepted) == 1 else None
 
 
