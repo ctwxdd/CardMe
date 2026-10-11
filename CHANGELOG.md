@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.32 · build 45
+
+- Add bounded camera-preview-guided multi-part JPEG reconstruction after existing two/three-part methods find no valid join. Preserve ambiguity refusals and source-byte provenance.
+- Rank continuations using decoded JPEG block luminance; exclude other reconstructed source ranges only after checking their current hashes. Limit each attempt to 90 seconds and 16 joins.
+- Save these candidates as needing review, with strict full decode and camera-preview agreement; do not count them as confirmed full-size rescues. Retry unresolved older checkpoints once without overwriting results.
+
 ## 0.3.31 · build 44
 
 - Expand three-part JPEG tail-boundary search when nearby joins fail. Keep previously qualified nearby matches and the existing candidate budget, strict validation, cancellation and original-byte provenance.

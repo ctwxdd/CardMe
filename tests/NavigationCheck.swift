@@ -184,6 +184,10 @@ struct NavigationCheck {
         let reviewEvent = try! JSONSerialization.data(withJSONObject: ["path": "review.jpg", "output": original.path, "quality": "manual_review"])
         session.receive(Data("FILE\t".utf8) + reviewEvent + Data("\n".utf8))
         assert(session.damaged.last?.fullSizeRecovered == false) // Saved for review is not confirmed recovery.
+        let guidedEvent = try! JSONSerialization.data(withJSONObject: ["path": "guided.jpg", "output": original.path, "quality": "manual_review", "reconstruction": "mpf_preview_guided"])
+        session.receive(Data("FILE\t".utf8) + guidedEvent + Data("\n".utf8))
+        assert(session.damaged.last?.detail == "Full-size candidate · please check")
+        assert(session.damaged.last?.fullSizeRecovered == false)
         for quality in ["camera_preview", "thumbnail_only", "carved_jpeg"] {
             let event = try! JSONSerialization.data(withJSONObject: ["path": "partial-" + quality, "output": original.path, "quality": quality])
             session.receive(Data("FILE\t".utf8) + event + Data("\n".utf8))

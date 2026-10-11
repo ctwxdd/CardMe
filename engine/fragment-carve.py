@@ -18,7 +18,7 @@ MAX_GAPS = 4096
 MAX_THREE_JOIN_ATTEMPTS = 8192
 MAX_FAILURE_PREFIX_PROBES = 256
 MAX_INTERIOR_STARTS = 64
-ALGORITHM_VERSION = 3
+ALGORITHM_VERSION = 4
 
 
 def comparison_size(dimensions):
@@ -135,11 +135,12 @@ def reconstruct(fd, total, candidate, photos, cluster, heap, verify):
     three = reconstruct_three(fd, total, candidate, photos, cluster, heap, verify)
     if three is not None:
         return three, 'reconstructed'
-    return None, 'no_valid_two_extent_join'
+    return None, candidate.get('_three_refusal', 'no_valid_two_extent_join')
 
 
 def reconstruct_three(fd, total, candidate, photos, cluster, heap, verify):
     """Try unique prefix/gap/tail joins; marker failure and free space are hypotheses."""
+    candidate.pop('_three_refusal', None)
     carve = importlib.import_module('carve-photos')
     start, length = candidate['offset'], candidate['bytes']
     # Only a failed marker boundary supplies a prefix hypothesis. Re-read it on resume,
@@ -283,6 +284,7 @@ def reconstruct_three(fd, total, candidate, photos, cluster, heap, verify):
         middle_starts = set(middle_starts) | edge_starts
         for middle_start in sorted(middle_starts, key=lambda value: abs(value - start)):
             if attempts >= MAX_THREE_JOIN_ATTEMPTS:
+                candidate['_three_refusal'] = 'fragment_search_budget'
                 return None
             if middle_start < heap or middle_start + middle_bytes > total:
                 continue
@@ -324,6 +326,7 @@ def reconstruct_three(fd, total, candidate, photos, cluster, heap, verify):
                 'thumbnail_difference': difference, 'preview_difference': score,
                 'paired_preview_offset': preview_row['offset']})
             if len(accepted) > 1:
+                candidate['_three_refusal'] = 'ambiguous_fragment_joins'
                 return None
     return accepted[0] if len(accepted) == 1 else None
 
@@ -404,15 +407,18 @@ def recover(fd, total, state, best, verify, checkpoint):
                     preview_rows.append(row)
                     print('FILE\t' + json.dumps(row), flush=True)
             result, reason = reconstruct(fd, total, candidate, preview_rows, cluster, heap, verify)
+            if result is None and reason == 'no_valid_two_extent_join':
+                guided = importlib.import_module('preview-guided')
+                result, reason = guided.reconstruct(fd, total, candidate, preview_rows, cluster, heap, verify)
             done[str(start)] = {'reason': reason, 'algorithm_version': ALGORITHM_VERSION}
             if result is not None:
                 verify()
                 target = best / f'Photo-{start:012x}.JPG'
                 digest = carve.save_exact(target, result.pop('data'))
-                row = {'path': target.name, 'output': str(target), 'quality': 'manual_review' if result['thumbnail_difference'] > 5 else 'full_resolution_reconstructed',
+                row = {'path': target.name, 'output': str(target), 'quality': 'manual_review' if result.pop('manual_review', False) or result['thumbnail_difference'] > 5 else 'full_resolution_reconstructed',
                        'offset': start, 'bytes': candidate['bytes'], 'dimensions': candidate['dimensions'],
                        'sha256': digest, 'byte_exact_source_copy': False, 'byte_exact_source_fragments': True,
-                       'review_required': True, 'reconstruction': 'mpf_three_extent' if len(result['source_extents']) == 3 else 'mpf_two_extent', **result}
+                       'review_required': True, 'reconstruction': result.get('reconstruction', 'mpf_three_extent' if len(result['source_extents']) == 3 else 'mpf_two_extent'), **result}
                 state['photos'].append(row); known.add(start)
                 print('FILE\t' + json.dumps(row), flush=True)
         checkpoint()

@@ -1,0 +1,251 @@
+"""Bounded baseline JPEG continuation ranking against a surviving camera preview."""
+import hashlib
+import importlib
+import io
+import math
+import os
+import time
+import warnings
+from PIL import Image, ImageChops, ImageStat
+
+coding = importlib.import_module('jpeg-checkpoint')
+MAX_SECONDS = 90
+MAX_JOINS = 16
+LOCAL_CLUSTERS = 256
+LOOKAHEAD = 4096
+
+
+def geometry(raw):
+    pos, tables, frame = 2, {}, None
+    while pos + 4 <= len(raw):
+        if raw[pos] != 255:
+            raise coding.Invalid('header marker')
+        marker = raw[pos + 1]
+        length = int.from_bytes(raw[pos + 2:pos + 4], 'big')
+        end = pos + 2 + length
+        if length < 2 or end > len(raw):
+            raise coding.Invalid('segment bounds')
+        data = raw[pos + 4:end]
+        pos = end
+        if marker == 0xdb:
+            index = 0
+            while index < len(data):
+                key = data[index]; index += 1
+                width = 2 if key >> 4 else 1
+                if key >> 4 > 1 or index + 64 * width > len(data):
+                    raise coding.Invalid('quantization bounds')
+                value = int.from_bytes(data[index:index + width], 'big')
+                if not value:
+                    raise coding.Invalid('zero quantization')
+                tables[key & 15] = value
+                index += 64 * width
+        elif marker == 0xc0:
+            if len(data) < 6 or len(data) != 6 + 3 * data[5]:
+                raise coding.Invalid('frame bounds')
+            frame = (int.from_bytes(data[3:5], 'big'), int.from_bytes(data[1:3], 'big'),
+                     [(data[i], data[i + 1] >> 4, data[i + 1] & 15, data[i + 2])
+                      for i in range(6, len(data), 3)])
+        elif marker == 0xda:
+            break
+    if not frame or any(q not in tables for _, _, _, q in frame[2]):
+        raise coding.Invalid('missing quantization/frame')
+    return frame, tables
+
+
+class PreviewDecoder(coding.Decoder):
+    def bit(self, bit):
+        before = self.phase
+        component = self.blocks[self.block][0]
+        block, mcu = self.block, self.mcus
+        super().bit(bit)
+        if ((before == 'dc_value' and self.phase == 'ac_code')
+                or (before == 'dc_code' and self.phase == 'ac_code')):
+            value = self.predictors[component]
+            if abs(value) > self.limits[component]:
+                raise coding.Invalid('DC range')
+            if component == self.y_component:
+                index = block - self.y_first
+                x = (mcu % self.mcu_columns) * self.y_h + index % self.y_h
+                y = (mcu // self.mcu_columns) * self.y_v + index // self.y_h
+                if x < self.grid.width and y < self.grid.height:
+                    self.error_sum += abs(value * self.y_quantization / 8 + 128 - self.grid.getpixel((x, y)))
+                    self.error_count += 1
+
+    def clone(self):
+        result = super().clone()
+        result.error_sum = result.error_count = 0
+        return result
+
+    def score(self):
+        return self.error_sum / self.error_count if self.error_count else float('inf')
+
+
+def overlaps(offset, size, extents):
+    return any(offset < row['offset'] + row['bytes'] and offset + size > row['offset'] for row in extents)
+
+
+class SearchBudget(Exception):
+    pass
+
+
+def reconstruct(fd, total, candidate, photos, cluster, heap, verify):
+    try:
+        return _reconstruct(fd, total, candidate, photos, cluster, heap, verify)
+    except SearchBudget:
+        return None, 'preview_guided_time_budget'
+
+
+def _reconstruct(fd, total, candidate, photos, cluster, heap, verify):
+    fragments = importlib.import_module('fragment-carve')
+    carve = importlib.import_module('carve-photos')
+    deadline = time.monotonic() + MAX_SECONDS
+
+    def check():
+        verify()  # Source identity and cancellation must propagate to the caller.
+        if time.monotonic() >= deadline:
+            raise SearchBudget()
+
+    def read(offset, size):
+        check()
+        raw = os.pread(fd, size, offset)
+        if len(raw) != size:
+            raise OSError('Short preview-guided source read')
+        return raw
+
+    start, length = candidate['offset'], candidate['bytes']
+    failure = next((offset for at, offset in candidate.get('_failure_prefixes', []) if at == start), None)
+    if failure is None:
+        return None, 'missing_prefix_hypothesis'
+    cut = failure // cluster * cluster
+    if not 0 < cut < length or length > 128 * 1024 * 1024:
+        return None, 'invalid_prefix_hypothesis'
+    within = candidate['preview_logical'] % cluster
+    matches = []
+    for row in photos:
+        if row['bytes'] != candidate['preview_bytes'] or (row['offset'] - start) % cluster != within:
+            continue
+        check()
+        with Image.open(row['output']) as preview:
+            if max(preview.size) > 2048 or preview.width * preview.height > 64_000_000:
+                continue
+            preview.load()
+            if fragments.scan.thumbnail_difference(preview, candidate['thumbnail']) <= 5:
+                matches.append(row)
+    if len(matches) != 1:
+        return None, 'missing_or_ambiguous_preview'
+    preview_row = matches[0]
+    owned = []
+    for row in candidate.get('_known_photos', []):
+        if (row.get('offset') == start or row.get('quality') != 'full_resolution_reconstructed'
+                or not row.get('source_extents') or not row.get('sha256')):
+            continue
+        digest = hashlib.sha256()
+        for extent in row['source_extents']:
+            digest.update(read(extent['offset'], extent['bytes']))
+        if digest.hexdigest() != row['sha256']:
+            raise ValueError('Changed reconstructed source extents')
+        owned.extend(row['source_extents'])
+    if overlaps(start, cut, owned):
+        return None, 'occupied_prefix_hypothesis'
+    extents, joins = [], []
+
+    def append(offset, size):
+        if extents and extents[-1]['offset'] + extents[-1]['bytes'] == offset:
+            extents[-1]['bytes'] += size
+        else:
+            extents.append({'offset': offset, 'bytes': size})
+
+    try:
+        raw = read(start, cut)
+        decoder = PreviewDecoder(raw)
+        (width, height, components), quantization = geometry(raw)
+        component, h, v, q = components[0]
+        mh, mv = max(c[1] for c in components), max(c[2] for c in components)
+        if component != 1 or h != mh or v != mv:
+            return None, 'unsupported_preview_sampling'
+        with Image.open(preview_row['output']) as preview:
+            preview.load()
+            decoder.grid = preview.convert('YCbCr').getchannel('Y').resize(
+                (math.ceil(width / 8), math.ceil(height / 8)), Image.Resampling.BOX)
+            reference = preview.resize(fragments.comparison_size(candidate['dimensions']),
+                                       Image.Resampling.LANCZOS, reducing_gap=3).convert('RGB')
+        decoder.limits = {c: math.ceil(1024 / quantization[t]) + 1 for c, _, _, t in components}
+        decoder.y_component, decoder.y_h, decoder.y_v = component, h, v
+        decoder.y_first = next(i for i, b in enumerate(decoder.blocks) if b[0] == component)
+        decoder.y_quantization = quantization[q]
+        decoder.mcu_columns = math.ceil(width / (mh * 8))
+        decoder.error_sum = decoder.error_count = 0
+        decoder.feed(raw[decoder.header_end:], check)
+        threshold = max(12, decoder.score() * 6)
+        append(start, cut)
+        done, physical = cut, start + cut
+        while done < length:
+            size = min(cluster, length - done)
+            trial = decoder.clone()
+            valid = not overlaps(physical, size, extents + owned)
+            if valid:
+                try:
+                    trial.feed(read(physical, size), check)
+                    valid = trial.score() <= threshold
+                except coding.Invalid:
+                    valid = False
+            if not valid:
+                if len(joins) >= MAX_JOINS:
+                    return None, 'preview_guided_join_budget'
+                distances = [0] + [value for n in range(1, LOCAL_CLUSTERS + 1) for value in (n, -n)]
+                positions = [physical + n * cluster for n in distances]
+                anchor = preview_row['offset'] - within
+                auxindex = candidate['preview_logical'] // cluster
+                positions.append(anchor - (auxindex - done // cluster) * cluster)
+                ranked = []
+                for offset in dict.fromkeys(positions):
+                    if offset < heap or offset + size > total or overlaps(offset, size, extents + owned):
+                        continue
+                    probe = decoder.clone()
+                    try:
+                        probe.feed(read(offset, min(LOOKAHEAD, size)), check)
+                    except coding.Invalid:
+                        continue
+                    if probe.error_count:
+                        ranked.append((probe.score(), offset))
+                ranked.sort()
+                if not ranked:
+                    return None, 'no_preview_guided_continuation'
+                # shortcut: ranked greedy continuation; retain branches after bounded beam qualification.
+                score, physical = ranked[0]
+                trial = decoder.clone()
+                trial.feed(read(physical, size), check)
+                if trial.score() > threshold:
+                    return None, 'preview_guided_low_agreement'
+                joins.append({'logical_offset': done, 'source_offset': physical,
+                              'preview_luminance_error': score, 'candidates': len(ranked)})
+            append(physical, size)
+            decoder, done, physical = trial, done + size, physical + size
+        if not decoder.eoi or decoder.mcus != decoder.expected:
+            return None, 'incomplete_preview_guided_frame'
+        data = b''.join(read(row['offset'], row['bytes']) for row in extents)
+        # Decode failures reject this hypothesis; source read failures above propagate.
+        try:
+            encoded, dimensions = carve.jpeg_extent(None, 0, length, lambda _, n, p: data[p:p + n])
+            if encoded != length or dimensions != candidate['dimensions']:
+                return None, 'invalid_preview_guided_frame'
+            with warnings.catch_warnings():
+                warnings.simplefilter('error')
+                with Image.open(io.BytesIO(data)) as photo:
+                    photo.load()
+                    difference = fragments.scan.thumbnail_difference(photo, candidate['thumbnail'])
+                    reduced = photo.resize(reference.size, Image.Resampling.LANCZOS, reducing_gap=3).convert('RGB')
+                    score = sum(ImageStat.Stat(ImageChops.difference(reduced, reference)).mean) / 3
+        except (ValueError, OSError, SyntaxError, EOFError, Warning):
+            return None, 'invalid_preview_guided_frame'
+        if difference > 5 or score > 3:
+            return None, 'preview_guided_full_mismatch'
+        check()
+        return {'data': data, 'source_extents': extents, 'thumbnail_difference': difference,
+                'preview_difference': score, 'paired_preview_offset': preview_row['offset'],
+                'reconstruction': 'mpf_preview_guided', 'manual_review': True,
+                'continuation_decisions': joins}, 'reconstructed_review_candidate'
+    except SearchBudget:
+        return None, 'preview_guided_time_budget'
+    except (coding.Invalid, SyntaxError, EOFError, Warning):
+        return None, 'invalid_preview_guided_coding'

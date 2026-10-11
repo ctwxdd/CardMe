@@ -438,7 +438,7 @@ final class RescueSession: ObservableObject {
         case "camera_preview": detail = "Smaller preview saved"
         case "thumbnail_only": detail = "Tiny thumbnail saved"
         case "carved_jpeg": detail = "Found · please review"
-        case "manual_review": detail = object["output"] == nil ? "Not recovered" : "Saved · needs checking"
+        case "manual_review": detail = object["output"] == nil ? "Not recovered" : (object["reconstruction"] as? String == "mpf_preview_guided" ? "Full-size candidate · please check" : "Saved · needs checking")
         default:
             switch object["status"] as? String {
             case "unsupported_or_unrecognized": detail = "Format needs review"
@@ -1230,7 +1230,7 @@ struct AboutView: View {
                         .font(.callout).foregroundStyle(.secondary)
                     SupportLink()
                     Text("Thank you for your support.").font(.callout).foregroundStyle(.secondary)
-                    Text("Deep Rescue searches safety copies for contiguous JPEGs, including after deletion or quick formatting. Direct exFAT rescue can try surviving photo fragments. Arbitrary fragment reconstruction and RAW recovery are currently not supported.")
+                    Text("Deep Rescue searches safety copies for deleted or formatted JPEG photos. It can also piece together some damaged photos when their camera preview survives. RAW recovery and overwritten data are currently not supported.")
                         .font(.callout).foregroundStyle(.secondary)
                     DisclosureGroup("Licenses and acknowledgements") {
                         VStack(alignment: .leading, spacing: 16) {
