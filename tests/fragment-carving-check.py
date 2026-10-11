@@ -10,6 +10,14 @@ fragments = importlib.import_module('fragment-carve')
 allocation = importlib.import_module('fragment-rescue')
 metadata = importlib.import_module('assemble-metadata')
 
+for malformed, message in ((b'\xff\xd8\xff\xd8', 'Unexpected JPEG marker'),
+                           (b'\xff\xd8\xff\xe0\x00\x01', 'Invalid JPEG segment length')):
+    try:
+        carve.jpeg_extent(None, 0, len(malformed), lambda _, size, offset: malformed[offset:offset + size])
+        raise AssertionError('Malformed marker structure accepted')
+    except carve.JPEGMarkerError as error:
+        assert str(error) == message and error.offset > 0
+
 def jpeg(image, exif=None):
     out = io.BytesIO(); image.save(out, format='JPEG', quality=95, **({'exif':exif} if exif else {})); return out.getvalue()
 
@@ -127,6 +135,23 @@ with tempfile.TemporaryDirectory() as temporary:
             {'offset': three_start, 'bytes': three_cut},
             {'offset': middle_start, 'bytes': boundary - three_cut},
             {'offset': three_suffix, 'bytes': len(primary) - boundary}]
+        retry_state = {'fragment_candidates': [three_start], 'photos': [],
+                       'fragment_analysis': {'candidates': {str(three_start): {
+                           'reason': 'no_valid_two_extent_join', 'algorithm_version': 1}}}}
+        header_row = {'offset': three_start, 'bytes': len(primary), 'thumbnail': None,
+                      'preview_logical': logical, 'preview_bytes': len(preview)}
+        with patch.object(allocation, 'volume', return_value=geometry), \
+             patch.object(carve, 'jpeg_extent', side_effect=carve.JPEGMarkerError('Unexpected JPEG marker', three_cut)) as probe, \
+             patch.object(fragments, 'header', return_value=header_row), \
+             patch.object(fragments, 'reconstruct', return_value=(None, 'no_valid_two_extent_join')):
+            fragments.recover(fd, len(three_payload), retry_state, root, lambda: None, lambda: None)
+            assert retry_state['fragment_analysis']['candidates'][str(three_start)]['algorithm_version'] == 2
+            assert probe.call_count == 1
+        with patch.object(allocation, 'volume', return_value=geometry), \
+             patch.object(carve, 'jpeg_extent', side_effect=AssertionError('Completed candidate was reprobed')) as probe, \
+             patch.object(fragments, 'header', side_effect=AssertionError('Completed candidate was retried')):
+            fragments.recover(fd, len(three_payload), retry_state, root, lambda: None, lambda: None)
+            probe.assert_not_called()
         def cancel_three(): raise KeyboardInterrupt
         with patch.object(carve, 'jpeg_extent', side_effect=failed_marker):
             try:

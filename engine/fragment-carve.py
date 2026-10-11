@@ -14,6 +14,7 @@ MAX_HEADER = 1024 * 1024
 MAX_BOUNDARIES = 1024
 MAX_GAPS = 4096
 MAX_THREE_JOIN_ATTEMPTS = 8192
+MAX_FAILURE_PREFIX_PROBES = 256
 ALGORITHM_VERSION = 2
 
 
@@ -137,7 +138,7 @@ def reconstruct_three(fd, total, candidate, photos, cluster, heap, verify):
     # since older reports did not retain this diagnostic.
     try:
         carve.jpeg_extent(fd, start, total)
-    except carve.JPEGMarkerBoundaryError as error:
+    except carve.JPEGMarkerError as error:
         failure = error.offset
     except (ValueError, SyntaxError, EOFError, Warning):
         return None
@@ -173,6 +174,10 @@ def reconstruct_three(fd, total, candidate, photos, cluster, heap, verify):
         mark_row(row)
     for row in photos:
         mark_row(row)
+    for failed_start, failure in candidate.get('_failure_prefixes', ()):
+        prefix = failure // cluster * cluster
+        if prefix > 0:
+            mark(failed_start, prefix)
     mark(start, prefix_bytes)
     gaps = []
     i = 0
@@ -289,6 +294,26 @@ def recover(fd, total, state, best, verify, checkpoint):
         return
     cluster, heap = geometry[3], geometry[4]
     done = state.setdefault('fragment_analysis', {}).setdefault('candidates', {})
+    failure_offsets = state.setdefault('fragment_failure_prefixes', {})
+    probes = 0
+    for failed_start in offsets:
+        key = str(failed_start)
+        diagnostic = failure_offsets.get(key)
+        diagnostic_version = diagnostic.get('algorithm_version', 0) if isinstance(diagnostic, dict) else 0
+        if (diagnostic_version >= ALGORITHM_VERSION
+                or done.get(key, {}).get('algorithm_version', 0) >= ALGORITHM_VERSION
+                or probes >= MAX_FAILURE_PREFIX_PROBES):
+            continue
+        verify()
+        probes += 1
+        try:
+            carve.jpeg_extent(fd, failed_start, total)
+        except carve.JPEGMarkerError as error:
+            failure_offsets[key] = {'offset': error.offset, 'algorithm_version': ALGORITHM_VERSION}
+        except (ValueError, SyntaxError, EOFError, Warning):
+            failure_offsets[key] = {'offset': None, 'algorithm_version': ALGORITHM_VERSION}
+        else:
+            failure_offsets[key] = {'offset': None, 'algorithm_version': ALGORITHM_VERSION}
     known = {row['offset'] for row in state['photos']}
     sizes = collections.defaultdict(list)
     for row in state['photos']:
@@ -304,6 +329,11 @@ def recover(fd, total, state, best, verify, checkpoint):
             done[str(start)] = {'reason': 'unusable_header', 'algorithm_version': ALGORITHM_VERSION}
         else:
             candidate['_known_photos'] = state['photos']
+            candidate['_failure_prefixes'] = []
+            for failed_start, diagnostic in failure_offsets.items():
+                failure = diagnostic.get('offset') if isinstance(diagnostic, dict) else diagnostic
+                if failure is not None:
+                    candidate['_failure_prefixes'].append((int(failed_start), failure))
             preview_rows = sizes[candidate['preview_bytes']]
             within = candidate['preview_logical'] % cluster
             aligned = [row for row in preview_rows if (row['offset'] - start) % cluster == within]

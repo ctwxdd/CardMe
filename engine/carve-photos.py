@@ -11,11 +11,16 @@ MAX_JPEG = 128 * 1024 * 1024
 MAX_PIXELS = 64_000_000
 
 
-class JPEGMarkerBoundaryError(ValueError):
-    """The byte offset of the first non-marker byte in a JPEG stream."""
-    def __init__(self, offset):
-        super().__init__('Invalid JPEG marker boundary')
+class JPEGMarkerError(ValueError):
+    """Relative byte offset of a marker-structure failure in a JPEG stream."""
+    def __init__(self, message, offset):
+        super().__init__(message)
         self.offset = offset
+
+
+class JPEGMarkerBoundaryError(JPEGMarkerError):
+    def __init__(self, offset):
+        super().__init__('Invalid JPEG marker boundary', offset)
 
 
 def jpeg_extent(fd, start, total, pread=None):
@@ -51,14 +56,14 @@ def jpeg_extent(fd, start, total, pread=None):
                 raise ValueError('No complete primary JPEG scan')
             return pos - start, dimensions
         if marker in (0, 0xD8) or 0xD0 <= marker <= 0xD7:
-            raise ValueError('Unexpected JPEG marker')
+            raise JPEGMarkerError('Unexpected JPEG marker', pos - 1 - start)
         if marker == 1:
             continue
         if not (0xC0 <= marker <= 0xFE):
-            raise ValueError('Invalid JPEG marker')
+            raise JPEGMarkerError('Invalid JPEG marker', pos - 1 - start)
         size = int.from_bytes(read(pos, 2), 'big')
         if size < 2 or pos + size > cap:
-            raise ValueError('Invalid JPEG segment length')
+            raise JPEGMarkerError('Invalid JPEG segment length', pos - start)
         if marker in (0xC0, 0xC1, 0xC2):
             body = read(pos + 2, size - 2)
             if len(body) < 6 or body[0] != 8 or size != 8 + 3 * body[5]:
@@ -247,13 +252,17 @@ def recover(image, output):
                                     quality = photo_quality(photo, difference)
                         except OSError as error:
                             raise ValueError('JPEG could not decode') from error
-                    except (ValueError, SyntaxError, EOFError, Warning):
+                    except (ValueError, SyntaxError, EOFError, Warning) as error:
                         state['rejected_candidates'] += 1
                         fragments = importlib.import_module('fragment-carve')
                         if fragments.header(fd, start, stat.st_size) is not None:
                             candidates = state.setdefault('fragment_candidates', [])
                             if start not in candidates:
                                 candidates.append(start)
+                            if isinstance(error, JPEGMarkerError):
+                                state.setdefault('fragment_failure_prefixes', {})[str(start)] = {
+                                    'offset': error.offset,
+                                    'algorithm_version': fragments.ALGORITHM_VERSION}
                         else:
                             preview = importlib.import_module('fragment-preview').describe(fd, start, stat.st_size)
                             if preview is not None:
