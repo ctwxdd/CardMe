@@ -77,10 +77,5 @@
   "coffee": "Invítame a un café ☕️",
   "licenses": "Las licencias y la información sobre el código fuente están disponibles en la app.",
   "version": "Versión 0.3.23 · Notarizada por Apple.",
-  "languageLabel": "Idioma",
-  "statistics": [
-    "{n} sesiones de recuperación",
-    "{n} fotos recuperadas en tamaño original",
-    "Informes anónimos de los últimos 90 días. Puede haber recuperaciones repetidas."
-  ]
+  "languageLabel": "Idioma"
 }

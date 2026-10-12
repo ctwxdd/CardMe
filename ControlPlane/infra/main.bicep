@@ -153,7 +153,6 @@ resource authSettings 'Microsoft.Web/sites/config@2024-04-01' = {
       excludedPaths: [
         '/api/v1/usage'
         '/api/health'
-        '/api/v1/public/totals'
       ]
     }
     identityProviders: {

@@ -77,10 +77,5 @@
   "coffee": "请我喝咖啡 ☕️",
   "licenses": "应用内附许可条款与源代码信息。",
   "version": "下载版本：0.3.23 · 已通过 Apple 公证。",
-  "languageLabel": "语言",
-  "statistics": [
-    "完成 {n} 次恢复",
-    "找回 {n} 张原尺寸照片",
-    "过去 90 天的匿名报告；可能包含重复恢复。"
-  ]
+  "languageLabel": "语言"
 }

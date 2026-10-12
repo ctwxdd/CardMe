@@ -69,18 +69,6 @@ export function createHandlers(options: {store: Pick<CardMeUsageStore,'save'|'su
     authorizeAdmin(request,options.adminObjectIds);
     charge('admin:'+source(request),60,60);
   }
-  let publicCache: {until:number; result:Promise<{windowDays:number; rescueSessions:number; fullSizePhotos:number}>} | undefined;
-  const publicTotals=wrap(async request=>{
-    if(request.method!=='GET') throw new HttpError('method_not_allowed',405);
-    if(request.query.size) throw new HttpError('invalid_filter');
-    charge('totals:'+source(request),60,60);
-    const now=clock();
-    if(!publicCache || now>=publicCache.until) {
-      const result=options.store.summary(new Date(now-90*86400000).toISOString(),new Date(now).toISOString()).then(t=>({windowDays:90,rescueSessions:t.rescues,fullSizePhotos:t.fullSize}));
-      publicCache={until:now+300000,result};
-    }
-    return json(200,await publicCache.result,{'cache-control':'public, max-age=300','access-control-allow-origin':options.websiteOrigin,'vary':'Origin'});
-  });
   const adminData=wrap(async request=>{
     admin(request);
     const days=Number(request.query.get('days') ?? '30');
@@ -96,5 +84,5 @@ export function createHandlers(options: {store: Pick<CardMeUsageStore,'save'|'su
     return {status:200,body:DASHBOARD_HTML,headers:{'content-type':'text/html; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff','referrer-policy':'no-referrer',
       'content-security-policy':`default-src 'none'; script-src ${hashes('script')}; style-src ${hashes('style')}; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'`}};
   });
-  return {usage,publicTotals,adminData,adminUI};
+  return {usage,adminData,adminUI};
 }

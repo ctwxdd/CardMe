@@ -77,10 +77,5 @@
   "coffee": "Einen Kaffee spendieren ☕️",
   "licenses": "Lizenzen und Hinweise zum Quellcode finden Sie in der App.",
   "version": "Version 0.3.23 · Von Apple notarisiert.",
-  "languageLabel": "Sprache",
-  "statistics": [
-    "{n} Wiederherstellungen",
-    "{n} Fotos in Originalgröße wiederhergestellt",
-    "Anonyme Meldungen der letzten 90 Tage. Mehrfach wiederhergestellte Fotos können mehrfach zählen."
-  ]
+  "languageLabel": "Sprache"
 }

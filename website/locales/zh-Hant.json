@@ -77,10 +77,5 @@
   "coffee": "請我喝咖啡 ☕️",
   "licenses": "App 內附授權條款與原始碼資訊。",
   "version": "下載版本：0.3.23 · 已通過 Apple 公證。",
-  "languageLabel": "語言",
-  "statistics": [
-    "完成 {n} 次救援",
-    "找回 {n} 張原尺寸照片",
-    "過去 90 天的匿名回報；重複救援可能計入。"
-  ]
+  "languageLabel": "語言"
 }

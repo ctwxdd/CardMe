@@ -77,10 +77,5 @@
   "coffee": "M’offrir un café ☕️",
   "licenses": "Les licences et les informations sur le code source sont disponibles dans l’app.",
   "version": "Version 0.3.23 · Notarisation Apple effectuée.",
-  "languageLabel": "Langue",
-  "statistics": [
-    "{n} sessions de récupération",
-    "{n} photos récupérées en taille originale",
-    "Signalements anonymes sur les 90 derniers jours. Les récupérations répétées peuvent être comptées."
-  ]
+  "languageLabel": "Langue"
 }

@@ -121,14 +121,3 @@ test('service resources and public route exceptions remain independent',async()=
   assert(!infra.includes("'/api/v1/admin/usage'"));
   assert(index.includes("route:'v1/usage'") && !index.includes('Pickology'));
 });
-test('public counters expose only fixed 90-day totals and coalesce concurrent reads',async()=>{
- let reads=0,now=Date.parse('2026-10-12T00:00:00Z'),from='';
- const store={async save(){},async summary(start:string){reads++;from=start;await Promise.resolve();return {rescues:12,fullSize:2000,appOpens:99,daily:[{day:'private'}]};}} as never;
- const h=createHandlers({store,adminObjectIds:[admin],websiteOrigin,now:()=>now});
- const results=await Promise.all([h.publicTotals(request({},'GET'),ctx),h.publicTotals(request({},'GET'),ctx)]);
- assert.equal(reads,1);assert.equal(from,'2026-07-14T00:00:00.000Z');
- for(const r of results){assert.equal(r.status,200);assert.deepEqual((r as {jsonBody:unknown}).jsonBody,{windowDays:90,rescueSessions:12,fullSizePhotos:2000});}
- const invalid=request({},'GET');invalid.query.set('version','private');assert.equal((await h.publicTotals(invalid,ctx)).status,400);
- now+=300001;assert.equal((await h.publicTotals(request({},'GET'),ctx)).status,200);assert.equal(reads,2);
- assert.equal((await h.publicTotals(request({}),ctx)).status,405);
-});
