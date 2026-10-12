@@ -7,15 +7,16 @@ from pathlib import Path
 root = Path(__file__).resolve().parents[1]
 site = root / 'website/dist'
 locales = {p.stem: json.loads(p.read_text()) for p in sorted((root / 'website/locales').glob('*.json'))}
-base = 'https://getpickology.com'
+base = 'https://witty-meadow-00543f01e.6.azurestaticapps.net'
+download = 'https://github.com/ctwxdd/CardMe-releases/releases/download/v0.3.23/CardMe-0.3.23.dmg'
 css_version = hashlib.sha256((site / 'style.css').read_bytes()).hexdigest()[:12]
 def route(lang):
-    return '/cardme' if lang == 'en' else '/cardme/' + lang.lower()
+    return '/' if lang == 'en' else '/' + lang.lower()
 alternates = '\n'.join(f'<link rel="alternate" hreflang="{lang}" href="{base}{route(lang)}">' for lang in locales)
-alternates += f'\n<link rel="alternate" hreflang="x-default" href="{base}/cardme">'
+alternates += f'\n<link rel="alternate" hreflang="x-default" href="{base}/">'
 for lang, d in locales.items():
     url = base + route(lang)
-    schema = {'@context': 'https://schema.org', '@type': 'SoftwareApplication', 'name': 'CardMe', 'url': url, 'inLanguage': lang, 'operatingSystem': 'macOS 14 or later; Apple silicon', 'applicationCategory': 'UtilitiesApplication', 'description': d['description'], 'offers': {'@type': 'Offer', 'price': '0', 'priceCurrency': 'USD'}, 'downloadUrl': base + '/cardme/download'}
+    schema = {'@context': 'https://schema.org', '@type': 'SoftwareApplication', 'name': 'CardMe', 'url': url, 'inLanguage': lang, 'operatingSystem': 'macOS 14 or later; Apple silicon', 'applicationCategory': 'UtilitiesApplication', 'description': d['description'], 'offers': {'@type': 'Offer', 'price': '0', 'priceCurrency': 'USD'}, 'downloadUrl': download}
     language_links = []
     for code, copy in locales.items():
         current = ' aria-current="page"' if code == lang else ''
@@ -28,20 +29,20 @@ for lang, d in locales.items():
 <html lang="{lang}"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{esc(d['title'])}</title><meta name="description" content="{esc(d['description'], quote=True)}">
-<script src="/cardme/metrics.js" defer></script>
+<script src="/metrics.js" defer></script>
 <meta name="theme-color" content="#ffffff"><meta name="robots" content="index,follow">
 <link rel="canonical" href="{url}">{alternates}
 <meta property="og:type" content="website"><meta property="og:title" content="{esc(d['title'], quote=True)}">
 <meta property="og:description" content="{esc(d['description'], quote=True)}"><meta property="og:url" content="{url}">
-<meta property="og:image" content="{base}/cardme/assets/cardme-app.png">
+<meta property="og:image" content="{base}/assets/cardme-app.png">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="icon" href="/cardme/assets/favicon.png" type="image/png"><link rel="apple-touch-icon" href="/cardme/assets/apple-touch-icon.png">
-<link rel="stylesheet" href="/cardme/style.css?v={css_version}">
+<link rel="icon" href="/assets/favicon.png" type="image/png"><link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="stylesheet" href="/style.css?v={css_version}">
 <script type="application/ld+json">{json.dumps(schema, ensure_ascii=False, separators=(',', ':')).replace('<', chr(92)+'u003c')}</script>
 </head><body>
-<header class="wrap header"><a class="brand" href="{route(lang)}" aria-label="CardMe"><img src="/cardme/assets/cardme-mark.svg" width="40" height="40" alt="">CardMe</a><nav><a href="#how-it-works">{esc(d['nav'][0])}</a><a href="#questions">{esc(d['nav'][1])}</a><a class="coffee-link" href="https://ko-fi.com/alittleseal" target="_blank" rel="noopener noreferrer">{esc(d['coffee'])}</a></nav></header>
-<main><section class="wrap hero" aria-labelledby="intro"><div class="intro"><p class="eyebrow">{esc(d["kicker"])}</p><h1 id="intro">{d['heading']}</h1></div><div class="hero-actions"><p class="lead">{esc(d['lead'])}</p><a class="primary" href="/cardme/download">{esc(d['download'])}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M5 16v4h14v-4"/></svg></a><p class="requirements">macOS 14+ · Apple silicon<br>{esc(d['appNote'])}</p><p class="coffee-note"><a href="https://ko-fi.com/alittleseal" target="_blank" rel="noopener noreferrer">{esc(d['support'])} ☕️</a></p></div></section>
-<figure class="wrap app-preview"><div class="app-stage"><div class="app-window"><img src="/cardme/assets/cardme-app.png" width="1480" height="1084" alt="{esc(d['caption'], quote=True)}"></div></div><figcaption>{esc(d['caption'])}</figcaption></figure><div class="wrap trust">{trust}</div>
+<header class="wrap header"><a class="brand" href="{route(lang)}" aria-label="CardMe"><img src="/assets/cardme-mark.svg" width="40" height="40" alt="">CardMe</a><nav><a href="#how-it-works">{esc(d['nav'][0])}</a><a href="#questions">{esc(d['nav'][1])}</a><a class="coffee-link" href="https://ko-fi.com/alittleseal" target="_blank" rel="noopener noreferrer">{esc(d['coffee'])}</a></nav></header>
+<main><section class="wrap hero" aria-labelledby="intro"><div class="intro"><p class="eyebrow">{esc(d["kicker"])}</p><h1 id="intro">{d['heading']}</h1></div><div class="hero-actions"><p class="lead">{esc(d['lead'])}</p><a class="primary" href="{download}" data-download>{esc(d['download'])}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M5 16v4h14v-4"/></svg></a><p class="requirements">macOS 14+ · Apple silicon<br>{esc(d['appNote'])}</p><p class="coffee-note"><a href="https://ko-fi.com/alittleseal" target="_blank" rel="noopener noreferrer">{esc(d['support'])} ☕️</a></p></div></section>
+<figure class="wrap app-preview"><div class="app-stage"><div class="app-window"><img src="/assets/cardme-app.png" width="1480" height="1084" alt="{esc(d['caption'], quote=True)}"></div></div><figcaption>{esc(d['caption'])}</figcaption></figure><div class="wrap trust">{trust}</div>
 <aside class="wrap safety-note"><strong>{esc(d["warningTitle"])}</strong><span>{esc(d["warning"])}</span></aside><section class="wrap steps-section" id="how-it-works"><h2>{esc(d['stepsTitle'])}</h2><div class="steps">{steps}</div></section>
 <section class="wrap questions" id="questions"><div><h2>{esc(d['nav'][1])}</h2></div><div class="answers">{questions}</div></section></main>
 <details class="wrap language-picker"><summary>{esc(d['name'])}</summary><nav class="languages" aria-label="{esc(d['languageLabel'], quote=True)}">{links}</nav></details>
@@ -53,4 +54,7 @@ for lang, d in locales.items():
     target.write_text(html)
 xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + ''.join(f'  <url><loc>{base}{route(lang)}</loc></url>\n' for lang in locales) + '</urlset>\n'
 (site / 'sitemap.xml').write_text(xml)
+(site / 'robots.txt').write_text(f'User-agent: *\nAllow: /\nSitemap: {base}/sitemap.xml\n')
+config = {'routes': [{'route': route(lang), 'rewrite': '/' + lang.lower() + '/index.html'} for lang in locales if lang != 'en'], 'globalHeaders': {'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; connect-src https://pickology-control-plane.azurewebsites.net/api/v1/cardme/usage"}}
+(site / 'staticwebapp.config.json').write_text(json.dumps(config, indent=2) + '\n')
 print(f'Generated {len(locales)} localized pages and sitemap.')

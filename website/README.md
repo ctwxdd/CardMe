@@ -1,7 +1,9 @@
 # CardMe website
 
-Dependency-free static landing page in dist/. Production: https://getpickology.com/cardme. Assets use the /cardme prefix. Serve a local parent directory containing dist as cardme/ to preview that path.
+Independent Azure Static Web App: https://witty-meadow-00543f01e.6.azurestaticapps.net
 
-The current Azure site is deployed by the Pickology website repository. Preserve the Pickology site, Remote, /download, and /version.json when updating CardMe. CardMe’s website download is independent of the GitHub release: update its DMG and version only after signing, notarization, and checksum verification.
+Run `python3 scripts/build-website.py` and serve `website/dist` as the website root. The generator produces nine locales, canonical links, sitemap, robots policy, and Azure route/security configuration. Direct GitHub Release asset links download the notarized DMG without a CardMe redirect.
 
-The product screenshot is CardMe’s empty starting screen. The page sends best-effort visit, download-click and coffee-link counts to the Pickology control plane, without cookies, persistent IDs, URLs or referrers. Do Not Track and Global Privacy Control disable these events. Hosting receives network addresses. It uses no remote fonts or photo uploads. Ko-fi is optional.
+Deploy with the manual `Deploy CardMe website` GitHub workflow. Azure resource group and app are both `CardMe`; the deployment secret is `AZURE_STATIC_WEB_APPS_API_TOKEN`. Pickology is untouched.
+
+Existing anonymous visit and click counts still use the Pickology control plane; Do Not Track and Global Privacy Control disable them. No cookies, persistent IDs, photo uploads, URLs, or referrers are sent. Ko-fi is optional.

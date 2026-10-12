@@ -15,7 +15,7 @@
   send('page_view');
   document.addEventListener('click', event => {
     const link = event.target.closest?.('a');
-    if (link?.getAttribute('href') === '/cardme/download') send('download_click');
+    if (link?.hasAttribute('data-download')) send('download_click');
     if (link?.getAttribute('href') === 'https://ko-fi.com/alittleseal') send('web_coffee_click');
   });
 })();

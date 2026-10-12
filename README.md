@@ -8,14 +8,14 @@ A faulty card adapter damaged my memory card and left me with photos I couldn’
 
 I’m sharing it so that others have a free option when the same thing happens. CardMe reads the card, saves recovered copies somewhere else, and tells you whether it found a full-size photo, a preview, or only a thumbnail. It won’t promise more than it recovered.
 
-[Website](https://getpickology.com/cardme) · [繁體中文](https://getpickology.com/cardme/zh-hant) · [Download for Mac](https://getpickology.com/cardme) · [Releases](https://github.com/ctwxdd/CardMe/releases)
+[Website](https://witty-meadow-00543f01e.6.azurestaticapps.net) · [繁體中文](https://witty-meadow-00543f01e.6.azurestaticapps.net/zh-hant) · [Download for Mac](https://witty-meadow-00543f01e.6.azurestaticapps.net) · [Releases](https://github.com/ctwxdd/CardMe/releases)
 
 ## Get started
 
 Requires **macOS 14 or later and an Apple silicon Mac**. No account, subscription, or separately installed Python or recovery tools.
 
 1. **Stop using the affected card.** Don’t take more photos or save files to it; new data can overwrite photos that are still recoverable.
-2. Download the signed, Apple-notarized DMG from the [website](https://getpickology.com/cardme). Open it and drag **CardMe** into Applications.
+2. Download the signed, Apple-notarized DMG from the [website](https://witty-meadow-00543f01e.6.azurestaticapps.net). Open it and drag **CardMe** into Applications.
 3. Connect your card with a working reader. Open CardMe, choose the card, and scan it.
 4. Click **Rescue to…** and choose a folder on your Mac or another fixed drive. Never save recovered photos back to the affected card.
 5. Check the results. Use **↑ / ↓** to move through the list and **Space** for Quick Look. Full-size photos, previews, tiny thumbnails, and unsuccessful recovery are shown separately.

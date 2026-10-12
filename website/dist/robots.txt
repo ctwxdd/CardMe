@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://witty-meadow-00543f01e.6.azurestaticapps.net/sitemap.xml

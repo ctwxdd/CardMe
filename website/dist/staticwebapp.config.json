@@ -1,0 +1,41 @@
+{
+  "routes": [
+    {
+      "route": "/de",
+      "rewrite": "/de/index.html"
+    },
+    {
+      "route": "/es",
+      "rewrite": "/es/index.html"
+    },
+    {
+      "route": "/fr",
+      "rewrite": "/fr/index.html"
+    },
+    {
+      "route": "/ja",
+      "rewrite": "/ja/index.html"
+    },
+    {
+      "route": "/ko",
+      "rewrite": "/ko/index.html"
+    },
+    {
+      "route": "/pt",
+      "rewrite": "/pt/index.html"
+    },
+    {
+      "route": "/zh-hans",
+      "rewrite": "/zh-hans/index.html"
+    },
+    {
+      "route": "/zh-hant",
+      "rewrite": "/zh-hant/index.html"
+    }
+  ],
+  "globalHeaders": {
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "no-referrer",
+    "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; connect-src https://pickology-control-plane.azurewebsites.net/api/v1/cardme/usage"
+  }
+}

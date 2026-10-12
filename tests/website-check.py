@@ -24,7 +24,7 @@ public_versions = {re.search(r'\b\d+\.\d+\.\d+', d['version']).group() for d in 
 assert len(public_versions) == 1
 version = public_versions.pop()
 assert tuple(map(int, version.split('.'))) <= tuple(map(int, json.loads((root/'VERSION.json').read_text())['version'].split('.')))
-expected = {'https://getpickology.com/cardme' if lang == 'en' else 'https://getpickology.com/cardme/'+lang.lower() for lang in locales}
+expected = {'https://witty-meadow-00543f01e.6.azurestaticapps.net/' if lang == 'en' else 'https://witty-meadow-00543f01e.6.azurestaticapps.net/'+lang.lower() for lang in locales}
 css_version = hashlib.sha256((root/'website/dist/style.css').read_bytes()).hexdigest()[:12]
 for lang in locales:
     copy = locales[lang]
@@ -42,10 +42,12 @@ for lang in locales:
     assert set(alternates.values()) == expected
     schema = json.loads(p.schema)
     assert schema['offers']['price'] == '0' and schema['inLanguage'] == lang
-    assert schema['downloadUrl'] == 'https://getpickology.com/cardme/download'
+    assert schema['downloadUrl'] == 'https://github.com/ctwxdd/CardMe-releases/releases/download/v0.3.23/CardMe-0.3.23.dmg'
+    assert f'href="{schema["downloadUrl"]}" data-download' in body
+    assert '/cardme/' not in body and 'getpickology.com' not in body
     assert 'aggregateRating' not in schema and 'review' not in schema
-    assert version in body and '/cardme/assets/cardme-mark.svg' in body
-    assert any(a.get('rel') == 'stylesheet' and a.get('href') == '/cardme/style.css?v='+css_version for a in p.links)
+    assert version in body and '/assets/cardme-mark.svg' in body
+    assert any(a.get('rel') == 'stylesheet' and a.get('href') == '/style.css?v='+css_version for a in p.links)
     assert len(locales[lang]['faq']) >= 9
     assert 'class="wrap support"' not in body
     assert body.count('href="https://ko-fi.com/alittleseal"') == 2
@@ -54,3 +56,9 @@ for lang in locales:
 ns = {'s': 'http://www.sitemaps.org/schemas/sitemap/0.9'}
 assert {n.text for n in ET.parse(root/'website/dist/sitemap.xml').findall('.//s:loc', ns)} == expected
 print(f'{len(locales)} languages: unique canonicals, reciprocal hreflang, sitemap, free app schema and secondary donation link checked.')
+
+config = json.loads((root/'website/dist/staticwebapp.config.json').read_text())
+assert len(config['routes']) == len(locales) - 1
+assert all('redirect' not in r and r['rewrite'].endswith('/index.html') for r in config['routes'])
+assert 'frame-ancestors' in config['globalHeaders']['Content-Security-Policy']
+assert 'sitemap.xml' in (root/'website/dist/robots.txt').read_text()
