@@ -18,7 +18,7 @@ struct UsageStatisticsCheck {
         let config = URLSessionConfiguration.ephemeral
         config.protocolClasses = [UsageProtocol.self]
         let network = URLSession(configuration: config)
-        let stats = UsageStatistics(defaults: defaults, network: network, endpoint: URL(string: "https://usage.test")!)
+        let stats = UsageStatistics(defaults: defaults, network: network, endpoint: URL(string: "https://cardme-control-plane.azurewebsites.net/api/v1/usage")!)
         assert(stats.enabled)
         stats.enabled = false
         stats.send("app_open")
@@ -38,6 +38,7 @@ struct UsageStatisticsCheck {
         assert(UsageProtocol.requests.count == 6)
         var ids = Set<String>()
         for request in UsageProtocol.requests {
+            assert(request.url?.host == "cardme-control-plane.azurewebsites.net")
             var data = request.httpBody
             if data == nil, let stream = request.httpBodyStream {
                 stream.open(); defer { stream.close() }

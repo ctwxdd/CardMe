@@ -61,7 +61,7 @@ final class UsageStatistics: ObservableObject {
         }
     }
     init(defaults: UserDefaults = .standard, network: URLSession? = nil,
-         endpoint: URL = URL(string: "https://pickology-control-plane.azurewebsites.net/api/v1/cardme/usage")!) {
+         endpoint: URL = URL(string: "https://cardme-control-plane.azurewebsites.net/api/v1/usage")!) {
         self.defaults = defaults
         self.endpoint = endpoint
         defaults.register(defaults: [Self.settingKey: true])

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.24 — 2026-10-11
+
+- Send optional anonymous statistics to the independent CardMe service. Recovery behavior is unchanged from 0.3.23.
+
+
 ## 0.3.23 · build 36
 
 - Report anonymous scan totals, photos needing review and completed, failed or cancelled scan outcomes when usage statistics are enabled.
