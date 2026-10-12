@@ -8,7 +8,7 @@ A faulty card adapter damaged my memory card and left me with photos I couldn’
 
 I’m sharing it so that others have a free option when the same thing happens. CardMe reads the card, saves recovered copies somewhere else, and tells you whether it found a full-size photo, a preview, or only a thumbnail. It won’t promise more than it recovered.
 
-[Website](https://witty-meadow-00543f01e.6.azurestaticapps.net) · [繁體中文](https://witty-meadow-00543f01e.6.azurestaticapps.net/zh-hant) · [Download for Mac](https://witty-meadow-00543f01e.6.azurestaticapps.net) · [Releases](https://github.com/ctwxdd/CardMe-releases/releases)
+[Website](https://witty-meadow-00543f01e.6.azurestaticapps.net) · [繁體中文](https://witty-meadow-00543f01e.6.azurestaticapps.net/zh-hant) · [Download for Mac](https://witty-meadow-00543f01e.6.azurestaticapps.net) · [Releases](https://github.com/ctwxdd/CardMe/releases)
 
 ## Get started
 

@@ -8,7 +8,7 @@ root = Path(__file__).resolve().parents[1]
 site = root / 'website/dist'
 locales = {p.stem: json.loads(p.read_text()) for p in sorted((root / 'website/locales').glob('*.json'))}
 base = 'https://witty-meadow-00543f01e.6.azurestaticapps.net'
-download = 'https://github.com/ctwxdd/CardMe-releases/releases/download/v0.3.36/CardMe-0.3.36.dmg'
+download = 'https://github.com/ctwxdd/CardMe/releases/download/v0.3.37/CardMe-0.3.37.dmg'
 source = download.replace('.dmg', '-source.tar.gz')
 css_version = hashlib.sha256((site / 'style.css').read_bytes()).hexdigest()[:12]
 def route(lang):

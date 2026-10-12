@@ -42,7 +42,7 @@ for lang in locales:
     assert set(alternates.values()) == expected
     schema = json.loads(p.schema)
     assert schema['offers']['price'] == '0' and schema['inLanguage'] == lang
-    assert schema['downloadUrl'] == f'https://github.com/ctwxdd/CardMe-releases/releases/download/v{version}/CardMe-{version}.dmg'
+    assert schema['downloadUrl'] == f'https://github.com/ctwxdd/CardMe/releases/download/v{version}/CardMe-{version}.dmg'
     assert f'href="{schema["downloadUrl"].replace(".dmg", "-source.tar.gz")}" class="source-link"' in body
     assert f'href="{schema["downloadUrl"]}" data-download' in body
     assert '/cardme/' not in body and 'getpickology.com' not in body
