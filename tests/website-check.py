@@ -58,8 +58,8 @@ assert {n.text for n in ET.parse(root/'website/dist/sitemap.xml').findall('.//s:
 print(f'{len(locales)} languages: unique canonicals, reciprocal hreflang, sitemap, free app schema and secondary donation link checked.')
 
 config = json.loads((root/'website/dist/staticwebapp.config.json').read_text())
-assert len(config['routes']) == len(locales) - 1
-assert all('redirect' not in r and r['rewrite'].endswith('/index.html') for r in config['routes'])
+assert len(config['routes']) == len(locales) + 1
+assert all('redirect' not in r and (r.get('rewrite', '/index.html').endswith('/index.html')) for r in config['routes'])
 assert 'pickology-control-plane' not in (root/'website/dist/metrics.js').read_text()
 assert 'https://cardme-control-plane.azurewebsites.net/api/v1/usage' in (root/'website/dist/metrics.js').read_text()
 assert 'https://cardme-control-plane.azurewebsites.net/api/v1/usage' in config['globalHeaders']['Content-Security-Policy']

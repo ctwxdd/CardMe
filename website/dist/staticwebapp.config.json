@@ -1,6 +1,19 @@
 {
   "routes": [
     {
+      "route": "/admin",
+      "rewrite": "/admin/index.html",
+      "headers": {
+        "X-Robots-Tag": "noindex, nofollow"
+      }
+    },
+    {
+      "route": "/admin/*",
+      "headers": {
+        "X-Robots-Tag": "noindex, nofollow"
+      }
+    },
+    {
       "route": "/de",
       "rewrite": "/de/index.html"
     },

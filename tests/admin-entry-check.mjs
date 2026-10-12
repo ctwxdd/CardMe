@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+const root=new URL('../website/dist/admin/',import.meta.url);
+const html=fs.readFileSync(new URL('index.html',root),'utf8');
+const code=fs.readFileSync(new URL('login.js',root),'utf8');
+const href=html.match(/id="login" href="([^"]+)"/)[1];
+const login=new URL(href);
+assert.equal(login.origin,'https://cardme-control-plane.azurewebsites.net');
+assert.equal(login.pathname,'/api/v1/admin/usage');
+assert.equal(login.search,'');
+assert(html.includes('noindex,nofollow') && !html.includes('metrics.js'));
+const frames=[],status={textContent:''};let destination;
+vm.runInNewContext(code,{document:{getElementById:id=>id==='login'?{href}:status},requestAnimationFrame:fn=>frames.push(fn),location:{replace:url=>{destination=url;}}});
+assert(status.textContent.includes('Microsoft'));assert.equal(destination,undefined);
+frames.shift()();assert.equal(destination,undefined);
+frames.shift()();assert.equal(destination,href);
+console.log('Admin entry: fixed independent login, first paint before navigation, no metrics and no indexing passed.');

@@ -3,6 +3,7 @@
 CardMe owns its own Azure Function, Flex Consumption plan, managed identity, Storage account, Entra application and administrator dashboard in resource group `CardMe`. It has no Pickology runtime, storage, certificate, DNS, Key Vault, or enrollment dependencies.
 
 - Public ingestion: `https://cardme-control-plane.azurewebsites.net/api/v1/usage`
+- Static sign-in entrance: `https://witty-meadow-00543f01e.6.azurestaticapps.net/admin` (shows connection status immediately, then opens the protected dashboard, reusing an existing login or entering Microsoft login when needed)
 - Protected dashboard: `https://cardme-control-plane.azurewebsites.net/api/v1/admin/usage`
 - Protected aggregate JSON: `/api/v1/admin/usage/data`
 - Health: `/api/health`
