@@ -46,7 +46,7 @@ for lang, d in locales.items():
 <aside class="wrap safety-note"><strong>{esc(d["warningTitle"])}</strong><span>{esc(d["warning"])}</span></aside><section class="wrap steps-section" id="how-it-works"><h2>{esc(d['stepsTitle'])}</h2><div class="steps">{steps}</div></section>
 <section class="wrap questions" id="questions"><div><h2>{esc(d['nav'][1])}</h2></div><div class="answers">{questions}</div></section></main>
 <details class="wrap language-picker"><summary>{esc(d['name'])}</summary><nav class="languages" aria-label="{esc(d['languageLabel'], quote=True)}">{links}</nav></details>
-<footer class="wrap footer"><span>CardMe</span><a href="https://github.com/ctwxdd/CardMe-releases" target="_blank" rel="noopener noreferrer">GitHub</a><span>{esc(d['version'])}</span></footer>
+<footer class="wrap footer"><span>CardMe</span><a href="https://github.com/ctwxdd/CardMe" target="_blank" rel="noopener noreferrer">GitHub</a><span>{esc(d['version'])}</span></footer>
 </body></html>
 '''
     target = site / ('index.html' if lang == 'en' else lang.lower() + '/index.html')

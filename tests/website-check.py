@@ -53,7 +53,7 @@ for lang in locales:
     assert body.count('href="https://ko-fi.com/alittleseal"') == 2
     assert 'class="wrap trust"' in body
     assert 'ko-fi.com' not in body.split('<footer')[1]
-    assert 'href="https://github.com/ctwxdd/CardMe-releases"' in body.split('<footer')[1]
+    assert 'href="https://github.com/ctwxdd/CardMe"' in body.split('<footer')[1]
 ns = {'s': 'http://www.sitemaps.org/schemas/sitemap/0.9'}
 assert {n.text for n in ET.parse(root/'website/dist/sitemap.xml').findall('.//s:loc', ns)} == expected
 print(f'{len(locales)} languages: unique canonicals, reciprocal hreflang, sitemap, free app schema and secondary donation link checked.')

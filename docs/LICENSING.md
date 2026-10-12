@@ -22,11 +22,11 @@ Earlier copies distributed under MIT remain under that license. The historical t
 
 The signed public 0.3.23 DMG remains a separate, unchanged artifact. Its included license governs that distribution. Future GPL releases must include the GPL notices and the matching corresponding source.
 
-## First public source publication
+## Published source history
 
-The private repository's history contains complete source snapshots with an MIT license. Making that history public also exposes those snapshots and their license notices. A GPL license at the newest commit does not erase them.
+The application repository is now public at https://github.com/ctwxdd/CardMe. Current original source is GPL-3.0-only; the public history also contains earlier MIT-licensed source snapshots. Those earlier grants remain valid. The latest GPL license does not revoke the rights granted by earlier MIT versions.
 
-If the first public source release is intended to be GPL-only, publish a clean snapshot of the current GPL tree and preserve the existing repository/history privately. Do not rewrite or delete private history merely to hide old notices. A source archive contains the current files without Git history; the project owner must choose the public repository and release history before changing visibility.
+Preserve the historical copyright and license notices. Do not describe every historical version as GPL-only or claim that the new license prevents use of older MIT source. Future GPL binaries still require their exact corresponding source as described below.
 
 ## Third-party components
 
