@@ -50,7 +50,7 @@
     ],
     [
       "Mes photos sont-elles envoyées sur Internet ?",
-      "Non. La récupération se fait sur votre Mac. Les versions récentes collectent des statistiques d’utilisation, désactivables dans les réglages. Photos, noms de fichiers, chemins et informations sur la carte ne sont jamais envoyés. Le site compte les visites et les clics sur les liens de téléchargement et de soutien, sans cookies ni identifiants persistants. Il respecte Do Not Track et Global Privacy Control. L’hébergeur reçoit des informations de connexion, notamment les adresses IP."
+      "Non. La récupération se fait sur votre Mac. Les statistiques d’utilisation sont activées par défaut. Vous pouvez les désactiver dans CardMe, sous Réglages → Confidentialité. Photos, noms de fichiers, chemins et informations sur la carte ne sont jamais envoyés. Le site compte les visites et les clics sur les liens de téléchargement et de soutien, sans cookies ni identifiants persistants. Il respecte Do Not Track et Global Privacy Control. L’hébergeur reçoit des informations de connexion, notamment les adresses IP."
     ],
     [
       "Comment Deep Rescue retrouve-t-il les photos ?",

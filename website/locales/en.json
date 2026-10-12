@@ -50,7 +50,7 @@
     ],
     [
       "Are my photos uploaded?",
-      "No. Photo recovery takes place on your Mac. Newer versions collect usage statistics, which you can turn off in Settings. Photos, filenames, paths and card details are never uploaded. The website counts visits and clicks on download and support links without cookies or persistent identifiers. It respects Do Not Track and Global Privacy Control. The hosting service still receives connection information such as IP addresses."
+      "No. Photo recovery takes place on your Mac. Usage statistics are enabled by default; you can turn them off in CardMe → Settings → Privacy. Photos, filenames, paths and card details are never uploaded. The website counts visits and clicks on download and support links without cookies or persistent identifiers. It respects Do Not Track and Global Privacy Control. The hosting service still receives connection information such as IP addresses."
     ],
     [
       "How does Deep Rescue find photos?",

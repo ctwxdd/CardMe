@@ -1,8 +1,9 @@
 # Changelog
 
-## Unreleased
+## 0.3.36 · build 49
 
 - License future CardMe source and builds under GPL-3.0-only. Preserve the terms of earlier MIT-licensed distributions and all third-party licenses.
+- Use dedicated CardMe telemetry infrastructure and link the public source repository from every website language.
 - Prepare the public README with installation, recovery limits, read-only safety, privacy, contributing and redistribution guidance.
 
 ## 0.3.35 · build 48
