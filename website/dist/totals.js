@@ -4,7 +4,7 @@
   if (!target) return;
   try {
     const response = await fetch('https://cardme-control-plane.azurewebsites.net/api/v1/public/totals', {
-      credentials: 'omit', referrerPolicy: 'no-referrer', signal: AbortSignal.timeout(8000)
+      credentials: 'omit', referrerPolicy: 'no-referrer', signal: AbortSignal.timeout(3000)
     });
     if (!response.ok) return;
     const totals = await response.json();
