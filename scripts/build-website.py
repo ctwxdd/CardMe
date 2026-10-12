@@ -8,7 +8,8 @@ root = Path(__file__).resolve().parents[1]
 site = root / 'website/dist'
 locales = {p.stem: json.loads(p.read_text()) for p in sorted((root / 'website/locales').glob('*.json'))}
 base = 'https://witty-meadow-00543f01e.6.azurestaticapps.net'
-download = 'https://github.com/ctwxdd/CardMe-releases/releases/download/v0.3.23/CardMe-0.3.23.dmg'
+download = 'https://github.com/ctwxdd/CardMe-releases/releases/download/v0.3.36/CardMe-0.3.36.dmg'
+source = download.replace('.dmg', '-source.tar.gz')
 css_version = hashlib.sha256((site / 'style.css').read_bytes()).hexdigest()[:12]
 def route(lang):
     return '/' if lang == 'en' else '/' + lang.lower()
@@ -41,7 +42,7 @@ for lang, d in locales.items():
 <script type="application/ld+json">{json.dumps(schema, ensure_ascii=False, separators=(',', ':')).replace('<', chr(92)+'u003c')}</script>
 </head><body>
 <header class="wrap header"><a class="brand" href="{route(lang)}" aria-label="CardMe"><img src="/assets/cardme-mark.svg" width="40" height="40" alt="">CardMe</a><nav><a href="#how-it-works">{esc(d['nav'][0])}</a><a href="#questions">{esc(d['nav'][1])}</a><a class="coffee-link" href="https://ko-fi.com/alittleseal" target="_blank" rel="noopener noreferrer">{esc(d['coffee'])}</a></nav></header>
-<main><section class="wrap hero" aria-labelledby="intro"><div class="intro"><p class="eyebrow">{esc(d["kicker"])}</p><h1 id="intro">{d['heading']}</h1></div><div class="hero-actions"><p class="lead">{esc(d['lead'])}</p><a class="primary" href="{download}" data-download>{esc(d['download'])}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M5 16v4h14v-4"/></svg></a><p class="requirements">macOS 14+ · Apple silicon<br>{esc(d['appNote'])}</p><p class="coffee-note"><a href="https://ko-fi.com/alittleseal" target="_blank" rel="noopener noreferrer">{esc(d['support'])} ☕️</a></p></div></section>
+<main><section class="wrap hero" aria-labelledby="intro"><div class="intro"><p class="eyebrow">{esc(d["kicker"])}</p><h1 id="intro">{d['heading']}</h1></div><div class="hero-actions"><p class="lead">{esc(d['lead'])}</p><a class="primary" href="{download}" data-download>{esc(d['download'])}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M5 16v4h14v-4"/></svg></a><p class="requirements">macOS 14+ · Apple silicon<br>{esc(d['appNote'])}<br><a href="{source}" class="source-link">{esc(d['source'])} · GPL-3.0</a></p><p class="coffee-note"><a href="https://ko-fi.com/alittleseal" target="_blank" rel="noopener noreferrer">{esc(d['support'])} ☕️</a></p></div></section>
 <figure class="wrap app-preview"><div class="app-stage"><div class="app-window"><img src="/assets/cardme-app.png" width="1480" height="1084" alt="{esc(d['caption'], quote=True)}"></div></div><figcaption>{esc(d['caption'])}</figcaption></figure><div class="wrap trust">{trust}</div>
 <aside class="wrap safety-note"><strong>{esc(d["warningTitle"])}</strong><span>{esc(d["warning"])}</span></aside><section class="wrap steps-section" id="how-it-works"><h2>{esc(d['stepsTitle'])}</h2><div class="steps">{steps}</div></section>
 <section class="wrap questions" id="questions"><div><h2>{esc(d['nav'][1])}</h2></div><div class="answers">{questions}</div></section></main>

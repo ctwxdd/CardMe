@@ -218,3 +218,5 @@ html { scroll-behavior: smooth; scroll-padding-top: 24px; }
   .hero { padding-top: 32px; }
   h1 { font-size: 35px; }
 }
+
+.source-link { text-decoration: underline; text-underline-offset: 3px; }
