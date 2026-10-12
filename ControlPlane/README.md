@@ -6,6 +6,7 @@ CardMe owns its own Azure Function, Flex Consumption plan, managed identity, Sto
 - Static sign-in entrance: `https://witty-meadow-00543f01e.6.azurestaticapps.net/admin` (shows connection status immediately, then opens the protected dashboard, reusing an existing login or entering Microsoft login when needed)
 - Protected dashboard: `https://cardme-control-plane.azurewebsites.net/api/v1/admin/usage`
 - Protected aggregate JSON: `/api/v1/admin/usage/data`
+- Protected GitHub Release download totals: `/api/v1/admin/usage/releases`
 - Health: `/api/health`
 
 Only the CardMe website origin may submit browser events. Native app reports use the same strict anonymous schema without browser credentials. Bodies are limited to 1 KiB; counts and fields are validated, with per-source minute limits, a daily instance limit and bounded limiter storage. Public reports are unverified and counts can include repeats. Daily cleanup deletes reports older than 90 days in bounded batches. No photos, file names, paths, card IDs, user IDs or IP addresses are persisted in event rows. Azure receives connection information as part of hosting.
@@ -23,3 +24,5 @@ az ad app update --id YOUR_CARDME_ENTRA_CLIENT_ID --enable-id-token-issuance tru
 The optional one-time `scripts/migrate-statistics.mjs` copies a `CardMeUsage` table between explicit endpoints using the maintainer's Azure CLI login. It creates records without overwriting existing events, verifies every copied event, saves only count/status evidence and leaves the source unchanged. Retire the old ingestion route before the final migration pass. Delete the old table only after verification.
 
 Already installed 0.3.23 and earlier clients have the retired endpoint compiled in; their optional uploads fail quietly after removal. Photo recovery remains local and independent of statistics.
+
+GitHub DMG counts are fetched server-side from the public CardMe and historical CardMe-releases repositories without a token. Only matching versioned DMG assets are counted; source archives and checksums are excluded. The latest 100 releases per repository are listed, including prereleases. Counts are lifetime totals, not unique users, installations or selected-window downloads. Requests time out after five seconds, concurrent refreshes share one request, and successful results are cached for five minutes (failures for one minute). The dashboard loads these separately so GitHub failures do not block website/app statistics. No event rows or app telemetry schema are changed.

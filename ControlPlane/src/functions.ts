@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import type { HttpHandler, HttpRequest, HttpResponseInit } from '@azure/functions';
 import { parseCardMeUsage, type CardMeUsageStore } from './usage.ts';
 import { readJson } from './body.ts';
+import type { ReleaseDownloads } from './releases.ts';
 import { DASHBOARD_HTML } from './dashboard.ts';
 
 export class HttpError extends Error {
@@ -26,7 +27,7 @@ export function authorizeAdmin(request: HttpRequest, allowed: readonly string[])
   if (ids.size !== 1 || !uuid.test([...ids][0])) throw new HttpError('admin_auth_required',401);
   if (!allowed.includes([...ids][0])) throw new HttpError('admin_forbidden',403);
 }
-export function createHandlers(options: {store: Pick<CardMeUsageStore,'save'|'summary'>; adminObjectIds: readonly string[]; websiteOrigin: string; now?:()=>number}) {
+export function createHandlers(options: {store: Pick<CardMeUsageStore,'save'|'summary'>; adminObjectIds: readonly string[]; websiteOrigin: string; releases?: () => Promise<ReleaseDownloads>; now?:()=>number}) {
   const clock=options.now ?? Date.now;
   const buckets = new Map<string,{start:number; count:number}>();
   function charge(key:string, seconds:number, max:number) {
@@ -78,11 +79,16 @@ export function createHandlers(options: {store: Pick<CardMeUsageStore,'save'|'su
     const to=new Date(clock()),from=new Date(to.getTime()-days*86400000);
     return json(200,{cardMe:await options.store.summary(from.toISOString(),to.toISOString(),version)});
   });
+  const adminReleases=wrap(async request=>{
+    admin(request);
+    if(!options.releases) return json(503,{error:'release_statistics_unavailable'});
+    return json(200,await options.releases());
+  });
   const hashes=(tag:string)=>[...DASHBOARD_HTML.matchAll(new RegExp('<'+tag+'[^>]*>([\\s\\S]*?)</'+tag+'>','g'))].map(m=>"'sha256-"+createHash('sha256').update(m[1]).digest('base64')+"'").join(' ');
   const adminUI=wrap(async request=>{
     admin(request);
     return {status:200,body:DASHBOARD_HTML,headers:{'content-type':'text/html; charset=utf-8','cache-control':'no-store','x-content-type-options':'nosniff','referrer-policy':'no-referrer',
       'content-security-policy':`default-src 'none'; script-src ${hashes('script')}; style-src ${hashes('style')}; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'`}};
   });
-  return {usage,adminData,adminUI};
+  return {usage,adminData,adminUI,adminReleases};
 }
