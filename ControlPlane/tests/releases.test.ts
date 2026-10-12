@@ -1,6 +1,5 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { legacyDownloads, historyCapturedAt } from '../src/release-history.ts';
 import { createReleaseDownloads } from '../src/releases.ts';
 import { createHandlers } from '../src/functions.ts';
 import { DASHBOARD_HTML } from '../src/dashboard.ts';
@@ -10,7 +9,7 @@ const { HttpRequest } = azureFunctions;
 const release = (version: string, downloads: unknown) => ({ tag_name: 'v'+version, draft: false, prerelease: true,
   assets: [{ name: `CardMe-${version}.dmg`, download_count: downloads }, { name: 'source.tar.gz', download_count: 99 }] });
 
-test('DMG-only lifetime counts include prereleases and historical downloads; cache shares concurrent refreshes', async () => {
+test('DMG counts use current reports only; refresh is coalesced and bounded to once per minute', async () => {
   let calls = 0, time = 0;
   const fetcher: typeof fetch = async (url, options) => {
     calls++;
@@ -21,12 +20,13 @@ test('DMG-only lifetime counts include prereleases and historical downloads; cac
   };
   const get = createReleaseDownloads(fetcher, () => time);
   const [a, b] = await Promise.all([get(), get()]);
-  assert.equal(calls, 1); assert.deepEqual(a, b); assert.equal(a.totalDmgDownloads, 12 + Object.values(legacyDownloads).reduce((sum, n) => sum + n, 0));
-  assert.equal(a.historyCapturedAt, historyCapturedAt);
-  assert.equal(a.releases.find(r => r.version === '0.3.36')?.historicalDownloads, legacyDownloads['0.3.36']);
+  assert.equal(calls, 1); assert.deepEqual(a, b); assert.equal(a.totalDmgDownloads, 12);
+  assert.deepEqual(a.releases.find(r => r.version === '0.3.36'), {version:'0.3.36',downloads:5});
   assert.deepEqual(a.releases.map(r => r.version), ['0.3.37', '0.3.36', '0.3.23']);
   await get(); assert.equal(calls, 1);
-  time = 300001; await get(); assert.equal(calls, 2);
+  await get(true); assert.equal(calls, 1);
+  time = 60001; await Promise.all([get(true),get(true)]); assert.equal(calls, 2);
+  time = 360002; await get(); assert.equal(calls, 3);
 });
 
 test('GitHub rate limits and malformed counts are unavailable, never falsely zero; failure cache retries', async () => {
@@ -43,10 +43,10 @@ test('GitHub rate limits and malformed counts are unavailable, never falsely zer
 
 test('release downloads require administrator authentication before accessing GitHub; existing stats stay independent', async () => {
   const admin = '11111111-1111-4111-8111-111111111111';
-  let reads = 0;
+  let reads = 0, refreshed = false;
   const h = createHandlers({ store: { async save() {}, async summary() { return { appOpens: 2 }; } } as never,
-    adminObjectIds: [admin], websiteOrigin: 'https://example.test', releases: async () => {
-      reads++; return { available: true, checkedAt: '2026-10-12T00:00:00Z', historyCapturedAt, totalDmgDownloads: 3, releases: [] };
+    adminObjectIds: [admin], websiteOrigin: 'https://example.test', releases: async refresh => {
+      reads++; refreshed=refresh??false; return { available: true, checkedAt: '2026-10-12T00:00:00Z', totalDmgDownloads: 3, releases: [] };
     } });
   const req = new HttpRequest({ url: 'https://test/api/v1/admin/usage/releases', method: 'GET' });
   const ctx = {} as InvocationContext;
@@ -57,6 +57,10 @@ test('release downloads require administrator authentication before accessing Gi
   req.headers.set('x-ms-client-principal', principal(admin));
   assert.equal((await h.adminReleases(req, ctx)).status, 200); assert.equal(reads, 1);
   assert.equal((await h.adminData(req, ctx)).status, 200); assert.equal(reads, 1);
+  req.query.set('refresh','1'); assert.equal((await h.adminReleases(req,ctx)).status,200); assert.equal(refreshed,true);
+  req.query.set('refresh','invalid'); assert.equal((await h.adminReleases(req,ctx)).status,400); assert.equal(reads,2);
+  assert(!DASHBOARD_HTML.includes('consolidation') && !DASHBOARD_HTML.includes('History captured'));
+  assert(DASHBOARD_HTML.includes('id="refresh"') && DASHBOARD_HTML.includes('loadReleases(true)'));
   assert.ok(DASHBOARD_HTML.includes('Website download clicks') && DASHBOARD_HTML.includes('GitHub Release downloads'));
   assert.ok(DASHBOARD_HTML.includes('loadReleases();') && DASHBOARD_HTML.includes('load();'));
   assert.ok(DASHBOARD_HTML.includes('five minutes') && DASHBOARD_HTML.includes('not unique users'));

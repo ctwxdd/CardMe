@@ -27,7 +27,7 @@ export function authorizeAdmin(request: HttpRequest, allowed: readonly string[])
   if (ids.size !== 1 || !uuid.test([...ids][0])) throw new HttpError('admin_auth_required',401);
   if (!allowed.includes([...ids][0])) throw new HttpError('admin_forbidden',403);
 }
-export function createHandlers(options: {store: Pick<CardMeUsageStore,'save'|'summary'>; adminObjectIds: readonly string[]; websiteOrigin: string; releases?: () => Promise<ReleaseDownloads>; now?:()=>number}) {
+export function createHandlers(options: {store: Pick<CardMeUsageStore,'save'|'summary'>; adminObjectIds: readonly string[]; websiteOrigin: string; releases?: (refresh?: boolean) => Promise<ReleaseDownloads>; now?:()=>number}) {
   const clock=options.now ?? Date.now;
   const buckets = new Map<string,{start:number; count:number}>();
   function charge(key:string, seconds:number, max:number) {
@@ -82,7 +82,9 @@ export function createHandlers(options: {store: Pick<CardMeUsageStore,'save'|'su
   const adminReleases=wrap(async request=>{
     admin(request);
     if(!options.releases) return json(503,{error:'release_statistics_unavailable'});
-    return json(200,await options.releases());
+    const refresh=request.query.get('refresh');
+    if(refresh!==null && refresh!=='1') throw new HttpError('invalid_refresh');
+    return json(200,await options.releases(refresh==='1'));
   });
   const hashes=(tag:string)=>[...DASHBOARD_HTML.matchAll(new RegExp('<'+tag+'[^>]*>([\\s\\S]*?)</'+tag+'>','g'))].map(m=>"'sha256-"+createHash('sha256').update(m[1]).digest('base64')+"'").join(' ');
   const adminUI=wrap(async request=>{

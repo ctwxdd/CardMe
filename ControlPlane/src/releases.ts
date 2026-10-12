@@ -1,15 +1,15 @@
-import { legacyDownloads, historyCapturedAt } from './release-history.ts';
 export type ReleaseDownloads = {
-  available: boolean; checkedAt: string; historyCapturedAt: string; totalDmgDownloads: number | null;
-  releases: { version: string; downloads: number; historicalDownloads: number }[];
+  available: boolean; checkedAt: string; totalDmgDownloads: number | null;
+  releases: { version: string; downloads: number }[];
 };
 // Counts are lifetime asset downloads, including repeat and verification downloads.
 export function createReleaseDownloads(fetcher: typeof fetch = fetch, now: () => number = Date.now) {
   let cached: ReleaseDownloads | undefined;
   let expires = 0;
+  let refreshAfter = 0;
   let pending: Promise<ReleaseDownloads> | undefined;
-  return async (): Promise<ReleaseDownloads> => {
-    if (cached && now() < expires) return cached;
+  return async (refresh = false): Promise<ReleaseDownloads> => {
+    if (cached && now() < expires && (!refresh || now() < refreshAfter)) return cached;
     if (pending) return pending;
     pending = (async () => {
       let result: ReleaseDownloads;
@@ -30,8 +30,7 @@ export function createReleaseDownloads(fetcher: typeof fetch = fetch, now: () =>
             if (!assets.length) return [];
             const count = assets[0].download_count;
             if (!Number.isSafeInteger(count) || count < 0) throw new Error('Invalid download count');
-            const historicalDownloads = legacyDownloads[version] ?? 0;
-            return [{ version, downloads: count + historicalDownloads, historicalDownloads }];
+            return [{ version, downloads: count as number }];
           });
         releases.sort((a, b) => {
           const av = a.version.split('.').map(Number), bv = b.version.split('.').map(Number);
@@ -39,11 +38,12 @@ export function createReleaseDownloads(fetcher: typeof fetch = fetch, now: () =>
         });
         const total = releases.reduce((sum, r) => sum + r.downloads, 0);
         if (!Number.isSafeInteger(total)) throw new Error('Invalid download total');
-        result = { available: true, checkedAt: new Date(now()).toISOString(), historyCapturedAt, totalDmgDownloads: total, releases };
+        result = { available: true, checkedAt: new Date(now()).toISOString(), totalDmgDownloads: total, releases };
       } catch {
-        result = { available: false, checkedAt: new Date(now()).toISOString(), historyCapturedAt, totalDmgDownloads: null, releases: [] };
+        result = { available: false, checkedAt: new Date(now()).toISOString(), totalDmgDownloads: null, releases: [] };
       }
       cached = result;
+      refreshAfter = now() + 60000;
       expires = now() + (result.available ? 300000 : 60000);
       return result;
     })();
