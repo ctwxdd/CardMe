@@ -47,6 +47,8 @@ else:
     macos.mkdir(parents=True)
     resources.mkdir()
     subprocess.run(['xcrun', 'swiftc', '-parse-as-library', '-swift-version', '5', '-O', '-target', 'arm64-apple-macosx14.0', '-module-cache-path', str(build_dir / 'ModuleCache'), str(ROOT / 'Sources/CardRescue.swift'), str(ROOT / 'Sources/ResultExport.swift'), '-o', str(macos / 'CardRescue')], check=True)
+for localization in (ROOT / 'Sources/Localization').glob('*.lproj'):
+    shutil.copytree(localization, resources / localization.name, dirs_exist_ok=True)
 shutil.copytree(ROOT / 'engine', resources / 'engine', ignore=shutil.ignore_patterns('__pycache__', '*.pyc'))
 ranker = resources / 'engine/native/jpeg-ranker'
 subprocess.run(['xcrun', 'clang++', '-O3', '-std=c++17', '-arch', 'arm64', '-mmacosx-version-min=14.0',
@@ -145,7 +147,7 @@ for icon in (ROOT / 'Sources/Assets.xcassets/AppIcon.appiconset').glob('*.png'):
     name = icon.name.replace('@1x', '')
     shutil.copy2(icon, iconset / name)
 subprocess.run(['iconutil', '-c', 'icns', str(iconset), '-o', str(resources / 'CardRescue.icns')], check=True)
-info = {'CFBundleName': 'CardMe', 'CFBundleDisplayName': 'CardMe', 'CFBundleIdentifier': 'com.nick.cardrescue',
+info = {'CFBundleDevelopmentRegion': 'en', 'CFBundleLocalizations': ['en', 'zh-Hant'], 'CFBundleName': 'CardMe', 'CFBundleDisplayName': 'CardMe', 'CFBundleIdentifier': 'com.nick.cardrescue',
         'CFBundleExecutable': 'CardRescue', 'CFBundleIconFile': 'CardRescue.icns', 'CFBundlePackageType': 'APPL', 'CFBundleShortVersionString': release['version'],
         'CFBundleVersion': str(release['build']), 'LSMinimumSystemVersion': '14.0', 'NSHighResolutionCapable': True,
         'NSRemovableVolumesUsageDescription': 'CardMe reads selected photos and saved card images. Recovery results are saved to your chosen fixed disk or SSD.',

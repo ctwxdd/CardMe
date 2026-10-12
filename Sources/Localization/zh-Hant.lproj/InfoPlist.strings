@@ -1,0 +1,3 @@
+"NSRemovableVolumesUsageDescription" = "CardMe 會讀取你選擇的照片與記憶卡備份，並將救回的照片儲存到你選擇的 Mac 或硬碟。";
+"NSDocumentsFolderUsageDescription" = "CardMe 只會在你選擇的資料夾儲存檢查結果與救回的照片。";
+"NSDownloadsFolderUsageDescription" = "CardMe 會讀取你選擇的影像檔，並將救援結果儲存到你選擇的資料夾。";

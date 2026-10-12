@@ -1,0 +1,3 @@
+"NSRemovableVolumesUsageDescription" = "CardMe reads selected photos and saved card images. Recovery results are saved to your chosen fixed disk or SSD.";
+"NSDocumentsFolderUsageDescription" = "CardMe saves reports and rescued photos only to the folder you choose.";
+"NSDownloadsFolderUsageDescription" = "CardMe reads selected images and writes results to your chosen folder.";

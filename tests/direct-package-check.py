@@ -21,6 +21,12 @@ assert info['CFBundleName'] == info['CFBundleDisplayName'] == 'CardMe'
 assert info['CFBundleIdentifier'] == 'com.nick.cardrescue.direct'
 subprocess.run(['codesign', '--verify', '--deep', '--strict', str(app)], check=True)
 resources = app / 'Contents/Resources'
+assert info['CFBundleDevelopmentRegion'] == 'en'
+assert info['CFBundleLocalizations'] == ['en', 'zh-Hant']
+for language in ['en', 'zh-Hant']:
+    for name in ['Localizable.strings', 'InfoPlist.strings']:
+        relative = pathlib.Path(language + '.lproj') / name
+        assert (resources / relative).read_bytes() == (root / 'Sources/Localization' / relative).read_bytes()
 assert (resources / 'engine/native/jpeg-ranker.cpp').read_bytes() == (root / 'engine/native/jpeg-ranker.cpp').read_bytes()
 assert (resources / 'engine/native/jpeg-ranker').is_file()
 assert not (resources / 'engine/card_directory.json').exists()

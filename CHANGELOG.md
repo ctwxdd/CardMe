@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.37 · build 50
+
+- Add Traditional Chinese app copy with familiar Taiwanese terms throughout card selection, scanning, rescue, results, privacy, About and permission prompts. Follow macOS app language preferences and retain English fallback.
+- Preserve recovery protocol strings, original filenames, read-only access and diagnostic/legal source text.
+
 ## 0.3.36 · build 49
 
 - License future CardMe source and builds under GPL-3.0-only. Preserve the terms of earlier MIT-licensed distributions and all third-party licenses.

@@ -4,6 +4,11 @@ import UniformTypeIdentifiers
 import QuickLookUI
 import CryptoKit
 
+func L(_ key: String, _ arguments: CVarArg...) -> String {
+    let text = NSLocalizedString(key, comment: "")
+    return arguments.isEmpty ? text : String(format: text, locale: Locale.current, arguments: arguments)
+}
+
 struct DamagedFile: Identifiable {
     let id: String
     var name: String
@@ -35,7 +40,7 @@ struct RecoveryOutcome {
         unrecovered = wholeCardSearch ? nil : missing
     }
     var text: String {
-        "Full-size photos: \(fullSize) · Previews only: \(previews) · Tiny thumbnails only: \(thumbnails)\nNot recovered: \(unrecovered.map(String.init) ?? "unknown") · Saved for review: \(review)"
+        L("Full-size photos: %ld · Previews only: %ld · Tiny thumbnails only: %ld\nNot recovered: %@ · Saved for review: %ld", fullSize, previews, thumbnails, unrecovered.map(String.init) ?? L("unknown"), review)
     }
 }
 
@@ -116,10 +121,10 @@ struct UsageSettingsView: View {
     @ObservedObject private var statistics = UsageStatistics.shared
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Privacy").font(.title2.bold())
-            Toggle("Share usage statistics", isOn: $statistics.enabled)
-            Text("Help improve CardMe by sharing app opens, scan totals and outcomes, rescue result counts and coffee-link clicks with our service. Enabled by default. No installation ID is used; photos, file names, paths and card details stay on your Mac.")
-            Text("Turning this off stops future uploads. Already received reports are normally kept for 90 days. Network requests expose your IP address to the hosting service; infrastructure logs may retain request metadata.")
+            Text(L("Privacy")).font(.title2.bold())
+            Toggle(L("Share usage statistics"), isOn: $statistics.enabled)
+            Text(L("Help improve CardMe by sharing app opens, scan totals and outcomes, rescue result counts and coffee-link clicks with our service. Enabled by default. No installation ID is used; photos, file names, paths and card details stay on your Mac."))
+            Text(L("Turning this off stops future uploads. Already received reports are normally kept for 90 days. Network requests expose your IP address to the hosting service; infrastructure logs may retain request metadata."))
                 .font(.callout).foregroundStyle(.secondary)
         }.padding(24).frame(width: 480).tint(.teal)
     }
@@ -162,9 +167,9 @@ final class RescueSession: ObservableObject {
     static var directDownload: Bool { Bundle.main.object(forInfoDictionaryKey: "CardRescueDirectDownload") as? Bool == true }
     static var safetyCopyLimitation: String {
         if directDownload {
-            return "We’ll make the safety copy for you, then recover from it. macOS may show “authopen” in its permission request; it opens the card only for reading. Keep the card connected until copying finishes."
+            return L("We’ll make the safety copy for you, then recover from it. macOS may show “authopen” in its permission request; it opens the card only for reading. Keep the card connected until copying finishes.")
         }
-        return "This App Store build can recover from an existing copy, but cannot create the whole-card copy itself. Creating it requires a separate disk-imaging tool."
+        return L("This App Store build can recover from an existing copy, but cannot create the whole-card copy itself. Creating it requires a separate disk-imaging tool.")
     }
     @Published var showingAbout = false
     @Published var showingCompletion = false
@@ -183,7 +188,7 @@ final class RescueSession: ObservableObject {
     @Published var copyWarning: String?
     @Published var running = false
     @Published var scanning = false
-    @Published var status = "Connect your memory card. We’ll help you take the next step."
+    @Published var status = L("Connect your memory card. We’ll help you take the next step.")
     @Published var fraction: Double?
     @Published var log = ""
     @Published var summary = ""
@@ -198,15 +203,15 @@ final class RescueSession: ObservableObject {
         !running && !folderRescued && !canSearchDeeper && scanFolder && scanReport != nil && !damaged.isEmpty
     }
     var guidanceTitle: String {
-        if running { return scanning ? "Scanning in progress" : "Recovery in progress" }
-        if hasSavedPhotos { return "Photos saved" }
-        if canSearchDeeper { return "Search for missing photos" }
-        if canContinueRecovery { return "Continue recovery" }
-        if error != nil { return "Recovery needs attention" }
-        if readyToRescue { return "Ready to rescue" }
-        if scanReport != nil { return "Photo check complete" }
-        if source != nil || selectedCard != nil { return "Ready to check photos" }
-        return "Choose your memory card"
+        if running { return scanning ? L("Scanning in progress") : L("Recovery in progress") }
+        if hasSavedPhotos { return L("Photos saved") }
+        if canSearchDeeper { return L("Search for missing photos") }
+        if canContinueRecovery { return L("Continue recovery") }
+        if error != nil { return L("Recovery needs attention") }
+        if readyToRescue { return L("Ready to rescue") }
+        if scanReport != nil { return L("Photo check complete") }
+        if source != nil || selectedCard != nil { return L("Ready to check photos") }
+        return L("Choose your memory card")
     }
     @Published var damaged: [DamagedFile] = []
     @Published var selectedID: String?
@@ -236,8 +241,8 @@ final class RescueSession: ObservableObject {
         panel.canChooseDirectories = folder
         panel.allowsMultipleSelection = false
         panel.directoryURL = cardRoot
-        panel.prompt = folder ? "Check photos" : "Use this copy"
-        panel.message = folder ? "Choose a photo folder. It will only be read." : "Choose a safety copy of your card, such as card.img. We’ll search it for photos."
+        panel.prompt = folder ? L("Check photos") : L("Use this copy")
+        panel.message = folder ? L("Choose a photo folder. It will only be read.") : L("Choose a safety copy of your card, such as card.img. We’ll search it for photos.")
         // Disk images can have UTType.diskImage rather than UTType.data. Allow files; the engine validates their contents.
         if !folder { panel.allowedContentTypes = [.item] }
         if panel.runModal() == .OK, let chosen = panel.url {
@@ -245,7 +250,7 @@ final class RescueSession: ObservableObject {
                 let root = cardRoot.resolvingSymlinksInPath().standardizedFileURL.path
                 let path = chosen.resolvingSymlinksInPath().standardizedFileURL.path
                 guard path == root || path.hasPrefix(root + "/") else {
-                    error = "Choose the selected card or a folder inside it."; return
+                    error = L("Choose the selected card or a folder inside it."); return
                 }
             }
             if freshImageDestination {
@@ -269,7 +274,7 @@ final class RescueSession: ObservableObject {
         safetyImage = nil; copyWarning = nil
         log = ""; lines = []; pending = Data(); fraction = nil
         paused = false; fullScan = false; scanning = false
-        status = "Connect your memory card. We’ll help you take the next step."
+        status = L("Connect your memory card. We’ll help you take the next step.")
         SystemPreview.shared.item = nil
         SystemPreview.shared.navigate = nil
         QLPreviewPanel.shared()?.close()
@@ -282,7 +287,7 @@ final class RescueSession: ObservableObject {
             chooseSource(cardRoot: root)
         } else if Self.directDownload {
             needsDeepRescue = true
-            status = "Your card is detected, but its files aren’t visible. We can try searching the whole card."
+            status = L("Your card is detected, but its files aren’t visible. We can try searching the whole card.")
         }
     }
     func scanCard(at root: URL) {
@@ -291,7 +296,7 @@ final class RescueSession: ObservableObject {
         guard FileManager.default.fileExists(atPath: root.path, isDirectory: &isDirectory),
               isDirectory.boolValue, FileManager.default.isReadableFile(atPath: root.path) else {
             needsDeepRescue = selectedCard != nil
-            error = "We couldn’t read this card. Check that it’s still connected and allow removable-volume access if macOS asks."; return
+            error = L("We couldn’t read this card. Check that it’s still connected and allow removable-volume access if macOS asks."); return
         }
         useSource(root, folder: true)
     }
@@ -318,8 +323,8 @@ final class RescueSession: ObservableObject {
             let panel = NSOpenPanel()
             panel.canChooseFiles = false; panel.canChooseDirectories = true
             panel.canCreateDirectories = true; panel.allowsMultipleSelection = false
-            panel.prompt = "Save photos here"
-            panel.message = "Choose where to save recovered photos. The search starts after you choose a folder. Your saved card copy stays read only."
+            panel.prompt = L("Save photos here")
+            panel.message = L("Choose where to save recovered photos. The search starts after you choose a folder. Your saved card copy stays read only.")
             guard panel.runModal() == .OK, let chosen = panel.url else { return false }
             destination = chosen
         }
@@ -340,8 +345,8 @@ final class RescueSession: ObservableObject {
             if destinationAccess { destination.stopAccessingSecurityScopedResource() }
             self.destination = nil; destinationAccess = false
             self.error = safetyImage == source
-                ? "Your safety copy is saved, but the photo search hasn’t started. Choose another save folder to continue searching the existing copy."
-                : "Choose a writable folder on a fixed disk or SSD, away from your card. Nothing was changed."
+                ? L("Your safety copy is saved, but the photo search hasn’t started. Choose another save folder to continue searching the existing copy.")
+                : L("Choose a writable folder on a fixed disk or SSD, away from your card. Nothing was changed.")
             return false
         }
     }
@@ -371,7 +376,7 @@ final class RescueSession: ObservableObject {
                 }
             }
             continueRecovery()
-        } catch { self.error = "Choose the saved card image again to resume." }
+        } catch { self.error = L("Choose the saved card image again to resume.") }
     }
     // Consume each photo event separately so pipe buffering cannot publish 100 rows in one UI update.
     nonisolated func readOutput(_ stream: Pipe) {
@@ -418,7 +423,7 @@ final class RescueSession: ObservableObject {
     func previewSelected() {
         guard let row = damaged.first(where: { $0.id == selectedID }) else { return }
         guard let url = row.url, FileManager.default.fileExists(atPath: url.path) else {
-            error = "A preview will be available after this photo is rescued."
+            error = L("A preview will be available after this photo is rescued.")
             return
         }
         SystemPreview.shared.navigate = { [weak self] delta in
@@ -432,20 +437,20 @@ final class RescueSession: ObservableObject {
         let quality = object["quality"] as? String
         let detail: String
         switch quality {
-        case "full_resolution": detail = "Original photo saved"
-        case "full_resolution_copy": detail = "Full-size photo saved"
-        case "full_resolution_reconstructed": detail = "Full-size photo rebuilt · please check"
-        case "camera_preview": detail = "Smaller preview saved"
-        case "thumbnail_only": detail = "Tiny thumbnail saved"
-        case "carved_jpeg": detail = "Found · please review"
-        case "manual_review": detail = object["output"] == nil ? "Not recovered" : (object["reconstruction"] as? String == "mpf_preview_guided" ? "Full-size candidate · please check" : "Saved · needs checking")
+        case "full_resolution": detail = L("Original photo saved")
+        case "full_resolution_copy": detail = L("Full-size photo saved")
+        case "full_resolution_reconstructed": detail = L("Full-size photo rebuilt · please check")
+        case "camera_preview": detail = L("Smaller preview saved")
+        case "thumbnail_only": detail = L("Tiny thumbnail saved")
+        case "carved_jpeg": detail = L("Found · please review")
+        case "manual_review": detail = object["output"] == nil ? L("Not recovered") : (object["reconstruction"] as? String == "mpf_preview_guided" ? L("Full-size candidate · please check") : L("Saved · needs checking"))
         default:
             switch object["status"] as? String {
-            case "unsupported_or_unrecognized": detail = "Format needs review"
-            case "read_error": detail = "Could not read"
-            case "skipped_size_limit": detail = "Too large to check safely"
-            case "suspect_thumbnail_mismatch", "suspect_warning": detail = "Please check this photo"
-            default: detail = "Unable to open"
+            case "unsupported_or_unrecognized": detail = L("Format needs review")
+            case "read_error": detail = L("Could not read")
+            case "skipped_size_limit": detail = L("Too large to check safely")
+            case "suspect_thumbnail_mismatch", "suspect_warning": detail = L("Please check this photo")
+            default: detail = L("Unable to open")
             }
         }
         let previewPath = object["metadata_output"] as? String ?? object["output"] as? String ?? (path.hasPrefix("/") ? path : nil)
@@ -460,28 +465,28 @@ final class RescueSession: ObservableObject {
            let progress = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
            let checked = progress["checked"] as? Int {
             scannedCount = max(scannedCount, checked)
-            status = "Checking photos… \(checked) checked"
+            status = L("Checking photos… %ld checked", checked)
             return
         }
         if line.hasPrefix("CARVING\t"), let data = String(line.dropFirst(8)).data(using: .utf8),
            let progress = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
            let done = progress["done"] as? Double, let total = progress["total"] as? Double, total > 0 {
             fraction = done / total
-            status = "Looking for your photos… \(Int(100 * done / total))% checked · \(progress["found"] as? Int ?? 0) found"
+            status = L("Looking for your photos… %ld%% checked · %ld found", Int(100 * done / total), progress["found"] as? Int ?? 0)
             return
         }
         if line.hasPrefix("FRAGMENTS\t"), let data = String(line.dropFirst(10)).data(using: .utf8),
            let progress = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
            let done = progress["done"] as? Double, let total = progress["total"] as? Double, total > 0 {
             fraction = done / total
-            status = "Putting photo pieces together… \(Int(100 * done / total))% checked · \(progress["found"] as? Int ?? 0) rebuilt"
+            status = L("Putting photo pieces together… %ld%% checked · %ld rebuilt", Int(100 * done / total), progress["found"] as? Int ?? 0)
             return
         }
         if line.hasPrefix("IMAGING\t"), let data = String(line.dropFirst(8)).data(using: .utf8),
            let progress = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
            let done = progress["done"] as? Double, let total = progress["total"] as? Double, total > 0 {
             fraction = done / total
-            status = "Keeping your card safe… \(Int(100 * done / total))% copied"
+            status = L("Keeping your card safe… %ld%% copied", Int(100 * done / total))
             return
         }
         if line.hasPrefix("FILE\t"), let data = String(line.dropFirst(5)).data(using: .utf8),
@@ -498,10 +503,10 @@ final class RescueSession: ObservableObject {
             let parts = token.replacingOccurrences(of: ":", with: "").split(separator: "/")
             if parts.count == 2, let done = Double(parts[0]), let total = Double(parts[1]), total > 0 {
                 fraction = done / total
-                status = "Rescuing your photos… \(Int(done)) of \(Int(total)) checked"
+                status = L("Rescuing your photos… %ld of %ld checked", Int(done), Int(total))
             }
         } else if line.hasPrefix("Scanned "), let count = line.split(separator: " ").dropFirst().first, Int(count) != nil {
-            status = "Checking your photos… \(count) checked"
+            status = L("Checking your photos… %@ checked", String(count))
         }
     }
     func rescueFolder() {
@@ -509,8 +514,8 @@ final class RescueSession: ObservableObject {
         let panel = NSOpenPanel()
         panel.canChooseFiles = false; panel.canChooseDirectories = true
         panel.canCreateDirectories = true; panel.allowsMultipleSelection = false
-        panel.prompt = "Save photos here"
-        panel.message = "Choose where to save the recovered photos. Recovery starts as soon as you choose a folder. Your card stays read only."
+        panel.prompt = L("Save photos here")
+        panel.message = L("Choose where to save the recovered photos. Recovery starts as soon as you choose a folder. Your card stays read only.")
         guard panel.runModal() == .OK, let chosen = panel.url, let source else { return }
         let access = chosen.startAccessingSecurityScopedResource()
         do {
@@ -526,7 +531,7 @@ final class RescueSession: ObservableObject {
             }
         } catch {
             if access { chosen.stopAccessingSecurityScopedResource() }
-            self.error = "Choose a writable folder away from your card. Nothing was changed."
+            self.error = L("Choose a writable folder away from your card. Nothing was changed.")
         }
     }
     func deepRescue() {
@@ -537,22 +542,22 @@ final class RescueSession: ObservableObject {
             else if let source, scanReport != nil { card = try ResultExport.card(at: source) }
             else { return }
         }
-        catch { self.error = "We couldn’t identify a physical card. Choose your card and try again."; return }
+        catch { self.error = L("We couldn’t identify a physical card. Choose your card and try again."); return }
         let cardBytes = card.bytes
         let size = ByteCountFormatter.string(fromByteCount: cardBytes, countStyle: .file)
         let explanation = NSAlert()
-        explanation.messageText = "Search the whole card safely"
-        explanation.informativeText = "We’ll read the whole card and save a safety copy called card.img in the folder you choose. Then we’ll search that copy for photos. Nothing on your card will be changed.\n\nThis takes longer and needs more than \(size) of free space, plus room for the rescued photos. We’ll check the space before starting.\n\nThis search supports JPEG photos and may also find small previews. Overwritten photos or photos split across different areas may not be recoverable. RAW photos aren’t supported.\n\n\(Self.safetyCopyLimitation)"
-        explanation.addButton(withTitle: "Choose where to save…")
-        explanation.addButton(withTitle: "Cancel")
+        explanation.messageText = L("Search the whole card safely")
+        explanation.informativeText = L("We’ll read the whole card and save a safety copy called card.img in the folder you choose. Then we’ll search that copy for photos. Nothing on your card will be changed.\n\nThis takes longer and needs more than %@ of free space, plus room for the rescued photos. We’ll check the space before starting.\n\nThis search supports JPEG photos and may also find small previews. Overwritten photos or photos split across different areas may not be recoverable. RAW photos aren’t supported.\n\n%@", size, Self.safetyCopyLimitation)
+        explanation.addButton(withTitle: L("Choose where to save…"))
+        explanation.addButton(withTitle: L("Cancel"))
         guard explanation.runModal() == .alertFirstButtonReturn else { return }
         let panel = NSOpenPanel()
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.canCreateDirectories = true
         panel.allowsMultipleSelection = false
-        panel.prompt = "Save here"
-        panel.message = "Choose a folder on another drive with more than \(size) free. The card stays untouched."
+        panel.prompt = L("Save here")
+        panel.message = L("Choose a folder on another drive with more than %@ free. The card stays untouched.", size)
         guard panel.runModal() == .OK, let chosen = panel.url else { return }
         let access = chosen.startAccessingSecurityScopedResource()
         do {
@@ -566,10 +571,10 @@ final class RescueSession: ObservableObject {
                 return
             }
             let next = NSAlert()
-            next.messageText = "There is room for your safety copy"
-            next.informativeText = "\(Self.safetyCopyLimitation) If you already have card.img, choose it to search for JPEG photos and save them into this folder. No copy has been created yet."
-            next.addButton(withTitle: "Use existing safety copy…")
-            next.addButton(withTitle: "Cancel")
+            next.messageText = L("There is room for your safety copy")
+            next.informativeText = L("%@ If you already have card.img, choose it to search for JPEG photos and save them into this folder. No copy has been created yet.", Self.safetyCopyLimitation)
+            next.addButton(withTitle: L("Use existing safety copy…"))
+            next.addButton(withTitle: L("Cancel"))
             guard next.runModal() == .alertFirstButtonReturn else {
                 if access { chosen.stopAccessingSecurityScopedResource() }
                 return
@@ -581,8 +586,8 @@ final class RescueSession: ObservableObject {
         } catch {
             if access { chosen.stopAccessingSecurityScopedResource() }
             if (error as NSError).code == CocoaError.fileWriteOutOfSpace.rawValue {
-                self.error = "Not enough free space. Choose a drive with more than \(size) available, plus room for rescued photos. Nothing was copied."
-            } else { self.error = "Choose a writable folder on another drive, away from the source card. Nothing was copied." }
+                self.error = L("Not enough free space. Choose a drive with more than %@ available, plus room for rescued photos. Nothing was copied.", size)
+            } else { self.error = L("Choose a writable folder on another drive, away from the source card. Nothing was copied.") }
         }
     }
     private func startImaging(card: CardDevice, destination: URL) {
@@ -604,7 +609,7 @@ final class RescueSession: ObservableObject {
         task.standardOutput = stream; task.standardError = stream
         process = task; pipe = stream; scanning = false; running = true; paused = false; fraction = nil
         error = nil; copyWarning = nil; safetyImage = nil; pending = Data(); lines = []; log = ""
-        status = "Preparing a safe copy. macOS may ask to read your card…"
+        status = L("Preparing a safe copy. macOS may ask to read your card…")
         do {
             try task.run()
             DispatchQueue.global(qos: .userInitiated).async {
@@ -619,12 +624,12 @@ final class RescueSession: ObservableObject {
                         if let data = try? Data(contentsOf: folder.appendingPathComponent("copy-report.json")),
                            let report = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                            let bad = report["unreadable_bytes"] as? Int64, bad > 0 {
-                            self.copyWarning = "Some parts of the card could not be read. The safety copy and recovery map are saved; recovered photos may be incomplete."
+                            self.copyWarning = L("Some parts of the card could not be read. The safety copy and recovery map are saved; recovered photos may be incomplete.")
                         }
                         self.useSource(image, folder: false)
                     } else {
-                        self.status = self.paused ? "Stopped safely. The partial copy is preserved." : "Safety copying stopped. Your card is untouched."
-                        self.error = self.paused ? nil : "We couldn’t finish the safety copy. Check the card reader and allow macOS to read your card, then try again. The activity log has more information."
+                        self.status = self.paused ? L("Stopped safely. The partial copy is preserved.") : L("Safety copying stopped. Your card is untouched.")
+                        self.error = self.paused ? nil : L("We couldn’t finish the safety copy. Check the card reader and allow macOS to read your card, then try again. The activity log has more information.")
                         if self.destinationAccess { destination.stopAccessingSecurityScopedResource() }
                         self.destinationAccess = false
                     }
@@ -645,7 +650,7 @@ final class RescueSession: ObservableObject {
     }
     private func exportResults(_ privateResults: URL) {
         guard let destination else { return }
-        scanning = false; running = true; status = "Saving your rescued photos…"
+        scanning = false; running = true; status = L("Saving your rescued photos…")
         DispatchQueue.global(qos: .userInitiated).async {
             let outcome = Result { try ResultExport.copy(from: privateResults, to: destination) }
             DispatchQueue.main.async {
@@ -656,12 +661,12 @@ final class RescueSession: ObservableObject {
                     self.rebindSavedPhotos(from: privateResults, to: saved)
                     self.folderRescued = true
                     self.presentCompletion()
-                    self.status = self.needsDeepRescue ? "Your rescued copies are saved. Some are smaller previews or still need checking; a deeper search may help." : "Your rescued photos are ready. Originals are untouched."
+                    self.status = self.needsDeepRescue ? L("Your rescued copies are saved. Some are smaller previews or still need checking; a deeper search may help.") : L("Your rescued photos are ready. Originals are untouched.")
                 case .failure:
                     self.folderRescued = false
                     self.results = nil
-                    self.status = "Your recovered copies are safe on this Mac."
-                    self.error = "We couldn’t save to that folder. Choose another folder and press Rescue again."
+                    self.status = L("Your recovered copies are safe on this Mac.")
+                    self.error = L("We couldn’t save to that folder. Choose another folder and press Rescue again.")
                 }
                 if self.destinationAccess { destination.stopAccessingSecurityScopedResource() }
                 self.destinationAccess = false
@@ -728,36 +733,36 @@ final class RescueSession: ObservableObject {
                 self.running = false; self.process = nil; self.pipe = nil
                 if self.paused {
                     self.canContinueRecovery = !folderMode && !rescueFolder
-                    self.status = folderMode ? "Scan stopped. Start again for a new report." : "Paused. Start again to resume verified outputs."
+                    self.status = folderMode ? L("Scan stopped. Start again for a new report.") : L("Paused. Start again to resume verified outputs.")
                 } else if task.terminationStatus == 0 || task.terminationStatus == 2 {
                     if folderMode { self.scanReport = report }
 
                     self.results = folderMode ? report : output.appendingPathComponent("best_available")
                     self.fraction = 1
-                    self.status = task.terminationStatus == 2 ? "Finished. Please check the saved photos." : (folderMode ? "Check complete. Your card is untouched." : "Rescue complete.")
+                    self.status = task.terminationStatus == 2 ? L("Finished. Please check the saved photos.") : (folderMode ? L("Check complete. Your card is untouched.") : L("Rescue complete."))
                     self.readSummary(report, folderMode: folderMode)
                     if rescueFolder { self.assessNormalRecovery(report) }
                     let best = output.appendingPathComponent("best_available")
                     if !folderMode && !rescueFolder {
                         self.folderRescued = true
-                        self.status = self.damaged.isEmpty ? "No JPEG photos found. Your card and safety copy are untouched." : "Your found photos are saved. Please check them before using them."
+                        self.status = self.damaged.isEmpty ? L("No JPEG photos found. Your card and safety copy are untouched.") : L("Your found photos are saved. Please check them before using them.")
                         self.presentCompletion()
                     } else if rescueFolder && (try? FileManager.default.contentsOfDirectory(atPath: best.path))?.isEmpty == true {
                         self.results = nil; self.folderRescued = false
-                        self.status = "These photos couldn’t be rescued from their files. We can try searching the whole card."
+                        self.status = L("These photos couldn’t be rescued from their files. We can try searching the whole card.")
                         self.presentCompletion()
                     } else if rescueFolder { self.exportResults(best) }
                 } else {
                     self.canContinueRecovery = !folderMode && !rescueFolder
                     if rescueFolder { self.needsDeepRescue = true }
-                    self.status = "Stopped safely."
+                    self.status = L("Stopped safely.")
                     let diagnostic = self.lines.last ?? ""
                     if diagnostic.contains("PermissionError") || diagnostic.contains("Operation not permitted") {
-                        self.error = "Some folders could not be read. Choose the card’s DCIM folder and try again."
+                        self.error = L("Some folders could not be read. Choose the card’s DCIM folder and try again.")
                     } else if diagnostic.contains("does not match this card profile") {
-                        self.error = "This card image is not supported by the current recovery method."
+                        self.error = L("This card image is not supported by the current recovery method.")
                     } else {
-                        self.error = "We couldn’t finish this step. Check that your card and save drive are connected, then try again. The activity log has more information."
+                        self.error = L("We couldn’t finish this step. Check that your card and save drive are connected, then try again. The activity log has more information.")
                     }
                 }
                 if folderMode {
@@ -771,7 +776,7 @@ final class RescueSession: ObservableObject {
             }
         }
         process = task; pipe = stream; scanning = folderMode; running = true; canContinueRecovery = false
-        status = rescueFolder ? "Rescuing the available photos…" : (scanFolder ? "Checking your photos…" : "Looking for photos beyond the file list…")
+        status = rescueFolder ? L("Rescuing the available photos…") : (scanFolder ? L("Checking your photos…") : L("Looking for photos beyond the file list…"))
         do {
             try task.run()
             DispatchQueue.global(qos: .userInitiated).async {
@@ -782,7 +787,7 @@ final class RescueSession: ObservableObject {
         } catch {
             process = nil; pipe = nil; running = false
             canContinueRecovery = !scanFolder && !rescueFolder
-            self.error = error.localizedDescription; status = "Could not start."
+            self.error = error.localizedDescription; status = L("Could not start.")
             if folderMode { UsageStatistics.shared.send("scan_finished", mode: "normal", scan: ScanOutcome(total: 0, flagged: 0, result: "failed")) }
         }
     }
@@ -809,10 +814,10 @@ final class RescueSession: ObservableObject {
             let total = counts.values.reduce(0, +)
             scannedCount = total
             let flagged = counts.filter { !$0.key.hasPrefix("ok_") }.values.reduce(0, +)
-            summary = "\(total) photos checked · \(flagged) need attention"
+            summary = L("%ld photos checked · %ld need attention", total, flagged)
             if total == 0 && selectedCard != nil { needsDeepRescue = true }
             if let unreadable = object["unreadable_folders"] as? [[String: Any]], !unreadable.isEmpty {
-                summary += " · \(unreadable.count) folders could not be read"
+                summary += L(" · %ld folders could not be read", unreadable.count)
                 if flagged == 0 { needsDeepRescue = true }
             }
         } else if let photos = object["photos"] as? [[String: Any]] {
@@ -836,7 +841,7 @@ final class RescueSession: ObservableObject {
     }
     func stop() {
         guard let process, process.isRunning else { return }
-        paused = true; status = "Stopping after preserving completed work…"
+        paused = true; status = L("Stopping after preserving completed work…")
         process.interrupt()
     }
     func requestQuit() -> NSApplication.TerminateReply {
@@ -864,11 +869,11 @@ private struct SupportLink: View {
         Button { UsageStatistics.shared.openCoffee() } label: {
             HStack(spacing: 6) {
                 Image(systemName: "cup.and.saucer")
-                Text("Buy me a coffee")
+                Text(L("Buy me a coffee"))
             }.frame(width: 140, height: 18)
         }
         .buttonStyle(.bordered)
-        .help("If this helped, you’re welcome to buy me a coffee. Optional support via Ko-fi · Opens in your browser")
+        .help(L("If this helped, you’re welcome to buy me a coffee. Optional support via Ko-fi · Opens in your browser"))
     }
 }
 
@@ -884,14 +889,14 @@ struct RescueView: View {
                 Image(nsImage: NSImage(contentsOf: Bundle.main.resourceURL!.appendingPathComponent("cardme-mark.png")) ?? NSImage()).resizable().scaledToFit().frame(width: 40, height: 40)
                 VStack(alignment: .leading, spacing: 3) {
                     Text("CardMe").font(.title2.bold())
-                    Text("Photo recovery for memory cards.").font(.callout).foregroundStyle(.secondary)
+                    Text(L("Photo recovery for memory cards.")).font(.callout).foregroundStyle(.secondary)
                 }
                 Spacer()
                 Button { session.showingAbout = true } label: { Image(systemName: "info.circle") }
-                    .buttonStyle(.borderless).help("About CardMe and licenses").accessibilityLabel("About CardMe and licenses")
+                    .buttonStyle(.borderless).help(L("About CardMe and licenses")).accessibilityLabel(L("About CardMe and licenses"))
             }.fixedSize(horizontal: false, vertical: true)
             HStack(spacing: 16) {
-                ForEach(Array(["Choose card", "Rescue photos", "View photos"].enumerated()), id: \.offset) { index, title in
+                ForEach(Array([L("Choose card"), L("Rescue photos"), L("View photos")].enumerated()), id: \.offset) { index, title in
                     HStack(spacing: 7) {
                         Image(systemName: index + 1 < step ? "checkmark.circle.fill" : "\(index + 1).circle.fill")
                         Text(title)
@@ -900,7 +905,7 @@ struct RescueView: View {
                     if index < 2 { Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary) }
                 }
             }.accessibilityElement(children: .ignore)
-                .accessibilityLabel("Step \(step) of 3: \(["Choose card", "Rescue photos", "View photos"][step - 1])")
+                .accessibilityLabel(L("Step %ld of 3: %@", step, [L("Choose card"), L("Rescue photos"), L("View photos")][step - 1]))
             VStack(alignment: .leading, spacing: 14) {
                 VStack(alignment: .leading, spacing: 12) {
                     if hasSource {
@@ -913,20 +918,20 @@ struct RescueView: View {
                             }
                             Spacer()
                             if !session.running {
-                                Button { choosingCard = true } label: { actionLabel("Change…") }.buttonStyle(.borderless)
+                                Button { choosingCard = true } label: { actionLabel(L("Change…")) }.buttonStyle(.borderless)
                             }
                         }
                     }
                     Text(session.guidanceTitle).font(.system(size: 22, weight: .semibold))
                     if !hasSource {
-                        Text("Connect your memory card to check for damaged or missing photos.")
+                        Text(L("Connect your memory card to check for damaged or missing photos."))
                             .foregroundStyle(.secondary)
                     } else if session.running || session.error != nil || session.canContinueRecovery || session.canSearchDeeper {
                         Text(session.status).font(.callout).fixedSize(horizontal: false, vertical: true)
                     }
                     if session.running {
                         if let value = session.fraction { ProgressView(value: value) } else { ProgressView().progressViewStyle(.linear) }
-                        Text("Keep the card and save drive connected until this step finishes.")
+                        Text(L("Keep the card and save drive connected until this step finishes."))
                             .font(.callout).foregroundStyle(.secondary)
                     }
                     if !session.summary.isEmpty { Text(session.summary).font(.callout).foregroundStyle(.secondary) }
@@ -937,37 +942,37 @@ struct RescueView: View {
                         Label(error, systemImage: "exclamationmark.circle").font(.callout).textSelection(.enabled)
                     }
                     if !session.running && session.canSearchDeeper && !session.hasSavedPhotos {
-                        Text("Search the whole card for missing photos. A safety copy is saved first; the next step explains the time and space needed.")
+                        Text(L("Search the whole card for missing photos. A safety copy is saved first; the next step explains the time and space needed."))
                             .font(.callout).foregroundStyle(.secondary)
                     } else if session.readyToRescue {
-                        Text("Choose where to save the photos. Recovery starts automatically after you select a folder.")
+                        Text(L("Choose where to save the photos. Recovery starts automatically after you select a folder."))
                             .font(.callout).foregroundStyle(.secondary)
                     } else if !session.running && session.selectedCard != nil && session.scanReport != nil && session.damaged.isEmpty && !session.folderRescued {
-                        Text("If photos are missing, try searching for deleted photos.")
+                        Text(L("If photos are missing, try searching for deleted photos."))
                             .font(.callout).foregroundStyle(.secondary)
                     }
                     HStack(spacing: 12) {
                         if session.running {
-                            Button(action: session.stop) { actionLabel(session.scanFolder ? "Stop safely" : "Pause safely") }
+                            Button(action: session.stop) { actionLabel(session.scanFolder ? L("Stop safely") : L("Pause safely")) }
                         } else if session.hasSavedPhotos, let results = session.results {
                             if session.canShowSupport { SupportLink() }
-                            Button { NSWorkspace.shared.open(results) } label: { actionLabel("View saved photos") }
+                            Button { NSWorkspace.shared.open(results) } label: { actionLabel(L("View saved photos")) }
                                 .buttonStyle(.borderedProminent)
                         } else if session.canSearchDeeper {
-                            Button(action: session.deepRescue) { actionLabel("Search deeper…") }.buttonStyle(.borderedProminent)
+                            Button(action: session.deepRescue) { actionLabel(L("Search deeper…")) }.buttonStyle(.borderedProminent)
                         } else if session.readyToRescue {
-                            Button(action: session.rescueFolder) { actionLabel("Rescue to…") }.buttonStyle(.borderedProminent)
+                            Button(action: session.rescueFolder) { actionLabel(L("Rescue to…")) }.buttonStyle(.borderedProminent)
                         } else if session.canContinueRecovery {
-                            Button(action: session.continueRecovery) { actionLabel("Continue rescue") }.buttonStyle(.borderedProminent)
+                            Button(action: session.continueRecovery) { actionLabel(L("Continue rescue")) }.buttonStyle(.borderedProminent)
                         } else if hasSource && session.scanFolder {
-                            Button { session.start() } label: { actionLabel("Check photos again") }.buttonStyle(.borderedProminent)
+                            Button { session.start() } label: { actionLabel(L("Check photos again")) }.buttonStyle(.borderedProminent)
                         } else if !hasSource {
-                            Button { choosingCard = true } label: { actionLabel("Choose card…") }.buttonStyle(.borderedProminent)
+                            Button { choosingCard = true } label: { actionLabel(L("Choose card…")) }.buttonStyle(.borderedProminent)
                         }
                     }
                     if !session.running && session.selectedCard != nil && session.scanReport != nil && (session.folderRescued || session.damaged.isEmpty) {
                         Button(action: session.deepRescue) {
-                            Text(session.canSearchDeeper ? "Search for remaining photos…" : "Find deleted photos…")
+                            Text(session.canSearchDeeper ? L("Search for remaining photos…") : L("Find deleted photos…"))
                         }.buttonStyle(.link)
                     }
                 }
@@ -980,17 +985,17 @@ struct RescueView: View {
                     Spacer(minLength: 0)
                 }
                 if hasSource {
-                    DisclosureGroup("Activity log and settings", isExpanded: $activityExpanded) {
+                    DisclosureGroup(L("Activity log and settings"), isExpanded: $activityExpanded) {
                         VStack(alignment: .leading, spacing: 10) {
-                            Toggle("Check photos more thoroughly next time (slower)", isOn: $session.fullScan).disabled(session.running)
-                                .help("Decode every pixel on the next folder check")
-                            Text("The quick check can miss some image damage. RAW photos aren’t checked. Open the saved photos to confirm the result.")
+                            Toggle(L("Check photos more thoroughly next time (slower)"), isOn: $session.fullScan).disabled(session.running)
+                                .help(L("Decode every pixel on the next folder check"))
+                            Text(L("The quick check can miss some image damage. RAW photos aren’t checked. Open the saved photos to confirm the result."))
                                 .font(.caption).foregroundStyle(.secondary)
                             if let image = session.safetyImage {
-                                Button { NSWorkspace.shared.activateFileViewerSelecting([image]) } label: { actionLabel("Show safety copy") }
+                                Button { NSWorkspace.shared.activateFileViewerSelecting([image]) } label: { actionLabel(L("Show safety copy")) }
                             }
                             ScrollView {
-                                Text(session.log.isEmpty ? "No activity yet." : session.log).font(.system(.caption, design: .monospaced))
+                                Text(session.log.isEmpty ? L("No activity yet.") : session.log).font(.system(.caption, design: .monospaced))
                                     .textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading)
                             }.frame(height: 96)
                         }.padding(.top, 8).frame(maxWidth: .infinity, alignment: .leading)
@@ -1000,14 +1005,14 @@ struct RescueView: View {
             VStack(alignment: .leading, spacing: 12) {
                 Divider()
                 HStack {
-                    Label("Your card is read only. Recovery runs on this Mac.", systemImage: "lock.shield")
+                    Label(L("Your card is read only. Recovery runs on this Mac."), systemImage: "lock.shield")
                         .font(.caption).foregroundStyle(.secondary)
                     Spacer()
-                    Button(action: session.startOver) { actionLabel("Start over") }
+                    Button(action: session.startOver) { actionLabel(L("Start over")) }
                         .disabled(session.running)
-                        .help("Return to choosing a card. Saved photos are kept.")
-                    Button { NSApp.terminate(nil) } label: { actionLabel("Exit") }
-                        .help("Stop safely and close CardMe")
+                        .help(L("Return to choosing a card. Saved photos are kept."))
+                    Button { NSApp.terminate(nil) } label: { actionLabel(L("Exit")) }
+                        .help(L("Stop safely and close CardMe"))
                 }
             }
         }.padding(24).frame(minWidth: 740, minHeight: 660)
@@ -1019,9 +1024,9 @@ struct RescueView: View {
             .sheet(isPresented: $session.showingCompletion, onDismiss: session.completionDismissed) {
                 RecoveryCompleteView(session: session)
             }
-            .alert("If this helped you, you’re welcome to buy me a coffee ☕️", isPresented: $session.showingSupportPrompt) {
-                Button("Sure") { UsageStatistics.shared.openCoffee() }
-                Button("Close", role: .cancel) { }
+            .alert(L("If this helped you, you’re welcome to buy me a coffee ☕️"), isPresented: $session.showingSupportPrompt) {
+                Button(L("Sure")) { UsageStatistics.shared.openCoffee() }
+                Button(L("Close"), role: .cancel) { }
             }
     }
 }
@@ -1058,21 +1063,21 @@ private struct PhotoReviewList: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("\(session.folderRescued || !session.scanFolder ? "Photos to review" : "Photos to rescue") (\(session.damaged.count))").font(.headline)
+                Text("\(session.folderRescued || !session.scanFolder ? L("Photos to review") : L("Photos to rescue")) (\(session.damaged.count))").font(.headline)
                 Spacer()
-                Button(action: session.previewSelected) { actionLabel("Open photo") }.disabled(session.selectedFileURL == nil)
+                Button(action: session.previewSelected) { actionLabel(L("Open photo")) }.disabled(session.selectedFileURL == nil)
                 if showsFinder {
-                    Button(action: session.revealSelected) { actionLabel("Show in Finder") }.disabled(session.selectedFileURL == nil)
+                    Button(action: session.revealSelected) { actionLabel(L("Show in Finder")) }.disabled(session.selectedFileURL == nil)
                 }
             }
-            Text("Select a photo. Press Space to open it, or ↑ ↓ to move through the list.")
+            Text(L("Select a photo. Press Space to open it, or ↑ ↓ to move through the list."))
                 .font(.caption).foregroundStyle(.secondary)
             ScrollViewReader { proxy in
                 List(session.damaged, selection: $session.selectedID) { row in
                     HStack {
                         Image(systemName: row.fullSizeRecovered ? "checkmark.circle.fill" : "exclamationmark.triangle")
                             .foregroundStyle(row.fullSizeRecovered ? Color.teal : Color.orange)
-                            .accessibilityLabel(row.fullSizeRecovered ? "Full-size photo saved" : "Full-size photo not recovered")
+                            .accessibilityLabel(row.fullSizeRecovered ? L("Full-size photo saved") : L("Full-size photo not recovered"))
                         Text(row.name)
                         Spacer()
                         Text(row.detail).foregroundStyle(.secondary)
@@ -1099,26 +1104,26 @@ struct RecoveryCompleteView: View {
     @Environment(\.dismiss) private var dismiss
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Text("Rescue complete").font(.title2.bold())
+            Text(L("Rescue complete")).font(.title2.bold())
             if let outcome = session.recoveryOutcome {
                 Grid(alignment: .leading, horizontalSpacing: 28, verticalSpacing: 10) {
-                    result("Full-size photos", value: "\(outcome.fullSize) ✨")
-                    result("Preview only", value: String(outcome.previews))
-                    result("Tiny thumbnail only", value: String(outcome.thumbnails))
-                    result("Not recovered", value: outcome.unrecovered.map(String.init) ?? "Unknown")
-                    result("Saved · needs checking", value: String(outcome.review))
+                    result(L("Full-size photos"), value: "\(outcome.fullSize) ✨")
+                    result(L("Preview only"), value: String(outcome.previews))
+                    result(L("Tiny thumbnail only"), value: String(outcome.thumbnails))
+                    result(L("Not recovered"), value: outcome.unrecovered.map(String.init) ?? L("Unknown"))
+                    result(L("Saved · needs checking"), value: String(outcome.review))
                 }
-                Text(outcome.unrecovered == nil ? "A whole-card search can’t tell how many photos were originally on the card. Found photos may include previews; please check the saved files." : "Previews and tiny thumbnails are smaller copies, not the original full-size photos.")
+                Text(outcome.unrecovered == nil ? L("A whole-card search can’t tell how many photos were originally on the card. Found photos may include previews; please check the saved files.") : L("Previews and tiny thumbnails are smaller copies, not the original full-size photos."))
                     .font(.callout).foregroundStyle(.secondary)
                 if session.hasSavedPhotos {
-                    Text("Your photos are saved in the folder you chose. Your card was not changed.")
+                    Text(L("Your photos are saved in the folder you chose. Your card was not changed."))
                         .font(.callout)
                 }
             }
             if !session.damaged.isEmpty { PhotoReviewList(session: session, showsFinder: false) }
             HStack {
                 Spacer()
-                Button("Done") { dismiss() }
+                Button(L("Done")) { dismiss() }
                     .keyboardShortcut(.defaultAction)
                     .buttonStyle(.borderedProminent)
             }
@@ -1142,8 +1147,8 @@ struct CardChooser: View {
     private var selected: CardDevice? { cards.devices.first { $0.id == selectedID } }
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Choose your card").font(.title2.bold())
-            Text("Select your memory card below. CardMe will only read it.")
+            Text(L("Choose your card")).font(.title2.bold())
+            Text(L("Select your memory card below. CardMe will only read it."))
                 .foregroundStyle(.secondary)
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
@@ -1152,7 +1157,7 @@ struct CardChooser: View {
                             Image(systemName: "externaldrive")
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(device.volumes.isEmpty ? device.name : device.volumes.map(\.lastPathComponent).joined(separator: ", "))
-                                Text("\(device.name) · \(ByteCountFormatter.string(fromByteCount: device.bytes, countStyle: .file)) · \(device.volumes.isEmpty ? "Files aren’t visible" : "Ready to check photos")")
+                                Text("\(device.name) · \(ByteCountFormatter.string(fromByteCount: device.bytes, countStyle: .file)) · \(device.volumes.isEmpty ? L("Files aren’t visible") : L("Ready to check photos"))")
                                     .font(.caption).foregroundStyle(.secondary)
                             }
                             Spacer()
@@ -1162,29 +1167,29 @@ struct CardChooser: View {
                             if cards.loading {
                                 HStack(spacing: 10) {
                                     ProgressView().controlSize(.small)
-                                    Text("Loading connected devices…").foregroundStyle(.secondary)
+                                    Text(L("Loading connected devices…")).foregroundStyle(.secondary)
                                 }.accessibilityElement(children: .combine)
                             } else if cards.devices.isEmpty {
-                                Text(cards.unavailable ? "macOS couldn’t provide the device list. You can still choose a photo folder." : "No card found. Connect your card with a working reader; it will appear here automatically.")
+                                Text(cards.unavailable ? L("macOS couldn’t provide the device list. You can still choose a photo folder.") : L("No card found. Connect your card with a working reader; it will appear here automatically."))
                                     .foregroundStyle(.secondary).multilineTextAlignment(.center).padding(20)
                             }
                         }
                     if let selected, selected.volumes.isEmpty {
-                        Text(RescueSession.directDownload ? "The card is connected, but its files aren’t accessible. A whole-card search may find photos. A safety copy is required first." : "macOS detects this card, but its files aren’t accessible. \(RescueSession.safetyCopyLimitation) We won’t mount or repair your card.")
+                        Text(RescueSession.directDownload ? L("The card is connected, but its files aren’t accessible. A whole-card search may find photos. A safety copy is required first.") : L("macOS detects this card, but its files aren’t accessible. %@ We won’t mount or repair your card.", RescueSession.safetyCopyLimitation))
                             .font(.callout).foregroundStyle(.secondary)
                     } else if selected != nil {
-                        Text(RescueSession.directDownload ? "The photos will be checked first. You can then choose where to save recovered copies." : "macOS will ask you to allow access to this card. Then we’ll check the photos.")
+                        Text(RescueSession.directDownload ? L("The photos will be checked first. You can then choose where to save recovered copies.") : L("macOS will ask you to allow access to this card. Then we’ll check the photos."))
                             .font(.callout).foregroundStyle(.secondary)
                     }
-                    DisclosureGroup("Use a folder or saved copy", isExpanded: $savedCopyExpanded) {
+                    DisclosureGroup(L("Use a folder or saved copy"), isExpanded: $savedCopyExpanded) {
                         VStack(alignment: .leading, spacing: 10) {
-                            Text("You can also check photos in a folder or search a previously saved safety copy of a card.")
+                            Text(L("You can also check photos in a folder or search a previously saved safety copy of a card."))
                                 .font(.callout).foregroundStyle(.secondary)
                             HStack {
-                                Button { dismiss(); session.chooseSource() } label: { actionLabel("Choose folder…") }
-                                Button { dismiss(); session.chooseSavedImage() } label: { actionLabel("Use safety copy…") }
+                                Button { dismiss(); session.chooseSource() } label: { actionLabel(L("Choose folder…")) }
+                                Button { dismiss(); session.chooseSavedImage() } label: { actionLabel(L("Use safety copy…")) }
                                 if session.hasPreviousRecovery {
-                                    Button { dismiss(); session.resumePrevious() } label: { actionLabel("Continue rescue") }
+                                    Button { dismiss(); session.resumePrevious() } label: { actionLabel(L("Continue rescue")) }
                                 }
                             }
                         }.padding(.top, 8)
@@ -1193,12 +1198,12 @@ struct CardChooser: View {
             }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             HStack {
                 Spacer()
-                Button { dismiss() } label: { actionLabel("Cancel") }.keyboardShortcut(.cancelAction)
+                Button { dismiss() } label: { actionLabel(L("Cancel")) }.keyboardShortcut(.cancelAction)
                 Button {
                     guard let selected else { return }
                     dismiss()
                     session.chooseCard(selected)
-                } label: { actionLabel(selected?.volumes.isEmpty == true && RescueSession.directDownload ? "Use this card" : "Check photos") }
+                } label: { actionLabel(selected?.volumes.isEmpty == true && RescueSession.directDownload ? L("Use this card") : L("Check photos")) }
                     .buttonStyle(.borderedProminent).keyboardShortcut(.defaultAction)
                     .disabled(cards.loading || selected == nil || (selected?.volumes.isEmpty == true && !RescueSession.directDownload))
             }
@@ -1210,35 +1215,35 @@ struct AboutView: View {
     @Environment(\.dismiss) private var dismiss
     private let resources = Bundle.main.resourceURL
     private let licenses = [
-        ("CardMe · Copyright and license notice", "CardMe-Copyright.txt"),
+        (L("CardMe · Copyright and license notice"), "CardMe-Copyright.txt"),
         ("CardMe · GPL-3.0-only", "CardMe-GPL-3.0.txt"),
         ("GNU ddrescue 1.30 · GPL-2.0-or-later", "ddrescue-GPL-2.0.txt"),
-        ("CPython · PSF and historical licenses", "Python-LICENSE.txt"),
-        ("Pillow and image codecs · upstream licenses", "Pillow-and-codecs-LICENSE.txt")
+        (L("CPython · PSF and historical licenses"), "Python-LICENSE.txt"),
+        (L("Pillow and image codecs · upstream licenses"), "Pillow-and-codecs-LICENSE.txt")
     ]
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 5) {
                 Text("CardMe").font(.title.bold())
-                Text("Version \(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Development")")
+                Text(L("Version %@", Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? L("Development")))
                     .font(.caption).foregroundStyle(.secondary)
             }
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    Text("Photo recovery runs locally. CardMe reads your card and saves copies on another drive. Photos are never uploaded. Optional usage statistics can be turned off in Settings.")
-                    Text("Small, useful things. Free to use.")
+                    Text(L("Photo recovery runs locally. CardMe reads your card and saves copies on another drive. Photos are never uploaded. Optional usage statistics can be turned off in Settings."))
+                    Text(L("Small, useful things. Free to use."))
                         .font(.headline)
-                    Text("If this helped, you’re welcome to buy me a coffee.")
+                    Text(L("If this helped, you’re welcome to buy me a coffee."))
                         .font(.callout).foregroundStyle(.secondary)
                     SupportLink()
-                    Text("Thank you for your support.").font(.callout).foregroundStyle(.secondary)
-                    Text("Deep Rescue searches safety copies for deleted or formatted JPEG photos. It can also piece together some damaged photos when their camera preview survives. RAW recovery and overwritten data are currently not supported.")
+                    Text(L("Thank you for your support.")).font(.callout).foregroundStyle(.secondary)
+                    Text(L("Deep Rescue searches safety copies for deleted or formatted JPEG photos. It can also piece together some damaged photos when their camera preview survives. RAW recovery and overwritten data are currently not supported."))
                         .font(.callout).foregroundStyle(.secondary)
-                    DisclosureGroup("Licenses and acknowledgements") {
+                    DisclosureGroup(L("Licenses and acknowledgements")) {
                         VStack(alignment: .leading, spacing: 16) {
                             if let resources,
                                let notices = try? String(contentsOf: resources.appendingPathComponent("ThirdPartyLicenses/Notices.md"), encoding: .utf8) {
-                                DisclosureGroup("Third-party notices and copyrights") {
+                                DisclosureGroup(L("Third-party notices and copyrights")) {
                                     VStack(alignment: .leading, spacing: 12) {
                                         ForEach(notices.components(separatedBy: "\n").filter { !$0.isEmpty }, id: \.self) { line in
                                             Text((try? AttributedString(markdown: line)) ?? AttributedString(line))
@@ -1256,17 +1261,17 @@ struct AboutView: View {
                                     }
                                 }
                             }
-                            Button("Show included source and build instructions") {
+                            Button(L("Show included source and build instructions")) {
                                 if let resources { NSWorkspace.shared.open(resources.appendingPathComponent("ThirdPartySources")) }
                             }
-                            Button("Show license files") {
+                            Button(L("Show license files")) {
                                 if let resources { NSWorkspace.shared.open(resources.appendingPathComponent("ThirdPartyLicenses")) }
                             }
                         }.padding(.top, 10).frame(maxWidth: .infinity, alignment: .leading)
                     }
                   }.frame(maxWidth: .infinity, alignment: .leading)
             }
-            HStack { Spacer(); Button("Done") { dismiss() }.keyboardShortcut(.cancelAction) }
+            HStack { Spacer(); Button(L("Done")) { dismiss() }.keyboardShortcut(.cancelAction) }
         }.padding(24).frame(width: 600, height: 560).buttonStyle(.bordered).tint(.teal)
     }
 }
@@ -1280,7 +1285,7 @@ struct CardRescueApp: App {
             .commands {
                 CommandGroup(replacing: .newItem) {}
                 CommandGroup(replacing: .appInfo) {
-                    Button("About CardMe…") { RescueSession.shared.showingAbout = true }
+                    Button(L("About CardMe…")) { RescueSession.shared.showingAbout = true }
                 }
             }
         Settings { UsageSettingsView() }

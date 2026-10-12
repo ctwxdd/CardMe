@@ -165,7 +165,7 @@ final class CardDevices: ObservableObject {
         let volumeDescription = DADiskCopyDescription(disk) as? [String: Any]
         let path = volumeDescription?[kDADiskDescriptionVolumePathKey as String] as? URL
         return CardDevice(id: String(cString: bsd),
-                          name: description[kDADiskDescriptionMediaNameKey as String] as? String ?? "External device",
+                          name: description[kDADiskDescriptionMediaNameKey as String] as? String ?? L("External device"),
                           bytes: size.int64Value, volumes: path.map { [$0] } ?? [], registryID: registryID)
     }
     private func refresh() {

@@ -46,7 +46,7 @@
    compatibilityVersion = "Xcode 14.0";
    developmentRegion = en;
    hasScannedForEncodings = 0;
-   knownRegions = (en,Base);
+   knownRegions = (en,"zh-Hant",Base);
    mainGroup = A30000000000000000000001;
    productRefGroup = A30000000000000000000002;
    projectDirPath = "";
@@ -68,8 +68,8 @@
    GENERATE_INFOPLIST_FILE = NO;
    INFOPLIST_FILE = Config/Info.plist;
    ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-   MARKETING_VERSION = 0.3.36;
-   CURRENT_PROJECT_VERSION = 49;
+   MARKETING_VERSION = 0.3.37;
+   CURRENT_PROJECT_VERSION = 50;
    SWIFT_OPTIMIZATION_LEVEL = "-Onone";
    SKIP_INSTALL = NO;
   }; };
@@ -84,8 +84,8 @@
    GENERATE_INFOPLIST_FILE = NO;
    INFOPLIST_FILE = Config/Info.plist;
    ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-   MARKETING_VERSION = 0.3.36;
-   CURRENT_PROJECT_VERSION = 49;
+   MARKETING_VERSION = 0.3.37;
+   CURRENT_PROJECT_VERSION = 50;
    SWIFT_OPTIMIZATION_LEVEL = "-O";
    SWIFT_COMPILATION_MODE = wholemodule;
    SKIP_INSTALL = NO;

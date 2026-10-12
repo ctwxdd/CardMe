@@ -12,7 +12,7 @@ I’m sharing it so that others have a free option when the same thing happens. 
 
 ## Get started
 
-Requires **macOS 14 or later and an Apple silicon Mac**. No account, subscription, or separately installed Python or recovery tools.
+Requires **macOS 14 or later and an Apple silicon Mac**. No account, subscription, or separately installed Python or recovery tools. The app supports English and Traditional Chinese and follows your macOS app language preference.
 
 1. **Stop using the affected card.** Don’t take more photos or save files to it; new data can overwrite photos that are still recoverable.
 2. Download the signed, Apple-notarized DMG from the [website](https://witty-meadow-00543f01e.6.azurestaticapps.net). Open it and drag **CardMe** into Applications.

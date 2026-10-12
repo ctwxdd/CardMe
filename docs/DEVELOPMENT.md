@@ -92,7 +92,7 @@ work/usage-check
 
 The frameless UI mark is generated from shared vector geometry with `swift scripts/brand.swift website/dist/assets`. The Dock icon retains its separate approved artwork.
 
-Localized website copy lives in `website/locales/*.json`. Run `python3 scripts/build-website.py` and `python3 tests/website-check.py` after edits. The app UI remains English.
+Localized website copy lives in `website/locales/*.json`. Run `python3 scripts/build-website.py` and `python3 tests/website-check.py` after edits. App copy is in `Sources/Localization/{en,zh-Hant}.lproj`. The interface follows macOS language preferences, including per-app overrides in System Settings → General → Language & Region. Run `python3 tests/localization-check.py` for actual Cocoa language selection, English fallback, format placeholders and unchanged photo identity. Diagnostic logs and original license documents retain their source language.
 
 ## EXIF assembly
 
