@@ -13,6 +13,12 @@ Easy Auth protects every route except ingestion and health. Code also requires a
 
 Run `npm ci`, `npm run typecheck`, `npm test`, and `npm run build` here. `scripts/package.sh` produces `../work/cardme-control-plane.zip`. `infra/main.bicep` owns the infrastructure; supply the dedicated Entra registration ID, tenant, secure client secret and administrator object IDs at deployment. Never commit deployment secrets. Deploy the package with Azure CLI `functionapp deployment source config-zip` to `CardMe/cardme-control-plane`.
 
+The dedicated Entra application must register `https://cardme-control-plane.azurewebsites.net/.auth/login/aad/callback` as a Web redirect URI and enable ID-token issuance for Easy Auth's `code id_token` login response. Keep implicit access-token issuance disabled. Configure the dedicated app (not another product's registration) with:
+
+```sh
+az ad app update --id YOUR_CARDME_ENTRA_CLIENT_ID --enable-id-token-issuance true
+```
+
 The optional one-time `scripts/migrate-statistics.mjs` copies a `CardMeUsage` table between explicit endpoints using the maintainer's Azure CLI login. It creates records without overwriting existing events, verifies every copied event, saves only count/status evidence and leaves the source unchanged. Retire the old ingestion route before the final migration pass. Delete the old table only after verification.
 
 Already installed 0.3.23 and earlier clients have the retired endpoint compiled in; their optional uploads fail quietly after removal. Photo recovery remains local and independent of statistics.
