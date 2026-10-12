@@ -8,6 +8,8 @@ Statistics are enabled by default. Turn them off in **CardMe → Settings → Pr
 
 Events contain app opens, app version, scan totals, photos flagged for review, scan completion/failure/cancellation, recovery mode and result counts (full-size, preview, thumbnail, review and unrecovered), and support-link clicks. There is no installation identifier.
 
+The website publishes only reported recovery-session and full-size-photo totals for the last 90 days. These exclude users who opt out and may count repeat recoveries. Individual event records remain private.
+
 App opens count launches, not unique people. Result counts may include the same photo recovered more than once. A support-link click does not indicate a donation.
 
 Reports are scheduled for deletion after 90 days; cleanup backlogs may take longer. Uploads are best-effort, have no offline backlog, and never block recovery. Turning statistics off cancels outstanding uploads. Requests already transmitted may still arrive, and earlier records are not deleted by switching the setting off.

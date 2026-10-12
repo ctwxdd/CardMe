@@ -218,3 +218,8 @@ html { scroll-behavior: smooth; scroll-padding-top: 24px; }
   .hero { padding-top: 32px; }
   h1 { font-size: 35px; }
 }
+
+.public-totals { margin-top: -4px; margin-bottom: 24px; font-size: 13px; color: var(--muted); }
+.public-totals > span { display: inline-block; margin-right: 20px; margin-bottom: 4px; }
+.public-totals strong { color: #202b28; font-weight: 600; }
+.public-totals small { display: block; font-size: 11px; line-height: 1.5; }

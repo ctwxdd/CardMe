@@ -10,6 +10,7 @@ const ids=required('CARDME_ADMIN_OBJECT_IDS').split(',').map(v=>v.trim().toLower
 if(ids.some(v=>!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(v)))throw new Error('Invalid administrator configuration');
 const handlers=createHandlers({store,adminObjectIds:ids,websiteOrigin:required('CARDME_WEBSITE_ORIGIN')});
 app.http('usage',{methods:['POST'],authLevel:'anonymous',route:'v1/usage',handler:handlers.usage});
+app.http('publicTotals',{methods:['GET'],authLevel:'anonymous',route:'v1/public/totals',handler:handlers.publicTotals});
 app.http('adminUsage',{methods:['GET'],authLevel:'anonymous',route:'v1/admin/usage',handler:handlers.adminUI});
 app.http('adminUsageData',{methods:['GET'],authLevel:'anonymous',route:'v1/admin/usage/data',handler:handlers.adminData});
 app.http('health',{methods:['GET'],authLevel:'anonymous',route:'health',handler:()=>({status:200,jsonBody:{service:'cardme',version:'1'}})});

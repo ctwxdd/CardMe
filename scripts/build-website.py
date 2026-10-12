@@ -24,12 +24,13 @@ for lang, d in locales.items():
     links = ' · '.join(language_links)
     steps = ''.join(f'<article><span class="number">{i:02}</span><h3>{esc(title)}</h3><p>{esc(body)}</p></article>' for i, (title, body) in enumerate(d['steps'], 1))
     questions = ''.join(f'<details><summary>{esc(title)}</summary><p>{esc(body)}</p></details>' for i, (title, body) in enumerate(d['faq']))
+    stats = [esc(d['statistics'][i]).replace('{n}', '<strong data-total="' + field + '">—</strong>') for i, field in enumerate(['rescueSessions', 'fullSizePhotos'])]
     trust = ''.join(f'<p>{esc(text)}</p>' for text in d['trust'])
     html = f'''<!doctype html>
 <html lang="{lang}"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{esc(d['title'])}</title><meta name="description" content="{esc(d['description'], quote=True)}">
-<script src="/metrics.js" defer></script>
+<script src="/metrics.js" defer></script><script src="/totals.js" defer></script>
 <meta name="theme-color" content="#ffffff"><meta name="robots" content="index,follow">
 <link rel="canonical" href="{url}">{alternates}
 <meta property="og:type" content="website"><meta property="og:title" content="{esc(d['title'], quote=True)}">
@@ -42,6 +43,7 @@ for lang, d in locales.items():
 </head><body>
 <header class="wrap header"><a class="brand" href="{route(lang)}" aria-label="CardMe"><img src="/assets/cardme-mark.svg" width="40" height="40" alt="">CardMe</a><nav><a href="#how-it-works">{esc(d['nav'][0])}</a><a href="#questions">{esc(d['nav'][1])}</a><a class="coffee-link" href="https://ko-fi.com/alittleseal" target="_blank" rel="noopener noreferrer">{esc(d['coffee'])}</a></nav></header>
 <main><section class="wrap hero" aria-labelledby="intro"><div class="intro"><p class="eyebrow">{esc(d["kicker"])}</p><h1 id="intro">{d['heading']}</h1></div><div class="hero-actions"><p class="lead">{esc(d['lead'])}</p><a class="primary" href="{download}" data-download>{esc(d['download'])}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M5 16v4h14v-4"/></svg></a><p class="requirements">macOS 14+ · Apple silicon<br>{esc(d['appNote'])}</p><p class="coffee-note"><a href="https://ko-fi.com/alittleseal" target="_blank" rel="noopener noreferrer">{esc(d['support'])} ☕️</a></p></div></section>
+<p class="wrap public-totals" data-public-totals hidden><span>{stats[0]}</span><span>{stats[1]}</span><small>{esc(d["statistics"][2])}</small></p>
 <figure class="wrap app-preview"><div class="app-stage"><div class="app-window"><img src="/assets/cardme-app.png" width="1480" height="1084" alt="{esc(d['caption'], quote=True)}"></div></div><figcaption>{esc(d['caption'])}</figcaption></figure><div class="wrap trust">{trust}</div>
 <aside class="wrap safety-note"><strong>{esc(d["warningTitle"])}</strong><span>{esc(d["warning"])}</span></aside><section class="wrap steps-section" id="how-it-works"><h2>{esc(d['stepsTitle'])}</h2><div class="steps">{steps}</div></section>
 <section class="wrap questions" id="questions"><div><h2>{esc(d['nav'][1])}</h2></div><div class="answers">{questions}</div></section></main>
@@ -55,6 +57,6 @@ for lang, d in locales.items():
 xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + ''.join(f'  <url><loc>{base}{route(lang)}</loc></url>\n' for lang in locales) + '</urlset>\n'
 (site / 'sitemap.xml').write_text(xml)
 (site / 'robots.txt').write_text(f'User-agent: *\nAllow: /\nSitemap: {base}/sitemap.xml\n')
-config = {'routes': [{'route': route(lang), 'rewrite': '/' + lang.lower() + '/index.html'} for lang in locales if lang != 'en'], 'globalHeaders': {'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; connect-src https://cardme-control-plane.azurewebsites.net/api/v1/usage"}}
+config = {'routes': [{'route': route(lang), 'rewrite': '/' + lang.lower() + '/index.html'} for lang in locales if lang != 'en'], 'globalHeaders': {'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; connect-src https://cardme-control-plane.azurewebsites.net/api/v1/usage https://cardme-control-plane.azurewebsites.net/api/v1/public/totals"}}
 (site / 'staticwebapp.config.json').write_text(json.dumps(config, indent=2) + '\n')
 print(f'Generated {len(locales)} localized pages and sitemap.')

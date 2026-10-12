@@ -77,5 +77,10 @@
   "coffee": "Buy me a coffee ☕️",
   "licenses": "Licenses and source information are included in the app.",
   "version": "Version 0.3.23 · Notarized by Apple.",
-  "languageLabel": "Language"
+  "languageLabel": "Language",
+  "statistics": [
+    "{n} recovery sessions",
+    "{n} full-size photos recovered",
+    "Anonymous reports · last 90 days. Repeat recoveries may count."
+  ]
 }

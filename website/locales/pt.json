@@ -77,5 +77,10 @@
   "coffee": "Me pague um café ☕️",
   "licenses": "As licenças e informações sobre o código-fonte estão disponíveis no app.",
   "version": "Versão 0.3.23 · Notarizado pela Apple.",
-  "languageLabel": "Idioma"
+  "languageLabel": "Idioma",
+  "statistics": [
+    "{n} sessões de recuperação",
+    "{n} fotos recuperadas no tamanho original",
+    "Relatos anônimos dos últimos 90 dias. Recuperações repetidas podem entrar na contagem."
+  ]
 }
