@@ -12,6 +12,8 @@ App opens count launches, not unique people. Result counts may include the same 
 
 Reports are scheduled for deletion after 90 days; cleanup backlogs may take longer. Uploads are best-effort, have no offline backlog, and never block recovery. Turning statistics off cancels outstanding uploads. Requests already transmitted may still arrive, and earlier records are not deleted by switching the setting off.
 
+Statistics are sent to `https://cardme-control-plane.azurewebsites.net/api/v1/usage` and stored in CardMe’s dedicated Azure account. The administrator dashboard is separate from Pickology.
+
 The Azure hosting service necessarily receives network addresses and may retain request metadata.
 
 ## Website and support links

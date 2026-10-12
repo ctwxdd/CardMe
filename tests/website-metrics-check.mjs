@@ -5,7 +5,8 @@ const code = fs.readFileSync(new URL('../website/dist/metrics.js', import.meta.u
 function run(navigator = {}, broken = false) {
   const events = []; let click;
   vm.runInNewContext(code, {navigator, crypto: {randomUUID: () => 'random-event-id'},
-    document: {addEventListener: (_, fn) => {click = fn;}}, fetch: (_, options) => {
+    document: {addEventListener: (_, fn) => {click = fn;}}, fetch: (url, options) => {
+      assert.equal(url, "https://cardme-control-plane.azurewebsites.net/api/v1/usage");
       events.push({body: JSON.parse(options.body), options});
       if (broken) throw Error('offline');
       return Promise.reject(Error('offline'));

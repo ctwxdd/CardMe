@@ -60,5 +60,8 @@ print(f'{len(locales)} languages: unique canonicals, reciprocal hreflang, sitema
 config = json.loads((root/'website/dist/staticwebapp.config.json').read_text())
 assert len(config['routes']) == len(locales) - 1
 assert all('redirect' not in r and r['rewrite'].endswith('/index.html') for r in config['routes'])
+assert 'pickology-control-plane' not in (root/'website/dist/metrics.js').read_text()
+assert 'https://cardme-control-plane.azurewebsites.net/api/v1/usage' in (root/'website/dist/metrics.js').read_text()
+assert 'https://cardme-control-plane.azurewebsites.net/api/v1/usage' in config['globalHeaders']['Content-Security-Policy']
 assert 'frame-ancestors' in config['globalHeaders']['Content-Security-Policy']
 assert 'sitemap.xml' in (root/'website/dist/robots.txt').read_text()

@@ -1,0 +1,16 @@
+import azureFunctions from '@azure/functions';
+const {app}=azureFunctions;
+import { TableClient } from '@azure/data-tables';
+import { DefaultAzureCredential } from '@azure/identity';
+import { CardMeUsageStore } from './usage.ts';
+import { createHandlers } from './functions.ts';
+const required=(name:string)=>{const value=process.env[name];if(!value)throw new Error('Missing configuration: '+name);return value;};
+const store=new CardMeUsageStore(new TableClient(required('CARDME_TABLE_ENDPOINT'),required('CARDME_USAGE_TABLE_NAME'),new DefaultAzureCredential()));
+const ids=required('CARDME_ADMIN_OBJECT_IDS').split(',').map(v=>v.trim().toLowerCase());
+if(ids.some(v=>!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(v)))throw new Error('Invalid administrator configuration');
+const handlers=createHandlers({store,adminObjectIds:ids,websiteOrigin:required('CARDME_WEBSITE_ORIGIN')});
+app.http('usage',{methods:['POST'],authLevel:'anonymous',route:'v1/usage',handler:handlers.usage});
+app.http('adminUsage',{methods:['GET'],authLevel:'anonymous',route:'v1/admin/usage',handler:handlers.adminUI});
+app.http('adminUsageData',{methods:['GET'],authLevel:'anonymous',route:'v1/admin/usage/data',handler:handlers.adminData});
+app.http('health',{methods:['GET'],authLevel:'anonymous',route:'health',handler:()=>({status:200,jsonBody:{service:'cardme',version:'1'}})});
+app.timer('pruneUsage',{schedule:'0 0 3 * * *',handler:async()=>{await store.prune(new Date(Date.now()-90*86400000));}});

@@ -100,3 +100,5 @@ The warranty disclaimer and limitation of liability are set out in sections 15�
 CardMe is free to use. No payment is required to recover or save photos.
 
 If it helped you get important photos back, you’re welcome to [buy me a coffee ☕️](https://ko-fi.com/alittleseal). Thank you for your support.
+
+The optional anonymous statistics service is maintained in [ControlPlane](ControlPlane/README.md), with dedicated CardMe infrastructure and administrator access. It is independent of the recovery engine and never receives photos.

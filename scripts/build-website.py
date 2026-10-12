@@ -55,6 +55,6 @@ for lang, d in locales.items():
 xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + ''.join(f'  <url><loc>{base}{route(lang)}</loc></url>\n' for lang in locales) + '</urlset>\n'
 (site / 'sitemap.xml').write_text(xml)
 (site / 'robots.txt').write_text(f'User-agent: *\nAllow: /\nSitemap: {base}/sitemap.xml\n')
-config = {'routes': [{'route': route(lang), 'rewrite': '/' + lang.lower() + '/index.html'} for lang in locales if lang != 'en'], 'globalHeaders': {'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; connect-src https://pickology-control-plane.azurewebsites.net/api/v1/cardme/usage"}}
+config = {'routes': [{'route': route(lang), 'rewrite': '/' + lang.lower() + '/index.html'} for lang in locales if lang != 'en'], 'globalHeaders': {'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; connect-src https://cardme-control-plane.azurewebsites.net/api/v1/usage"}}
 (site / 'staticwebapp.config.json').write_text(json.dumps(config, indent=2) + '\n')
 print(f'Generated {len(locales)} localized pages and sitemap.')

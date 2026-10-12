@@ -6,7 +6,7 @@
       const body = JSON.stringify({schema_version: 1, event_id: crypto.randomUUID(), event,
         app_version: 'web', mode: 'none', full_size: 0, previews: 0, thumbnails: 0,
         review: 0, unrecovered: null});
-      void fetch('https://pickology-control-plane.azurewebsites.net/api/v1/cardme/usage', {
+      void fetch('https://cardme-control-plane.azurewebsites.net/api/v1/usage', {
         method: 'POST', body, headers: {'Content-Type': 'text/plain;charset=UTF-8'},
         credentials: 'omit', referrerPolicy: 'no-referrer', keepalive: true
       }).catch(() => {});

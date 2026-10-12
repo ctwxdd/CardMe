@@ -1,0 +1,24 @@
+{
+  "name": "cardme-control-plane",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@azure/data-tables": "^13.3.2",
+    "@azure/functions": "^4.16.2",
+    "@azure/identity": "^4.13.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "typescript": "^5.9.2"
+  }
+}

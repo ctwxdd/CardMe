@@ -5,3 +5,5 @@ __pycache__/
 /investigations/
 *.dmg
 *.zip
+/ControlPlane/node_modules/
+/ControlPlane/dist/
