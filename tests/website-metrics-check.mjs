@@ -15,8 +15,8 @@ function run(navigator = {}, broken = false) {
 }
 const result = run();
 assert.equal(result.events[0].body.event, 'page_view');
-for (const [href, event] of [['https://github.com/ctwxdd/CardMe-releases/releases/download/v0.3.23/CardMe-0.3.23.dmg','download_click'],['https://ko-fi.com/alittleseal','web_coffee_click']]) {
-  result.click({target: {closest: () => ({getAttribute: () => href, hasAttribute: () => href === 'https://github.com/ctwxdd/CardMe-releases/releases/download/v0.3.23/CardMe-0.3.23.dmg'})}});
+for (const [href, event] of [['https://github.com/ctwxdd/CardMe/releases/download/v0.3.37/CardMe-0.3.37.dmg','download_click'],['https://ko-fi.com/alittleseal','web_coffee_click']]) {
+  result.click({target: {closest: () => ({getAttribute: () => href, hasAttribute: () => href === 'https://github.com/ctwxdd/CardMe/releases/download/v0.3.37/CardMe-0.3.37.dmg'})}});
   assert.equal(result.events.at(-1).body.event, event);
 }
 result.click({target: {}});
@@ -27,5 +27,5 @@ for (const {body, options} of result.events) {
 }
 assert.equal(run({doNotTrack:'1'}).events.length, 0);
 assert.equal(run({globalPrivacyControl:true}).events.length, 0);
-const offline = run({}, true); assert.doesNotThrow(() => offline.click({target:{closest:()=>({getAttribute:()=>'https://github.com/ctwxdd/CardMe-releases/releases/download/v0.3.23/CardMe-0.3.23.dmg', hasAttribute:()=>true})}}));
+const offline = run({}, true); assert.doesNotThrow(() => offline.click({target:{closest:()=>({getAttribute:()=>'https://github.com/ctwxdd/CardMe/releases/download/v0.3.37/CardMe-0.3.37.dmg', hasAttribute:()=>true})}}));
 console.log('Website metrics: anonymous schema, privacy signals, click reporting and offline navigation passed.');
