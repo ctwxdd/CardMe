@@ -23,25 +23,43 @@ CardMe first tries the accessible photo files. For deleted files, a quick format
 
 **Start with Normal when the damaged files are still visible. Use Deep for missing/deleted files, a quick format, or unresolved Normal results.** Deep searches more data; it does not guarantee a better result for every photo and cannot undo overwritten data. Both modes can recover original JPGs, and both can leave uncertain candidates that need visual review. Neither mode is simply a choice between JPG and PNG.
 
-## Start to finish
+## Recovery flow
+
+The two modes share decoding, validation and safe output handling. Their inputs and search scope differ:
 
 ```mermaid
 flowchart TD
-    A[Choose a card] --> B[Scan accessible photo files]
-    B --> C[Review flagged photos]
-    C --> D[Choose a separate output folder]
-    D --> N[Normal Rescue]
-    N --> R[Review saved photos and recovery status]
-    C --> E[Choose Deep Rescue for deleted or harder cases]
-    R --> E
-    E --> F{Existing card image?}
-    F -->|Yes| I[Open the image read only]
-    F -->|No| G[Check card identity and available storage]
-    G --> H[Copy the whole card with ddrescue]
-    H --> I
-    I --> J[Search JPEG streams and reconstruct fragments]
-    J --> R
+    A{Choose recovery mode}
+    subgraph Normal[Normal Rescue]
+        N1[Scan visible files and select flagged photos]
+        N2[Try surviving exFAT allocation chains]
+        N3[If eligible and unresolved, find indexed preview anchors]
+        N4[Try bounded two-part, three-part and local guided joins]
+        N1 --> N2 --> N3 --> N4
+    end
+    subgraph Deep[Deep Rescue]
+        D1[Create a whole-card copy or open an existing image]
+        D2[Scan the image for JPEG streams and surviving clues]
+        D3[Try eligible two-part, three-part and local guided joins]
+        D4[For eligible failures, rank wider cluster continuations]
+        D1 --> D2 --> D3 --> D4
+    end
+    A -->|Visible damaged files| N1
+    A -->|Missing files or harder recovery| D1
+    N1 -->|Folder-only fallback| V
+    N2 -->|Accepted allocation candidate| V
+    N4 --> V
+    D2 -->|Intact stream| V
+    D4 --> V
+    V[Decode, validate and classify each result]
+    V --> O[Save separate outputs and review photos]
 ```
+
+Later search stages run only for eligible unresolved candidates. Accepted results can be saved earlier; explicit refusals, ambiguity and budgets can skip later searches. Normal can also use accessible-file fallbacks when raw allocation analysis is unavailable. Deep's filename restoration and separate preview metadata copies are described below.
+
+## Start to finish
+
+## Start to finish
 
 | Step | What it does | What it establishes |
 | --- | --- | --- |
@@ -55,28 +73,6 @@ flowchart TD
 ## Normal Rescue: selected files, direct card reads
 
 Normal Rescue works from the scan's flagged files. On supported exFAT cards it can also read hidden fragments directly through an authorized read-only descriptor; a whole-card image is not required for this path. If allocation geometry is unsupported, it falls back to the accessible files.
-
-```mermaid
-flowchart TD
-    N[Flagged file and source checks] --> V{Usable exFAT allocation metadata?}
-    V -->|Yes| A[Try allocation-chain and tail hypotheses]
-    A --> B{Full photo validates?}
-    B -->|Yes| J[Save original JPEG bytes]
-    B -->|No| P[Find a matching indexed camera preview]
-    P --> T[Try bounded two-part and three-part joins]
-    T --> G[If eligible and unresolved, try local preview-guided joins]
-    G --> Q{Validated reconstruction?}
-    Q -->|Yes| K[Save source-byte JPEG candidate for review]
-    Q -->|No| F[Try accessible file fallbacks]
-    V -->|No| F
-    F --> X{Complete readable JPEG?}
-    X -->|Yes| J
-    X -->|No| Y{Decodable primary, preview or thumbnail?}
-    Y -->|Yes| O[Save the best available decoded image as PNG]
-    Y -->|No| Z[Report no saved photo]
-```
-
-The join stages stop when a result is accepted. An ambiguity, unsafe source, failed validation or exhausted budget can end a search; the engine does not automatically try every later method after every refusal.
 
 | Stage | What it does | Why it helps |
 | --- | --- | --- |
@@ -94,23 +90,7 @@ The additional Normal reconstruction phase is bounded to **90 seconds, 256 MiB o
 
 Deep Rescue can work without a surviving file list. A new copy requires enough destination capacity for the card's full size, plus recovered files. ddrescue records read errors and progress in a map file; copying bytes cannot repair data that has already been overwritten.
 
-```mermaid
-flowchart TD
-    I[Read-only safety image] --> C[Scan JPEG signatures and marker extents]
-    C --> S[Decode intact streams and save source bytes]
-    C --> H[Collect damaged MPF headers, previews and directory hints]
-    S --> P[Complete quick two-part joins first]
-    H --> P
-    P --> T[Try eligible three-part joins and fragmented preview recovery]
-    T --> L[Try eligible local preview-guided reconstruction]
-    L --> W[For eligible failures, rank wider cluster continuations natively]
-    W --> V[Validate complete candidates and record source extents]
-    V --> N[Restore unambiguous filenames or EXIF date names]
-    N --> M[Create separate metadata-enriched preview copies when matched]
-    M --> R[Checkpoint results and request visual review]
-```
-
-Intact photos can be saved before reconstruction completes. The two-pass schedule establishes quick results before harder searches use verified recovered ranges as exclusion hints. The arrows describe stage order; accepted candidates and explicit refusals skip later searches.
+The two-pass schedule establishes quick results before harder searches use verified recovered ranges as exclusion hints.
 
 | Stage | What it does | Why it helps |
 | --- | --- | --- |
