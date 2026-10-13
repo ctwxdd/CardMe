@@ -27,12 +27,27 @@ with tempfile.TemporaryDirectory() as temp:
     with patch.object(rescue.scan, 'embedded_thumbnail', return_value=thumbnail), patch.object(sys, 'argv', args):
         assert rescue.main() == 2
     summary = json.loads((output / 'pipeline-report.json').read_text())
-    assert summary['quality_counts'] == {'full_resolution_copy': 1, 'manual_review': 1}
+    assert summary['quality_counts'] == {'full_resolution': 1, 'manual_review': 1}
     recovered = Path(summary['photos'][0]['output'])
+    assert recovered.suffix == '.jpg' and recovered.read_bytes() == data
     with Image.open(recovered) as photo:
         photo.load()
         assert photo.size == (64, 48)
     assert original.read_bytes() == data
+    # Preserve camera EXIF/orientation rather than baking rotation into a re-encoded image.
+    exif = Image.Exif(); exif[271] = 'Canon'; exif[274] = 8
+    tagged = source / 'orientation.jpg'; Image.new('RGB',(64,48),'red').save(tagged,exif=exif)
+    original_tagged = tagged.read_bytes()
+    with patch.object(rescue.scan,'embedded_thumbnail',return_value=None):
+        payload, kind, suffix, dims = rescue.recover_bytes(tagged, {'failed_stage':'exif'})
+    assert payload == original_tagged and kind == 'full_resolution' and suffix == '.jpg' and dims == [64,48]
+    with Image.open(__import__('io').BytesIO(payload)) as saved:
+        assert saved.getexif()[274] == 8 and saved.getexif()[271] == 'Canon'
+    # An image that can be decoded but has no complete JPEG marker extent stays a labelled PNG fallback.
+    truncated = source/'no-eoi.jpg'; truncated.write_bytes(data[:-2])
+    with patch.object(rescue,'recover',return_value=(Image.new('RGB',(64,48),'red'),'full_resolution_copy')):
+        payload, kind, suffix, dims = rescue.recover_bytes(truncated, flagged)
+    assert payload.startswith(b'\x89PNG') and kind == 'full_resolution_copy' and suffix == '.rescued.png'
     # A flagged EXIF/header issue can still have an intact primary image, with no thumbnail.
     with patch.object(rescue.scan, 'embedded_thumbnail', return_value=None):
         photo, quality = rescue.recover(original, {**flagged, 'failed_stage': 'exif'})

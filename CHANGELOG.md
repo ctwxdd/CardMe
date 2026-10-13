@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.38 · build 51
+
+- Extend Normal rescue on supported exFAT cards with bounded two/three-part JPEG joins and local preview-guided reconstruction after allocation-chain attempts fail. Keep sector-aligned read-only access, cancellation, source identity checks and separate outputs; no whole-card copy is required for this path.
+- Preserve complete readable JPEGs without re-encoding, including surviving EXIF orientation and indexed previews. Label decoded full-size PNG fallback copies explicitly in English and Traditional Chinese. Reconstructed photos still require visual checking.
+
 ## 0.3.37 · build 50
 
 - Add Traditional Chinese app copy with familiar Taiwanese terms throughout card selection, scanning, rescue, results, privacy, About and permission prompts. Follow macOS app language preferences and retain English fallback.

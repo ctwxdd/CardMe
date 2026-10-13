@@ -37,7 +37,7 @@ The current source supports:
 
 **RAW recovery, arbitrary fragmented-photo reconstruction, and overwritten data are currently not supported.** Recovery depends on what remains on the card.
 
-Normal recovery may save a decoded full-size photo as PNG. That preserves the decoded image, but is not necessarily the original JPEG file. Deep Rescue copies recovered JPEG image data from the source; it does not generate missing image content. A photo that opens may still contain visible damage. Please inspect it before relying on it.
+Normal recovery first preserves complete readable JPEGs unchanged. On supported exFAT cards it also tries bounded original-byte fragment joins and preview-guided reconstruction directly through read-only card access, without a whole-card image. Surviving EXIF and indexed previews are retained when their original bytes can be assembled. PNG is only a fallback for a decoded image when a complete JPEG cannot be preserved, and is labelled as a PNG copy. Reconstructed candidates still need visual checking. Deep Rescue extends the search on a safety copy; neither mode generates missing image content or guarantees every pixel is correct.
 
 A quick scan checks thumbnails, metadata, and image headers. It does not certify every pixel; full pixel checks are available in Details. More technical information is in [development documentation](docs/DEVELOPMENT.md).
 

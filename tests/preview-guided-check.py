@@ -39,6 +39,11 @@ with tempfile.TemporaryDirectory() as directory:
         assert result, reason
         assert result['data'] == primary and result['source_extents'] == expected, result['source_extents']
         assert result['manual_review'] and result['reconstruction'] == 'mpf_preview_guided'
+        # Normal supplies a sector-aligned reader; the shared search must not reread the raw fd natively.
+        with patch.object(guided.native, 'feed', side_effect=AssertionError('Unaligned native raw-card read')):
+            supplied, supplied_reason = guided.reconstruct(None, len(payload), candidate, [row], cluster, heap,
+                lambda: None, pread=lambda _, n, p: bytes(payload[p:p+n]))
+        assert supplied and supplied['data'] == result['data'] and supplied['source_extents'] == expected, supplied_reason
         python_started = time.monotonic()
         with patch.object(guided.native, 'ROOT', folder / 'missing-native'):
             plain, reason = guided.reconstruct(fd, len(payload), candidate, [row], cluster, heap, lambda: None)
@@ -186,7 +191,7 @@ assert not guided.overlaps(8, 2, [{'offset': 10, 'bytes': 2}])
 
 # All rollback attempts share the original budget; each retry cannot reset it.
 clock, attempts = [0], []
-def budget_trial(fd, total, candidate, photos, cluster, heap, verify, adaptive_prefix=False):
+def budget_trial(fd, total, candidate, photos, cluster, heap, verify, adaptive_prefix=False, pread=None):
     verify()
     attempts.append(adaptive_prefix)
     clock[0] += 60

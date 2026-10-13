@@ -72,7 +72,7 @@ def volume(read, total):
     raise Unsupported('Direct fragment analysis currently supports exFAT cards.')
 
 
-def recover(read, total, source, scan, output, verify):
+def recover(read, total, source, scan, output, verify, search_verify=None):
     source = source.resolve()
     output = output.resolve()
     if output.is_relative_to(source):
@@ -244,6 +244,7 @@ def recover(read, total, source, scan, output, verify):
                 raise ValueError('Photo changed since scanning; scan again.')
             record = records.get(str(path.relative_to(source)).casefold())
             candidate, chosen, previews, orientation = None, None, [], 1
+            rebuilt = None
             if record and 0 < record[1] <= MAX_PHOTO:
                 first, length, contiguous = record
                 header = block(first)
@@ -295,8 +296,19 @@ def recover(read, total, source, scan, output, verify):
                         break
                     except (OSError, ValueError, SyntaxError, Warning):
                         continue
+                if candidate is None:
+                    extra = importlib.import_module('normal-jpeg')
+                    metadata_unchanged()
+                    rebuilt, reason = extra.recover(read, total, heap + (first - 2) * cs, cs, heap,
+                                                   terminals, output, search_verify or verify)
+                    result['normal_fragment_reason'] = reason
+                    if rebuilt:
+                        candidate = rebuilt.pop('data')
             if candidate is not None:
-                quality, suffix, dimensions = 'full_resolution', '.jpg', list(dimensions)
+                quality = ('manual_review' if rebuilt.get('manual_review') else 'full_resolution_reconstructed') if rebuilt else 'full_resolution'
+                suffix, dimensions = '.jpg', list(dimensions)
+                if rebuilt:
+                    result.update(rebuilt, review_required=True, byte_exact_source_fragments=True)
             else:
                 if previews:
                     with Image.open(io.BytesIO(previews[0])) as preview:
@@ -304,9 +316,10 @@ def recover(read, total, source, scan, output, verify):
                         photo = folder_engine.orient(preview.convert('RGB'), orientation)
                     quality = 'camera_preview'
                 else:
-                    photo, quality = folder_engine.recover(path, item)
-                buffer = io.BytesIO(); photo.save(buffer, format='PNG')
-                candidate, suffix, dimensions = buffer.getvalue(), '.rescued.png', list(photo.size)
+                    candidate, quality, suffix, dimensions = folder_engine.recover_bytes(path, item)
+                if previews:
+                    buffer = io.BytesIO(); photo.save(buffer, format='PNG')
+                    candidate, suffix, dimensions = buffer.getvalue(), '.rescued.png', list(photo.size)
             metadata_unchanged()
             if path.stat().st_size != item['bytes'] or (item.get('mtime_ns') is not None and path.stat().st_mtime_ns != item['mtime_ns']):
                 raise ValueError('Photo changed during recovery.')
@@ -325,7 +338,7 @@ def recover(read, total, source, scan, output, verify):
                     verify(); os.link(temporary, target)
                 finally:
                     temporary.unlink()
-            result.update(quality=quality, output=str(target), dimensions=dimensions, sha256=sha)
+            result.update(quality=quality, output=str(target), dimensions=dimensions, sha256=sha, output_format='JPEG' if suffix == '.jpg' else 'PNG')
             if chosen:
                 remaining = len(candidate)
                 extents = []
@@ -333,6 +346,8 @@ def recover(read, total, source, scan, output, verify):
                     length = min(cs, remaining)
                     extents.append({'offset': heap + (c - 2) * cs, 'bytes': length}); remaining -= length
                 recipes.append({'path': str(path.relative_to(source)), 'extents': extents, 'sha256': sha, 'dimensions': dimensions})
+            elif rebuilt:
+                recipes.append({'path': str(path.relative_to(source)), 'extents': rebuilt['source_extents'], 'sha256': sha, 'dimensions': dimensions})
         except (OSError, ValueError, SyntaxError, EOFError, struct.error, Warning) as error:
             if isinstance(error, SourceChanged):
                 raise

@@ -26,9 +26,9 @@ def comparison_size(dimensions):
     return tuple(max(1, round(value * scale)) for value in dimensions)
 
 
-def header(fd, start, total):
+def header(fd, start, total, pread=None):
     length = min(MAX_HEADER, total - start)
-    raw = os.pread(fd, length, start)
+    raw = (pread or os.pread)(fd, length, start)
     if len(raw) != length:
         raise OSError('Short fragment header read')
     try:
@@ -57,7 +57,7 @@ def header(fd, start, total):
         return None
 
 
-def reconstruct(fd, total, candidate, photos, cluster, heap, verify, allow_three=True):
+def reconstruct(fd, total, candidate, photos, cluster, heap, verify, allow_three=True, pread=None):
     """Return exactly one validated join; ambiguity leaves the candidate unresolved."""
     carve = importlib.import_module('carve-photos')
     start, length = candidate['offset'], candidate['bytes']
@@ -92,8 +92,8 @@ def reconstruct(fd, total, candidate, photos, cluster, heap, verify, allow_three
     tail_end = anchor - auxindex * cluster + length
     if tail_base < heap or tail_end > total or tail_end <= tail_base or start + length > total:
         return None, 'tail_outside_source'
-    prefix = os.pread(fd, length, start)
-    tail = os.pread(fd, tail_end - tail_base, tail_base)
+    prefix = (pread or os.pread)(fd, length, start)
+    tail = (pread or os.pread)(fd, tail_end - tail_base, tail_base)
     if len(prefix) != length or len(tail) != tail_end - tail_base:
         raise OSError('Short fragment source read')
     with Image.open(preview_row['output']) as preview:
@@ -134,13 +134,13 @@ def reconstruct(fd, total, candidate, photos, cluster, heap, verify, allow_three
         return accepted, 'reconstructed'
     if not allow_three:
         return None, 'no_valid_two_extent_join'
-    three = reconstruct_three(fd, total, candidate, photos, cluster, heap, verify)
+    three = reconstruct_three(fd, total, candidate, photos, cluster, heap, verify, pread=pread)
     if three is not None:
         return three, 'reconstructed'
     return None, candidate.get('_three_refusal', 'no_valid_two_extent_join')
 
 
-def reconstruct_three(fd, total, candidate, photos, cluster, heap, verify):
+def reconstruct_three(fd, total, candidate, photos, cluster, heap, verify, pread=None):
     """Try unique prefix/gap/tail joins; marker failure and free space are hypotheses."""
     candidate.pop('_three_refusal', None)
     carve = importlib.import_module('carve-photos')
@@ -148,7 +148,7 @@ def reconstruct_three(fd, total, candidate, photos, cluster, heap, verify):
     # Only a failed marker boundary supplies a prefix hypothesis. Re-read it on resume,
     # since older reports did not retain this diagnostic.
     try:
-        carve.jpeg_extent(fd, start, total)
+        carve.jpeg_extent(fd, start, total, pread)
     except carve.JPEGMarkerError as error:
         failure = error.offset
     except (ValueError, SyntaxError, EOFError, Warning):
@@ -239,7 +239,7 @@ def reconstruct_three(fd, total, candidate, photos, cluster, heap, verify):
     if first_tail <= prefix_clusters:
         return None
 
-    prefix = os.pread(fd, prefix_bytes, start)
+    prefix = (pread or os.pread)(fd, prefix_bytes, start)
     if len(prefix) != prefix_bytes:
         raise OSError('Short fragment prefix read')
     with Image.open(preview_row['output']) as preview:
@@ -258,7 +258,7 @@ def reconstruct_three(fd, total, candidate, photos, cluster, heap, verify):
         tail_bytes = length - boundary * cluster
         if tail_bytes <= 0 or suffix_start < heap or suffix_start + tail_bytes > total:
             continue
-        tail = os.pread(fd, tail_bytes, suffix_start)
+        tail = (pread or os.pread)(fd, tail_bytes, suffix_start)
         if len(tail) != tail_bytes:
             raise OSError('Short fragment tail read')
         if tail[-2:] != b'\xff\xd9':
@@ -295,7 +295,7 @@ def reconstruct_three(fd, total, candidate, photos, cluster, heap, verify):
             if not (middle_start + middle_bytes <= suffix_start or middle_start >= suffix_start + tail_bytes):
                 continue
             verify(); attempts += 1
-            middle = os.pread(fd, middle_bytes, middle_start)
+            middle = (pread or os.pread)(fd, middle_bytes, middle_start)
             if len(middle) != middle_bytes:
                 raise OSError('Short fragment middle read')
             data = prefix + middle + tail

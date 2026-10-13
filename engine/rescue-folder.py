@@ -46,6 +46,31 @@ def orient(image, orientation):
     return ImageOps.exif_transpose(image)
 
 
+def recover_bytes(path, flagged):
+    """Keep a complete readable JPEG unchanged; PNG is a decoded-image fallback."""
+    photo, quality = recover(path, flagged)
+    if quality == 'full_resolution_copy' and path.stat().st_size <= 128 * 1024 * 1024:
+        raw = path.read_bytes()
+        try:
+            carve = importlib.import_module('carve-photos')
+            carve.jpeg_extent(None, 0, len(raw), lambda _, n, p: raw[p:p + n])
+            with warnings.catch_warnings():
+                warnings.simplefilter('error')
+                with Image.open(io.BytesIO(raw)) as check:
+                    dimensions = list(check.size)
+                    frames = getattr(check, 'n_frames', 1)
+                    if frames > 16:
+                        raise ValueError('Too many embedded frames.')
+                    for frame in range(frames):
+                        check.seek(frame); check.load()
+            return raw, 'full_resolution', '.jpg', dimensions
+        except (OSError, ValueError, SyntaxError, EOFError, struct.error, Warning):
+            pass
+    buffer = io.BytesIO()
+    photo.save(buffer, format='PNG')
+    return buffer.getvalue(), quality, '.rescued.png', list(photo.size)
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--source', type=Path, required=True)
@@ -75,16 +100,13 @@ def main(argv=None):
             before = path.stat()
             if before.st_size != item['bytes'] or (item.get('mtime_ns') is not None and before.st_mtime_ns != item['mtime_ns']):
                 raise ValueError('Source changed since scanning; scan again.')
-            photo, quality = recover(path, item)
-            data = io.BytesIO()
-            photo.save(data, format='PNG')
-            pixels = data.getvalue()
+            pixels, quality, suffix, dimensions = recover_bytes(path, item)
             with Image.open(io.BytesIO(pixels)) as check:
                 check.load()
             after = path.stat()
             if (before.st_size, before.st_mtime_ns) != (after.st_size, after.st_mtime_ns):
                 raise ValueError('Source changed during recovery.')
-            target = best / path.relative_to(source).with_name(path.name + '.rescued.png')
+            target = best / path.relative_to(source).with_name(path.name if suffix == '.jpg' else path.name + suffix)
             target = target.resolve()
             if not target.is_relative_to(best.resolve()) or target.is_relative_to(source):
                 raise ValueError('Destination redirects outside private result storage.')
@@ -102,14 +124,14 @@ def main(argv=None):
                     os.link(temporary, target)
                 finally:
                     temporary.unlink()
-            result.update(quality=quality, output=str(target), dimensions=list(photo.size), sha256=hashlib.sha256(pixels).hexdigest())
+            result.update(quality=quality, output=str(target), dimensions=dimensions, sha256=hashlib.sha256(pixels).hexdigest(), output_format='JPEG' if suffix == '.jpg' else 'PNG')
         except (OSError, ValueError, SyntaxError, EOFError, struct.error, Image.DecompressionBombError, Warning) as error:
             result['reason'] = str(error)
         results.append(result)
         print('FILE\t' + json.dumps(result), flush=True)
         print(f"Recovery {index}/{len(flagged)}: {path.name} ({result['quality']})", flush=True)
     summary = {'version': 1, 'quality_counts': dict(collections.Counter(r['quality'] for r in results)), 'photos': results,
-               'limitations': 'Embedded-data rescue only. Full-resolution copies are re-encoded, not byte-identical originals. Decoding and thumbnail agreement do not certify every pixel. Missing fragments require deeper recovery.'}
+               'limitations': 'Complete readable JPEG files are copied unchanged. PNG is a decoded-image fallback, not an original JPEG. Decoding and thumbnail agreement do not certify every pixel. Folder-only rescue cannot read hidden card fragments.'}
     with tempfile.NamedTemporaryFile(mode='w', dir=output, delete=False) as temp:
         json.dump(summary, temp, indent=2)
         temporary = Path(temp.name)

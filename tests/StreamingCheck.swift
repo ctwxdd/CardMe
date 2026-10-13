@@ -25,6 +25,8 @@ struct StreamingCheck {
         assert(session.damaged.last?.name == "IMG_1234.JPG")
         assert(session.damaged.last?.url?.path == "/tmp/IMG_1234.JPG")
         assert(session.selectedID == "recovered-512")
+        session.receive(Data("FILE\t{\"path\":\"decoded.jpg\",\"quality\":\"full_resolution_copy\",\"output\":\"/tmp/decoded.rescued.png\"}\n".utf8))
+        assert(session.damaged.last?.detail == L("Full-size image saved · PNG copy"))
         print("100 buffered photo events displayed incrementally, in order, without loss.")
     }
 }

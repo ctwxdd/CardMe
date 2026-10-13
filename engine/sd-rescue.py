@@ -57,7 +57,8 @@ def analyze_card(args, image, output):
         with (output / '.pipeline.lock').open('a') as lock:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
             try:
-                result = analysis.recover(read, args.bytes, args.source.resolve(), json.loads(args.scan.read_text()), output, verify)
+                result = analysis.recover(read, args.bytes, args.source.resolve(), json.loads(args.scan.read_text()), output, verify,
+                                          search_verify=lambda: verify(False))
                 report = json.loads((output / 'pipeline-report.json').read_text())
                 report['source_bytes_read_this_run'] = read_bytes
                 report['identity'] = {'device': args.device, 'registry_id': args.registry_id, 'bytes': args.bytes}

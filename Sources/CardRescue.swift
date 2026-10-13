@@ -438,7 +438,7 @@ final class RescueSession: ObservableObject {
         let detail: String
         switch quality {
         case "full_resolution": detail = L("Original photo saved")
-        case "full_resolution_copy": detail = L("Full-size photo saved")
+        case "full_resolution_copy": detail = (object["output"] as? String).map { URL(fileURLWithPath: $0).pathExtension.lowercased() == "png" } == true ? L("Full-size image saved · PNG copy") : L("Full-size photo saved")
         case "full_resolution_reconstructed": detail = L("Full-size photo rebuilt · please check")
         case "camera_preview": detail = L("Smaller preview saved")
         case "thumbnail_only": detail = L("Tiny thumbnail saved")

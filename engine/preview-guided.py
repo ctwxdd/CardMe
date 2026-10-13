@@ -91,7 +91,7 @@ class SearchBudget(Exception):
     pass
 
 
-def reconstruct(fd, total, candidate, photos, cluster, heap, verify):
+def reconstruct(fd, total, candidate, photos, cluster, heap, verify, pread=None):
     deadline = time.monotonic() + MAX_SECONDS
 
     def check():
@@ -100,19 +100,19 @@ def reconstruct(fd, total, candidate, photos, cluster, heap, verify):
             raise SearchBudget()
 
     try:
-        result, reason = _reconstruct(fd, total, candidate, photos, cluster, heap, check)
+        result, reason = _reconstruct(fd, total, candidate, photos, cluster, heap, check, pread=pread)
         if result is not None or reason not in ('invalid_preview_guided_prefix', 'invalid_prefix_hypothesis'):
             return result, reason
         check()
         result, reason = _reconstruct(fd, total, candidate, photos, cluster, heap, check,
-                                      adaptive_prefix=True)
+                                      adaptive_prefix=True, pread=pread)
         check()
         return result, reason
     except (SearchBudget, subprocess.TimeoutExpired):
         return None, 'preview_guided_time_budget'
 
 
-def _reconstruct(fd, total, candidate, photos, cluster, heap, verify, adaptive_prefix=False):
+def _reconstruct(fd, total, candidate, photos, cluster, heap, verify, adaptive_prefix=False, pread=None):
     fragments = importlib.import_module('fragment-carve')
     carve = importlib.import_module('carve-photos')
     deadline = time.monotonic() + MAX_SECONDS
@@ -124,10 +124,16 @@ def _reconstruct(fd, total, candidate, photos, cluster, heap, verify, adaptive_p
 
     def read(offset, size):
         check()
-        raw = os.pread(fd, size, offset)
+        raw = (pread or os.pread)(fd, size, offset)
         if len(raw) != size:
             raise OSError('Short preview-guided source read')
         return raw
+
+    def feed(decoder, raw, fd, offset, seconds, verify):
+        # Raw cards require aligned reads; use the supplied bytes instead of native rereads.
+        if pread is not None:
+            return decoder.feed(raw, verify)
+        return native.feed(decoder, raw, fd, offset, seconds, verify)
 
     start, length = candidate['offset'], candidate['bytes']
     failure = next((offset for at, offset in candidate.get('_failure_prefixes', []) if at == start), None)
@@ -202,7 +208,7 @@ def _reconstruct(fd, total, candidate, photos, cluster, heap, verify, adaptive_p
                 end = min(cut, (position // cluster + 1) * cluster)
                 trial = decoder.clone()
                 try:
-                    native.feed(trial, raw[position:end], fd, start+position,
+                    feed(trial, raw[position:end], fd, start+position,
                                 max(.1,deadline-time.monotonic()), check)
                     valid = trial.score() <= threshold
                 except coding.Invalid:
@@ -218,7 +224,7 @@ def _reconstruct(fd, total, candidate, photos, cluster, heap, verify, adaptive_p
                 threshold = max(12, error_sum / max(1, error_count) * 6)
         else:
             try:
-                native.feed(decoder, raw[decoder.header_end:], fd, start+decoder.header_end,
+                feed(decoder, raw[decoder.header_end:], fd, start+decoder.header_end,
                             max(.1,deadline-time.monotonic()), check)
             except coding.Invalid:
                 return None, 'invalid_preview_guided_prefix'
@@ -231,7 +237,7 @@ def _reconstruct(fd, total, candidate, photos, cluster, heap, verify, adaptive_p
             valid = not overlaps(physical, size, extents + owned)
             if valid:
                 try:
-                    native.feed(trial, read(physical, size), fd, physical,
+                    feed(trial, read(physical, size), fd, physical,
                                 max(.1,deadline-time.monotonic()), check)
                     valid = trial.score() <= threshold
                 except coding.Invalid:
@@ -251,7 +257,7 @@ def _reconstruct(fd, total, candidate, photos, cluster, heap, verify, adaptive_p
                     eligible = [offset for offset in offsets
                                 if offset >= heap and offset + size <= total
                                 and not overlaps(offset, size, extents + owned)]
-                    if native.available(decoder) and eligible:
+                    if pread is None and native.available(decoder) and eligible:
                         try:
                             eligible = [offset for _,offset in native.screen(decoder, fd,
                                 [(0,offset) for offset in eligible], min(512,lookahead,size), total,
@@ -304,7 +310,7 @@ def _reconstruct(fd, total, candidate, photos, cluster, heap, verify, adaptive_p
                     score, offset = rows[0]
                     trial = decoder.clone()
                     try:
-                        native.feed(trial, read(offset, size), fd, offset,
+                        feed(trial, read(offset, size), fd, offset,
                                     max(.1,deadline-time.monotonic()), check)
                     except coding.Invalid:
                         return None

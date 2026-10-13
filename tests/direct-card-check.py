@@ -82,7 +82,7 @@ with tempfile.TemporaryDirectory(prefix='cardrescue-direct-check-') as temp:
     assert len(descriptors) == descriptor_count + 1  # public analysis requests a read-only descriptor
     card.write_bytes(data)
     assert json.loads((no_profile / 'pipeline-report.json').read_text())['quality_counts'] == {
-        'full_resolution_copy': 1, 'manual_review': 1}
+        'full_resolution': 1, 'manual_review': 1}
     saved_image = base / 'saved.img'
     saved_image.write_bytes(jpeg)
     saved_output = base / 'saved-image-results'
@@ -134,7 +134,7 @@ with tempfile.TemporaryDirectory(prefix='cardrescue-direct-check-') as temp:
     assert run(fallback, size=len(data) + 512) == 2
     assert len(descriptors) == count
     assert json.loads((fallback / 'pipeline-report.json').read_text())['quality_counts'] == {
-        'full_resolution_copy': 1, 'manual_review': 1}
+        'full_resolution': 1, 'manual_review': 1}
     # Metadata mismatch must also use folder recovery, never apply another card's recipe.
     card.write_bytes(b'X' + bytes(data[1:]))
     mismatch = base / 'mismatch'
