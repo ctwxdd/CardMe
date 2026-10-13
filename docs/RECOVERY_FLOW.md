@@ -4,6 +4,25 @@ This describes the current source on `main`. A signed download may use an older 
 
 CardMe first tries the accessible photo files. For deleted files, a quick format, or harder damage, Deep Rescue searches a whole-card safety copy. Every recovered file is saved separately. The engine uses surviving source bytes and JPEG decoding; it does not generate missing image content.
 
+## Normal vs. Deep Rescue
+
+**The main difference is where the search starts and how much of the source it searches.** Normal starts with damaged files still visible in the filesystem and uses their surviving allocation and camera metadata to look for missing fragments. Deep scans a whole-card safety copy for JPEG data, including photos that no longer have a visible file entry, and can try wider reconstruction searches.
+
+| | Normal Rescue | Deep Rescue |
+| --- | --- | --- |
+| Best starting point | Photos are still listed but cannot open, or look damaged. | Photos were deleted, the card was quickly formatted, files are missing, or Normal could not recover the full photo. |
+| Input | Accessible files and, on supported exFAT cards, direct read-only access to their allocation and fragment regions. | A new whole-card safety copy or an existing card image opened read only. |
+| Needs a surviving file list? | Yes. Recovery targets the scan's flagged files. | No. JPEG carving can discover streams without directory entries. |
+| Search scope | File decoding, allocation-chain hypotheses, and bounded fragment searches using surviving MPF/preview clues. It does not scan every byte to discover all deleted photos. | A scan across the image for JPEG streams, followed by eligible local and wider cluster-based fragment searches. |
+| Whole-card copy required? | No. | Yes for the current app's Deep workflow; an existing image skips the copying step. The copy is a workflow/safety choice, not a requirement of JPEG decoding itself. |
+| Extra storage | Recovered outputs and working files. | The card's full capacity for a new image, plus recovered outputs and working files. |
+| Time | Usually faster when only a few visible files are damaged. Bounded fragment searches can still take time. | Includes copying the card, scanning its full image and possibly longer reconstruction. An existing image avoids only the copy time. |
+| Original JPEG recovery | Can preserve or rebuild full-size JPEGs when enough source data and clues survive. | Can preserve or rebuild full-size JPEGs, including some that Normal cannot locate. |
+| Lower-resolution fallback | Can save a decoded primary PNG, camera preview or thumbnail. | Can save surviving previews/thumbnails and separate metadata-enriched preview copies. |
+| Source writes | None by CardMe. | None by CardMe, including to the safety image. |
+
+**Start with Normal when the damaged files are still visible. Use Deep for missing/deleted files, a quick format, or unresolved Normal results.** Deep searches more data; it does not guarantee a better result for every photo and cannot undo overwritten data. Both modes can recover original JPGs, and both can leave uncertain candidates that need visual review. Neither mode is simply a choice between JPG and PNG.
+
 ## Start to finish
 
 ```mermaid
