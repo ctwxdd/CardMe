@@ -1,0 +1,54 @@
+{
+  "repository": "libjpeg-turbo/libjpeg-turbo",
+  "commit": "43ea809765004508d8da72ebe562cf570c6a62b2",
+  "files": [
+    {
+      "file": "testorig.jpg",
+      "source": "https://raw.githubusercontent.com/libjpeg-turbo/libjpeg-turbo/43ea809765004508d8da72ebe562cf570c6a62b2/testimages/testorig.jpg",
+      "sha256": "acc6ec555d41d15b368320edaa3b20958ee6fa97cb6e4a18d1213d5ae8bec73b",
+      "bytes": 5770
+    },
+    {
+      "file": "testimgint.jpg",
+      "source": "https://raw.githubusercontent.com/libjpeg-turbo/libjpeg-turbo/43ea809765004508d8da72ebe562cf570c6a62b2/testimages/testimgint.jpg",
+      "sha256": "491679b8057739b3c8e5bacd1e918efb1691d271cbbd69820ff8d480dcb90963",
+      "bytes": 5756
+    },
+    {
+      "file": "testimgari.jpg",
+      "source": "https://raw.githubusercontent.com/libjpeg-turbo/libjpeg-turbo/43ea809765004508d8da72ebe562cf570c6a62b2/testimages/testimgari.jpg",
+      "sha256": "4672c7f08864cd0a8c73a4fa4b66ca32b635d38464551c1ecf06564ae8c89b38",
+      "bytes": 5126
+    },
+    {
+      "file": "shira_bird8.bmp",
+      "source": "https://raw.githubusercontent.com/libjpeg-turbo/libjpeg-turbo/43ea809765004508d8da72ebe562cf570c6a62b2/testimages/shira_bird8.bmp",
+      "sha256": "cd4c0f6835f8737be8f9b980ed6e748778b12f7cad09fa5c86317305c8de654c",
+      "bytes": 82998
+    },
+    {
+      "file": "vgl_5674_0098.png",
+      "source": "https://raw.githubusercontent.com/libjpeg-turbo/libjpeg-turbo/43ea809765004508d8da72ebe562cf570c6a62b2/testimages/vgl_5674_0098.png",
+      "sha256": "6e886de2f1f4c8a87257fedcb2f3f5a4642c7e9843edc9a144fd110a2c4dcd68",
+      "bytes": 25566
+    },
+    {
+      "file": "LICENSE.txt",
+      "source": "https://raw.githubusercontent.com/libjpeg-turbo/libjpeg-turbo/43ea809765004508d8da72ebe562cf570c6a62b2/testimages/LICENSE.txt",
+      "sha256": "1c4d5dfc985d5061ba11180a8ffb541cc1778bccf87fd9f0fb92cbae69d8a9cc",
+      "bytes": 2075
+    },
+    {
+      "file": "LICENSE.md",
+      "source": "https://raw.githubusercontent.com/libjpeg-turbo/libjpeg-turbo/43ea809765004508d8da72ebe562cf570c6a62b2/LICENSE.md",
+      "sha256": "ba6bceebcba0fdd35488477c2cca8c4632ce82c74dbfbc87d886ce6fc4433579",
+      "bytes": 6077
+    },
+    {
+      "file": "README.ijg",
+      "source": "https://raw.githubusercontent.com/libjpeg-turbo/libjpeg-turbo/43ea809765004508d8da72ebe562cf570c6a62b2/README.ijg",
+      "sha256": "75815e3bf6484201a3c3d17a1bbf10f2e8e3237f84df10a2357ea896db2a81d6",
+      "bytes": 12799
+    }
+  ]
+}
