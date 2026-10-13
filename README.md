@@ -39,7 +39,7 @@ The current source supports:
 
 Normal recovery first preserves complete readable JPEGs unchanged. On supported exFAT cards it also tries bounded original-byte fragment joins and preview-guided reconstruction directly through read-only card access, without a whole-card image. Surviving EXIF and indexed previews are retained when their original bytes can be assembled. PNG is only a fallback for a decoded image when a complete JPEG cannot be preserved, and is labelled as a PNG copy. Reconstructed candidates still need visual checking. Deep Rescue extends the search on a safety copy; neither mode generates missing image content or guarantees every pixel is correct.
 
-A quick scan checks thumbnails, metadata, and image headers. It does not certify every pixel; full pixel checks are available in Details. More technical information is in [development documentation](docs/DEVELOPMENT.md).
+A quick scan checks thumbnails, metadata, and image headers. It does not certify every pixel; full pixel checks are available in Details. See the [recovery flowcharts and step-by-step technical explanation](docs/RECOVERY_FLOW.md) for Normal and Deep Rescue, validation, fallbacks and limits. More implementation details are in [development documentation](docs/DEVELOPMENT.md).
 
 ## Your card stays read only
 
