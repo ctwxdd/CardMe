@@ -26,6 +26,8 @@ for lang, d in locales.items():
     steps = ''.join(f'<article><span class="number">{i:02}</span><h3>{esc(title)}</h3><p>{esc(body)}</p></article>' for i, (title, body) in enumerate(d['steps'], 1))
     questions = ''.join(f'<details><summary>{esc(title)}</summary><p>{esc(body)}</p></details>' for i, (title, body) in enumerate(d['faq']))
     trust = ''.join(f'<p>{esc(text)}</p>' for text in d['trust'])
+    credits = d['openSource']
+    improvements = ''.join(f'<li>{esc(text)}</li>' for text in credits['changes'])
     html = f'''<!doctype html>
 <html lang="{lang}"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
@@ -45,6 +47,9 @@ for lang, d in locales.items():
 <main><section class="wrap hero" aria-labelledby="intro"><div class="intro"><p class="eyebrow">{esc(d["kicker"])}</p><h1 id="intro">{d['heading']}</h1></div><div class="hero-actions"><p class="lead">{esc(d['lead'])}</p><a class="primary" href="{download}" data-download>{esc(d['download'])}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M12 3v12m-4-4 4 4 4-4M5 16v4h14v-4"/></svg></a><p class="requirements">macOS 14+ · Apple silicon<br>{esc(d['appNote'])}<br><a href="{source}" class="source-link">{esc(d['source'])} · GPL-3.0</a></p><p class="coffee-note"><a href="https://ko-fi.com/alittleseal" target="_blank" rel="noopener noreferrer">{esc(d['support'])} ☕️</a></p></div></section>
 <figure class="wrap app-preview"><div class="app-stage"><div class="app-window"><img src="/assets/cardme-app.png" width="1480" height="1084" alt="{esc(d['caption'], quote=True)}"></div></div><figcaption>{esc(d['caption'])}</figcaption></figure><div class="wrap trust">{trust}</div>
 <aside class="wrap safety-note"><strong>{esc(d["warningTitle"])}</strong><span>{esc(d["warning"])}</span></aside><section class="wrap steps-section" id="how-it-works"><h2>{esc(d['stepsTitle'])}</h2><div class="steps">{steps}</div></section>
+<section class="wrap questions" id="open-source"><div><h2>{esc(credits['title'])}</h2></div><div class="answers"><p>{esc(credits['intro'])}</p>
+<details><summary>{esc(credits['toolsTitle'])}</summary><ul><li><a class="source-link" href="https://www.gnu.org/software/ddrescue/">GNU ddrescue</a> — {esc(credits['ddrescue'])}</li><li><a class="source-link" href="https://www.python.org/">CPython</a> · <a class="source-link" href="https://python-pillow.github.io/">Pillow</a> — {esc(credits['pythonPillow'])}</li></ul><p>{esc(credits['relatedLabel'])} <a class="source-link" href="https://www.cgsecurity.org/wiki/PhotoRec">PhotoRec / TestDisk</a>. {esc(credits['photoRec'])}</p></details>
+<details><summary>{esc(credits['changesTitle'])}</summary><ul>{improvements}</ul></details></div></section>
 <section class="wrap questions" id="questions"><div><h2>{esc(d['nav'][1])}</h2></div><div class="answers">{questions}</div></section></main>
 <details class="wrap language-picker"><summary>{esc(d['name'])}</summary><nav class="languages" aria-label="{esc(d['languageLabel'], quote=True)}">{links}</nav></details>
 <footer class="wrap footer"><span>CardMe</span><a href="https://github.com/ctwxdd/CardMe" target="_blank" rel="noopener noreferrer">GitHub</a><span>{esc(d['version'])}</span></footer>

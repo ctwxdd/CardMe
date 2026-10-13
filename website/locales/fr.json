@@ -71,12 +71,27 @@
     "Les photos récupérées sont enregistrées sur un autre disque."
   ],
   "caption": "Sélectionnez votre carte mémoire dans CardMe pour commencer.",
-  "appNote": "L’app est actuellement disponible en anglais uniquement.",
+  "appNote": "Langues de l’app : anglais et chinois traditionnel.",
   "free": "Utilisation gratuite.",
   "support": "Si CardMe vous a aidé à retrouver des photos qui comptent pour vous, vous pouvez m’offrir un café.",
   "coffee": "M’offrir un café ☕️",
   "licenses": "Les licences et les informations sur le code source sont disponibles dans l’app.",
   "version": "Version 0.3.37 · Notarisation Apple effectuée.",
   "languageLabel": "Langue",
-  "source": "Code source"
+  "source": "Code source",
+  "openSource": {
+    "title": "L’open source au service de vos photos",
+    "intro": "CardMe associe GNU ddrescue, CPython et Pillow à son propre moteur de récupération JPEG.",
+    "toolsTitle": "Les outils utilisés",
+    "ddrescue": "Lit toute la carte pour en créer une copie de sécurité et conserve la trace des zones illisibles.",
+    "pythonPillow": "Exécutent le moteur de récupération et décodent les images pour vérifier les fichiers retrouvés.",
+    "relatedLabel": "Premiers essais de récupération :",
+    "photoRec": "PhotoRec, du projet TestDisk, a été utilisé lors des premiers essais de récupération. L’app CardMe actuelle utilise son propre moteur JPEG et n’intègre ni n’exécute PhotoRec.",
+    "changesTitle": "Ce qu’ajoute CardMe",
+    "changes": [
+      "Une interface Mac pour choisir la carte, créer une copie en lecture seule et enregistrer les photos ailleurs. Chaque photo récupérée peut être vérifiée.",
+      "Pour certains JPEG fragmentés, les entrées exFAT restantes, les aperçus de l’appareil et les vérifications du décodage JPEG aident à retrouver les morceaux suivants. Les résultats incertains sont signalés comme devant être vérifiés.",
+      "Les noms sont récupérés dans les entrées de dossier restantes, ou remplacés par la date de prise de vue EXIF. Photos en taille d’origine, aperçus et miniatures sont distingués. Aucun contenu d’image manquant n’est généré."
+    ]
+  }
 }

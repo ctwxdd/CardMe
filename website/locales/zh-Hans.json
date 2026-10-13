@@ -71,12 +71,27 @@
     "恢复的照片保存到其他磁盘。"
   ],
   "caption": "在 CardMe 中选择存储卡，开始扫描。",
-  "appNote": "目前应用界面为英文。",
+  "appNote": "App 支持英语和繁体中文。",
   "free": "免费使用。",
   "support": "如果 CardMe 帮你找回了重要的照片，欢迎请我喝杯咖啡。",
   "coffee": "请我喝咖啡 ☕️",
   "licenses": "应用内附许可条款与源代码信息。",
   "version": "下载版本：0.3.37 · 已通过 Apple 公证。",
   "languageLabel": "语言",
-  "source": "源代码"
+  "source": "源代码",
+  "openSource": {
+    "title": "开源工具与照片恢复",
+    "intro": "CardMe 使用 GNU ddrescue、CPython 和 Pillow，搭配自行开发的 JPEG 恢复程序。",
+    "toolsTitle": "CardMe 使用的开源工具",
+    "ddrescue": "读取整张存储卡、创建备份，并记录无法读取的区域。",
+    "pythonPillow": "运行恢复程序、解码图像，检查找到的照片能否正常读取。",
+    "relatedLabel": "早期恢复实验：",
+    "photoRec": "最初的恢复实验使用了 TestDisk 项目的 PhotoRec。目前 CardMe App 使用自行开发的 JPEG 恢复程序，没有内置或调用 PhotoRec。",
+    "changesTitle": "CardMe 增加了哪些功能",
+    "changes": [
+      "把选卡、只读备份和另存照片整合为简单的 Mac 操作流程，恢复后可以逐张预览确认。",
+      "对于部分碎片化的相机 JPEG，利用残留的 exFAT 记录、相机预览图和 JPEG 解码检查，寻找可能接续的数据。无法确定的结果会标为需要检查。",
+      "从残留的目录记录恢复文件名，找不到时使用 EXIF 拍摄时间命名。原尺寸照片、预览照片与缩略图分别标明，不会生成缺失的图像内容。"
+    ]
+  }
 }

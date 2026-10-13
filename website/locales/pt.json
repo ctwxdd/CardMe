@@ -71,12 +71,27 @@
     "As fotos recuperadas são salvas em outra unidade."
   ],
   "caption": "Selecione seu cartão no CardMe para começar.",
-  "appNote": "O app está disponível atualmente apenas em inglês.",
+  "appNote": "Idiomas do app: inglês e chinês tradicional.",
   "free": "Uso gratuito.",
   "support": "Se o CardMe ajudou você a recuperar fotos importantes, fique à vontade para me pagar um café.",
   "coffee": "Me pague um café ☕️",
   "licenses": "As licenças e informações sobre o código-fonte estão disponíveis no app.",
   "version": "Versão 0.3.37 · Notarizado pela Apple.",
   "languageLabel": "Idioma",
-  "source": "Código-fonte"
+  "source": "Código-fonte",
+  "openSource": {
+    "title": "Código aberto para recuperar fotos",
+    "intro": "O CardMe combina GNU ddrescue, CPython e Pillow com seu próprio mecanismo de recuperação JPEG.",
+    "toolsTitle": "As ferramentas utilizadas",
+    "ddrescue": "Lê o cartão inteiro para criar uma cópia de segurança e registra as áreas que não podem ser lidas.",
+    "pythonPillow": "Executam a recuperação e decodificam as imagens para verificar os arquivos encontrados.",
+    "relatedLabel": "Primeiros testes de recuperação:",
+    "photoRec": "Nos primeiros testes foi usado o PhotoRec, do projeto TestDisk. O app CardMe atual usa seu próprio mecanismo JPEG e não inclui nem executa o PhotoRec.",
+    "changesTitle": "O que o CardMe acrescenta",
+    "changes": [
+      "Uma interface para Mac que reúne a escolha do cartão, o backup com acesso somente de leitura e o salvamento em outra unidade. Cada foto recuperada pode ser conferida.",
+      "Em alguns JPEGs fragmentados, os registros exFAT restantes, as prévias da câmera e as verificações de decodificação ajudam a encontrar os próximos trechos. Resultados incertos são marcados para revisão.",
+      "Recupera nomes dos registros de diretório restantes ou usa a data de captura EXIF quando não encontra um nome. Fotos no tamanho original, prévias e miniaturas são identificadas separadamente, sem gerar conteúdo de imagem perdido."
+    ]
+  }
 }

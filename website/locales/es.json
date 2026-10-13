@@ -71,12 +71,27 @@
     "Las fotos recuperadas se guardan en otra unidad."
   ],
   "caption": "Selecciona tu tarjeta en CardMe para empezar.",
-  "appNote": "La app está disponible actualmente solo en inglés.",
+  "appNote": "Idiomas de la app: inglés y chino tradicional.",
   "free": "Gratis para usar.",
   "support": "Si CardMe te ayudó a recuperar fotos importantes para ti, puedes invitarme a un café.",
   "coffee": "Invítame a un café ☕️",
   "licenses": "Las licencias y la información sobre el código fuente están disponibles en la app.",
   "version": "Versión 0.3.37 · Notarizada por Apple.",
   "languageLabel": "Idioma",
-  "source": "Código fuente"
+  "source": "Código fuente",
+  "openSource": {
+    "title": "Código abierto para recuperar tus fotos",
+    "intro": "CardMe combina GNU ddrescue, CPython y Pillow con su propio motor de recuperación JPEG.",
+    "toolsTitle": "Las herramientas que utiliza",
+    "ddrescue": "Lee toda la tarjeta para crear una copia de seguridad y registra las zonas que no se pueden leer.",
+    "pythonPillow": "Ejecutan la recuperación y decodifican las imágenes para comprobar los archivos encontrados.",
+    "relatedLabel": "Primeras pruebas de recuperación:",
+    "photoRec": "En las primeras pruebas se utilizó PhotoRec, del proyecto TestDisk. La app CardMe actual utiliza su propio motor JPEG y no incluye ni ejecuta PhotoRec.",
+    "changesTitle": "Qué añade CardMe",
+    "changes": [
+      "Una interfaz para Mac que reúne la selección de la tarjeta, las copias de solo lectura y el guardado en otra unidad. Puedes revisar cada foto recuperada.",
+      "En algunos JPEG fragmentados, los registros exFAT que quedan, las vistas previas de la cámara y las comprobaciones de decodificación ayudan a encontrar los siguientes fragmentos. Los resultados inciertos se marcan para revisión.",
+      "Recupera los nombres de los registros de directorio que quedan; si faltan, utiliza la fecha de captura EXIF. Distingue fotos a tamaño original, vistas previas y miniaturas, sin generar contenido de imagen perdido."
+    ]
+  }
 }

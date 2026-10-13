@@ -71,12 +71,27 @@
     "Save recovered copies elsewhere."
   ],
   "caption": "Choose your memory card in CardMe to begin.",
-  "appNote": "The app interface is currently in English.",
+  "appNote": "App interface: English and Traditional Chinese.",
   "free": "Free to use.",
   "support": "If CardMe helped you save a memory, you’re welcome to buy me a coffee.",
   "coffee": "Buy me a coffee ☕️",
   "licenses": "Licenses and source information are included in the app.",
   "version": "Version 0.3.37 · Notarized by Apple.",
   "languageLabel": "Language",
-  "source": "Source code"
+  "source": "Source code",
+  "openSource": {
+    "title": "Open source, with care for your photos",
+    "intro": "CardMe combines GNU ddrescue, CPython and Pillow with its own JPEG recovery engine.",
+    "toolsTitle": "The tools behind CardMe",
+    "ddrescue": "Reads the card into a safety copy, retaining a map of unreadable areas.",
+    "pythonPillow": "Run the recovery engine and decode images to check recovered files.",
+    "relatedLabel": "Early recovery experiments:",
+    "photoRec": "PhotoRec from the TestDisk project was used in the early recovery experiments. The current CardMe app uses its own JPEG recovery engine and does not bundle or invoke PhotoRec.",
+    "changesTitle": "What CardMe adds",
+    "changes": [
+      "A Mac interface that handles card selection, read-only backups and separate save locations, then lets you review each photo.",
+      "For some fragmented camera JPEGs, surviving exFAT records, embedded camera previews and JPEG decoding checks help find and join candidate pieces. Uncertain results are marked for review.",
+      "Filename recovery from surviving directory records, with EXIF capture times as a fallback. Full-size photos, previews and thumbnails are reported separately; missing image content is not generated."
+    ]
+  }
 }

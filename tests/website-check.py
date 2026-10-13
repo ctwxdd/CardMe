@@ -31,7 +31,9 @@ for lang in locales:
     assert set(copy) == set(locales['en']), f'Incomplete copy: {lang}'
     assert len(copy['steps']) == 3 and len(copy['trust']) == 3
     assert len(copy['faq']) == len(locales['en']['faq'])
-    assert copy['languageLabel'] and 'Rescue to…' in copy['steps'][1][1]
+    assert copy['languageLabel'] and ('救回照片並儲存至⋯' if lang == 'zh-Hant' else 'Rescue to…') in copy['steps'][1][1]
+    assert set(copy['openSource']) == set(locales['en']['openSource'])
+    assert len(copy['openSource']['changes']) == 3
     path = root/'website/dist'/('index.html' if lang == 'en' else lang.lower()+'/index.html')
     body = path.read_text(); p = Page(); p.feed(body)
     assert p.lang == lang and p.headings == 1 and '�' not in body
@@ -55,6 +57,10 @@ for lang in locales:
     assert 'class="wrap trust"' in body
     assert 'ko-fi.com' not in body.split('<footer')[1]
     assert 'href="https://github.com/ctwxdd/CardMe"' in body.split('<footer')[1]
+    assert 'id="open-source"' in body
+    for url in ['https://www.gnu.org/software/ddrescue/', 'https://www.python.org/', 'https://python-pillow.github.io/', 'https://www.cgsecurity.org/wiki/PhotoRec']:
+        assert f'href="{url}"' in body
+    assert copy['openSource']['photoRec'] in body
 ns = {'s': 'http://www.sitemaps.org/schemas/sitemap/0.9'}
 assert {n.text for n in ET.parse(root/'website/dist/sitemap.xml').findall('.//s:loc', ns)} == expected
 print(f'{len(locales)} languages: unique canonicals, reciprocal hreflang, sitemap, free app schema and secondary donation link checked.')

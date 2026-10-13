@@ -220,3 +220,5 @@ html { scroll-behavior: smooth; scroll-padding-top: 24px; }
 }
 
 .source-link { text-decoration: underline; text-underline-offset: 3px; }
+.answers ul { padding-left: 20px; font-size: 13px; line-height: 1.9; color: var(--muted); margin: 0 0 21px; }
+.answers li { margin-bottom: 12px; }

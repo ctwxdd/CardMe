@@ -71,12 +71,27 @@
     "Gerettete Fotos auf einem anderen Laufwerk speichern."
   ],
   "caption": "Wählen Sie Ihre Speicherkarte in CardMe aus, um zu starten.",
-  "appNote": "Die App ist derzeit nur auf Englisch verfügbar.",
+  "appNote": "App-Sprachen: Englisch und traditionelles Chinesisch.",
   "free": "Kostenlos nutzbar.",
   "support": "Wenn CardMe Ihnen geholfen hat, wichtige Fotos zurückzubekommen, freue ich mich über einen Kaffee.",
   "coffee": "Einen Kaffee spendieren ☕️",
   "licenses": "Lizenzen und Hinweise zum Quellcode finden Sie in der App.",
   "version": "Version 0.3.37 · Von Apple notarisiert.",
   "languageLabel": "Sprache",
-  "source": "Quellcode"
+  "source": "Quellcode",
+  "openSource": {
+    "title": "Open Source für die Fotorettung",
+    "intro": "CardMe verbindet GNU ddrescue, CPython und Pillow mit einer eigenen JPEG-Wiederherstellung.",
+    "toolsTitle": "Die verwendeten Werkzeuge",
+    "ddrescue": "Liest die gesamte Karte in eine Sicherheitskopie und protokolliert nicht lesbare Bereiche.",
+    "pythonPillow": "Führen die Wiederherstellung aus und dekodieren Bilder, um gefundene Dateien zu prüfen.",
+    "relatedLabel": "Frühe Wiederherstellungsversuche:",
+    "photoRec": "Bei den frühen Wiederherstellungsversuchen kam PhotoRec aus dem TestDisk-Projekt zum Einsatz. Die heutige CardMe-App nutzt einen eigenen JPEG-Wiederherstellungsmechanismus und enthält oder startet PhotoRec nicht.",
+    "changesTitle": "Was CardMe ergänzt",
+    "changes": [
+      "Eine Mac-Oberfläche für Kartenauswahl, schreibgeschützten Zugriff und getrennte Speicherorte. Gerettete Fotos lassen sich einzeln prüfen.",
+      "Bei manchen fragmentierten Kamera-JPEGs helfen verbliebene exFAT-Einträge, eingebettete Vorschaubilder und JPEG-Dekodierungsprüfungen dabei, passende Datenstücke zu finden. Unsichere Ergebnisse werden zur Prüfung markiert.",
+      "Dateinamen aus verbliebenen Verzeichniseinträgen; fehlen diese, wird die EXIF-Aufnahmezeit genutzt. Fotos in voller Größe, Vorschauen und Miniaturen werden getrennt ausgewiesen. Fehlende Bildinhalte werden nicht erzeugt."
+    ]
+  }
 }
